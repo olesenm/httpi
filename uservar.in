@@ -42,19 +42,21 @@ they'll just override all the types they'll define with the same MIME type.
 ~
 ~
 ~check MRESTRICTIONS
-%restrictions =
-	("/nw" => "^10\.##^Mozilla#MSIE",
-	 "/status" => "####voyeur:daNrZR3TcSwD2");
+%restrictions = (
+	 "/nw" => "^10\.##^Mozilla#MSIE",
+	 "/status" => "####voyeur:daNrZR3TcSwD2",
+	 "/" => "###(NPBot|WebZIP|HTTrack|eCatch|Offline Explorer|UdmSearch|WebCopier|internetseer|MSIECrawler)",
+	);
 		# See documentation for interpreting this string.
 ~
 ~
 ~check NAMEREDIR
-%nameredir =
-	("stockholm" => "http://stockholm.ptloma.edu:8080",
-	 "stockholm.ptloma.edu" => "http://stockholm.ptloma.edu:8080",
+%nameredir = (
 	 "stockholm.floodgap.com" => "http://www.floodgap.com",
-	 "httpi.ptloma.edu" => "http://stockholm.ptloma.edu:8080/httpi",
-	 "httpi.floodgap.com" => "http://www.floodgap.com/httpi");
+	 "httpi.floodgap.com" => "http://www.floodgap.com/httpi",
+	 "www.retrobits.com" => "http://www.floodgap.com/retrobits",
+	 "retrobits.com" => "http://www.floodgap.com/retrobits",
+	);
 ~
 ~
 

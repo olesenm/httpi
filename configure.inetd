@@ -11,7 +11,7 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "") unless ($DEFAULT);
-Configure (inetd) for HTTPi/$ACTUAL_VERSION (C)1998-2001 Cameron Kaiser
+Configure (inetd) for HTTPi/$ACTUAL_VERSION (C)1998-2003 Cameron Kaiser
 
 This is the configure script for inetd systems (most Unix boxen).
 
@@ -160,8 +160,6 @@ security hole (to run *any* webserver as root, not just HTTPi).
 
 What user do you want the script to run as?
 EOF
-$DEF_CANDOSETRUID = &yncheck("Can we use setruid()?",
-	'$q = $<;$< = 65534;$< = $q;');
 
 $WAIT_MODE = &prompt(<<"EOF", "n") unless (!$DO_INSTALL);
 A further bonus to slow systems is, because HTTPi runs out of inetd, the
@@ -258,6 +256,7 @@ If you want to continue, just press ENTER.
 If you don't, press CTRL-C NOW!
 EOF
 
+$INSTALL_PATH = &detaint($INSTALL_PATH);
 print "Writing out the configured httpi to $INSTALL_PATH ... ";
 (open(S, "httpi.in") && open(T, ">$INSTALL_PATH")) || die(<<"EOF");
 

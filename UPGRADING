@@ -1,5 +1,5 @@
 ** Upgrading protocol for HTTPi
-** Copyright 1999-2001 Cameron Kaiser
+** Copyright 1999-2003 Cameron Kaiser
 
 Since HTTPi is a patchwork hacker's webserver, upgrading from version to
 version was tricky if you made changes to the code. Hopefully this will make
@@ -16,10 +16,7 @@ upgrading to and from, to
 
 	httpi@floodgap.com
 
-
-
 *** From 1.2 and higher to current version ***
-
 
 	This may be really easy for you if you don't have a pathological
 	install :-) (that should be all of three people ...)
@@ -59,7 +56,6 @@ upgrading to and from, to
 	before you run the new one.
 
 *** From 1.0b2 and previous to current version ***
-
 
 	This isn't as elegant, but it should still help some.
 

@@ -1,15 +1,23 @@
 ~check ISNTINSTALLEDYET
+();
+sub BEGIN { die(<<"EOF");
 
-******* HEY! THIS ISN'T THE REAL WEBSERVER! DON'T RUN THIS! RUN CONFIGURE!
 
-Thanks.
+  ****************************************************************************
+  **** HEY! THIS ISN'T THE REAL WEBSERVER! DON'T RUN THIS! RUN CONFIGURE! ****
+  ****************************************************************************
+
+
+EOF
+}
+
 ~
 ~
 #!DEF_PERL
-$VERSION = "1.3.2 (DEF_CONF_TYPE/DEF_ARCH)";
+$VERSION = "1.4 (DEF_CONF_TYPE/DEF_ARCH)";
 
 # HTTPi Hypertext Tiny Truncated Process Implementation
-# Copyright 1999-2001 Cameron Kaiser # All rights reserved
+# Copyright 1999-2003 Cameron Kaiser # All rights reserved
 # Please read LICENSE # Do not strip this copyright message.
 
 %system_content_types =
@@ -21,34 +29,44 @@ $VERSION = "1.3.2 (DEF_CONF_TYPE/DEF_ARCH)";
 	 "sht" => "text/html",
 ~
 ~
+	 "txt" => "text/plain",
 	 "wml" => "text/vnd.wap.wml",
+	 "gif" => "image/gif",
+	 "jpeg" => "image/jpeg",
+	 "jpg" => "image/jpeg",
+	 "png" => "image/png",
+	 "tif" => "image/tiff",
+	 "tiff" => "image/tiff",
 	 "wbmp" => "image/vnd.wap.wbmp",
 	 "wbm" => "image/vnd.wap.wbmp",
 	 "xbm" => "image/x-xbitmap",
+	 "wav" => "audio/x-wav",
+	 "mp3" => "audio/x-mpeg",
+	 "au" => "audio/basic",
+	 "aif" => "audio/x-aiff",
+	 "aiff" => "audio/x-aiff",
+	 "mid" => "audio/x-midi",
+	 "mov" => "video/quicktime",
+	 "mpeg" => "video/mpeg",
+	 "mpg" => "video/mpeg",
 	 "pdf" => "application/pdf",
 	 "fdf" => "application/vnd.fdf",
-	 "bin" => "application/octet-stream",
 	 "class" => "application/octet-stream",
 	 "jar" => "application/octet-stream",
 	 "js" => "application/x-javascript",
 	 "lnk" => "application/x-hyperlink",
-	 "wav" => "audio/x-wav",
-	 "mp3" => "audio/x-mpeg",
-	 "tif" => "image/tiff",
-	 "tiff" => "image/tiff",
-	 "mid" => "audio/x-midi",
-	 "txt" => "text/plain",
-	 "gif" => "image/gif",
+	 "prg" => "application/x-c64-prg-binary",
+	 "d64" => "application/x-c64-disk-image",
 	 "sit" => "application/x-stuffit",
+	 "hqx" => "application/x-binhex",
 	 "zip" => "application/x-zip-compressed",
 	 "lzh" => "application/octet-stream",
 	 "lha" => "application/octet-stream",
+	 "tar" => "application/x-tar",
 	 "gz"  => "application/x-gzip",
-	 "mov" => "movie/quicktime",
-	 "mpeg" => "video/mpeg",
-	 "mpg" => "video/mpeg",
-	 "jpeg" => "image/jpeg",
-	 "jpg" => "image/jpeg");
+	 "css" => "text/css",
+
+	 "bin" => "application/octet-stream");
 
 $logfile = "DEF_ACCESS_LOG";
 $path = "DEF_HTDOCS_PATH";
@@ -68,7 +86,7 @@ while (($file, $arrayref) = each(%virtual_files)) {
 		$/ = $j; close(S);
 	} else {
 		warn "while getting virtual file $file: $!\n";
-		map_delete(%virtual_files, $file);
+		undef $virtual_files{$file};
 	}
 }
 ~
@@ -99,17 +117,20 @@ sub sock_to_host {
 
 ~
 ~
-	local($sock) = getpeername(STDIN);
+	my($AFC, $thataddr, $zero);
+	return ($cache_hn, $cache_port, $cache_ip)
+		if (length($cache_ip));
 
 	return (undef, undef, undef) if (!$sock);
-	local($AFC, $port, $thataddr, $zero) = unpack($sockaddr, $sock);
-	local($ip) = join('.', unpack("C4", $thataddr));
+	($AFC, $cache_port, $thataddr, $zero) = unpack($sockaddr, $sock);
+	$cache_ip = join('.', unpack("C4", $thataddr));
+	$cache_hn =
 ~check MHOSTNAMES
-	local($hn) = gethostbyaddr($thataddr, DEF_AF_INET) || $ip;
-	return ($hn, $port, $ip);
+		gethostbyaddr($thataddr, DEF_AF_INET) ||
 ~
-	return ($ip, $port, $ip);
 ~
+		$cache_ip;
+	return ($cache_hn, $cache_port, $cache_ip);
 }
 
 sub htsponse {
@@ -165,6 +186,15 @@ sub log {
 
 ~
 ~
+~check MASYNCLOG
+	if ($pid = fork()) { return; }
+	$0 = "dhttpi: logging";
+	close(STDIN);
+	close(STDOUT);
+	close(NS);
+	close(S);
+~
+~
  	if (open(J, ">>$logfile")) {
 		local $q = $address . (($variables) ? "?$variables" : "");
 		$contentlength += 0;
@@ -188,8 +218,13 @@ $hostname - $httpuser [$date] "$method $q HTTP/$httpver" $currentcode $contentle
 ~
 ~
 EOF
-		close(J); }
+		close(J);
 	}
+~check MASYNCLOG
+	exit;
+~
+~
+}
 
 ~check MFALSE
 
@@ -227,7 +262,7 @@ sub master {
 	$0 = "dhttpi: handling request";
 ~
 ~
-# $sock = getpeername(STDIN);
+$sock = getpeername(STDIN);
 $rfcdate = scalar gmtime;
 ($dow, $mon, $dt, $tm, $yr) = ($rfcdate =~
 	m/(...) (...) (..) (..:..:..) (....)/);
@@ -255,6 +290,7 @@ while (<STDIN>) {
 		$httpver = ($httpver =~ m#HTTP/([0-9]\.[0-9]+)#) ?
 			($1) : (0.9);
 		$address =~ s#^http://[^/]+/#/#;
+		$0 = "dhttpi: $method $address $httpver";
 		next unless ($httpver < 1);
 	} else {
 		s/[\r\l\n\s]+$//;
@@ -267,6 +303,7 @@ while (<STDIN>) {
 		(/^Content-type: (.+)/i) && ($ENV{'CONTENT_TYPE'} =
 			$httpct = $1);
 		(/^Expect: /) && ($expect = 1);
+		(/^Cookie: (.+)/i) && ($ENV{'HTTP_COOKIE'} = $1);
 ~check MRESTRICTIONS
 		(/^Authorization: Basic (.+)/i) && ($httprawu = $1);
 ~
@@ -297,7 +334,7 @@ while (<STDIN>) {
 		if ($nameredir{$httphost}) {
 			&hterror301("$nameredir{$httphost}$address");
 		}
-		&hterror404; &log; exit;
+		&hterror404;
 	}
 ~
 ~
@@ -450,23 +487,10 @@ EOF
 ~
 		if ($address !~ m#/$# && -d $raddress);
 	$raddress = "${raddress}index.html" if (-d $raddress);
-	if(!sysopen(S, $raddress, 0)) { &hterror404; } else {
+	IRED: if(!sysopen(S, $raddress, 0)) { &hterror404; } else {
 		if (-x $raddress) {
-			$currentcode = 100;
-			&log;
-			if (!$<) {
-				($x,$x,$x,$x,$uid,$gid) = stat(S);
-				(!$uid || !$gid) &&
-					die "executable is root-owned";
-~check CANDOSETRUID
-				$< = $uid || die "can't set uid";
-				$( = $gid || die "can't set gid";
-~
-~
-				$> = $uid || die "can't set effuid";
-				$) = $gid || die "can't set effgid";
-			}
-			($hostname, $port, $ip) = &sock_to_host() if (!$port);
+			($hostname, $port, $ip) = &sock_to_host();
+			$currentcode = 100; &log; &nsecmodel;
 			$ENV{'REQUEST_METHOD'} = $method;
 			$ENV{'SERVER_NAME'} = "DEF_SERVER_HOST";
 			$ENV{'SERVER_PROTOCOL'} = "HTTP/$httpver";
@@ -536,7 +560,12 @@ SERVEIT:	$ctype ||= 'text/plain';
 		if ($virt_buffer) {
 			&htcontent($virtual_files{$address}->[2],
 				$virtual_files{$address}->[0], 0);
+			&log; exit;
 		} else {
+~
+~
+~check MNSECMODEL
+		$contentlength ||= $length; &log; &nsecmodel;
 ~
 ~
 ~check MPREPARSE
@@ -554,8 +583,12 @@ SERVEIT:	$ctype ||= 'text/plain';
 			&htcontent("", $ctype, $length);
 			unless ($method eq 'HEAD') {
 				while(!eof(S)) {
-					read(S, $q, 16384);
+					read(S, $q, DEF_READBUFFER);
 					print stdout $q;
+~check MTHROTTLE
+					sleep DEF_THROTWAIT if(!eof(S));
+~
+~
 				}
 			}
 ~check MPREPARSE
@@ -571,7 +604,10 @@ SERVEIT:	$ctype ||= 'text/plain';
 ~
 ~
 	}
+~check MNSECMODEL
+~
 	&log;
+~
 	exit;
 }
 
@@ -584,8 +620,36 @@ exit;
 ~check MPREPARSE
 sub output { $fbuf .= "@_"; }
 sub flush { $fbuf1 = $fbuf; $fbuf = ''; return $fbuf1; }
+sub include { if(open(INC, "@_")) { &output(join('', (<INC>))); close(INC); }
+	else { &output("<!-- $! -->\n"); } }
+sub finclude { &include(@_); return &flush; }
 ~
 ~
+
+sub nsecmodel {
+~check MNSECMODEL
+	($x,$x,$x,$x,$uid,$gid) = stat(S);
+	(!$uid || !$gid || $uid < DEF_NSECUID) &&
+		die "resource is root-owned, secured or not stat-able\n";
+	if (!$<) {
+~
+	if (!$<) {
+		($x,$x,$x,$x,$uid,$gid) = stat(S);
+		(!$uid || !$gid) && die "file is root-owned\n";
+~
+~check CANDOSETRUID
+		($< = $uid) || die "can't set ruid to $uid";
+		($( = $gid) || die "can't set rgid to $gid";
+		($> = $uid) || die "can't set euid to $uid";
+		($) = $gid) || die "can't set egid to $gid";
+~
+		eval { (($<, $>) = ($uid, $uid)) } ||
+			die("setreuid workaround failed uid $uid");
+		eval { (($(, $)) = ($gid, $gid)) } ||
+			die("setregid workaround failed gid $gid");
+~
+	}
+}
 
 sub hterror {
 	local($errstr, $expl) = (@_);
@@ -606,6 +670,7 @@ sub hterror404 {
 	&htsponse(404, "File Not Found");
 	&hterror("File Not Found",
 		"The resource $address was not found on this system.");
+	&log; exit;
 }
 
 sub hterror301 {
@@ -613,7 +678,7 @@ sub hterror301 {
 	&hthead("Location: @_");
 	&hterror("Resource Moved Permanently",
 		"This resource has moved <a href = \"@_\">here</a>.");
-	$keep = 0; &log; exit;
+	&log; exit;
 }
 
 ~check MFALSE

@@ -1,0 +1,8 @@
+# PHP support -- requires phproxy and HTTPerl
+# Set $raddress below to point to the location of where you
+# installed phproxy. See the documentation.
+
+	if ($address =~ /\.php$/i) {
+		$raddress = "/usr/local/bin/phproxy";
+		goto IRED;
+	}

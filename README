@@ -1,13 +1,5 @@
 You're using HTTPi, the coolest little webserver out there! Thanks!
 
-** Important difference between 1.2.x and all previous versions, and 1.3:
-   most system content types are now in httpi.in -- only user overrides and
-   user-defined types should go in uservar.in. However, 1.2.x-style
-   uservar.in files should still work -- but they will make an unnecessarily
-   large executable! **
-
-** We've MOVED! Look for us at http://httpi.floodgap.com/! **
-
 Be sure you read the LICENSE file and the INSTALL file! The LICENSE
 file, especially, because HTTPi is NOT GPL. It's free, but it's NOT GPL.
 

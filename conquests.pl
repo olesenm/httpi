@@ -1,5 +1,9 @@
 $HOSTNAME = &wherecheck('Finding hostname', 'hostname');
 $DEF_MCANALARM = &yncheck('Can we use alarm()?', 'alarm 0;');
+$DEF_CANFORK = $q = &yncheck("Can we fork()?",
+        'if ($pid = fork()) { waitpid($pid,0); } else { exit; }');
+$DEF_CANDOSETRUID = &yncheck("Can we use setruid()?",
+	'$q = $<;$< = 65534;$< = $q;');
 &prompt(<<"EOF", "") if (!$DEF_MCANALARM);
 Let me guess. You're not using a Unix Perl.
 
@@ -14,17 +18,25 @@ HTTPi, not Demonic or xinetd HTTPis.)
 You can still install HTTPi, but consider running this on a system that
 supports alarm() in its Perl port.
 
-Press ENTER to continue.
+Press RETURN or ENTER to continue.
 EOF
 
-$INSTALL_PATH = &prompt(<<"EOF", "/usr/local/bin/httpi", 1);
-
+&prompt(<<"EOF", "");
 Cool, we made it that far.
 
 Now you'll need to answer a few questions about your installation options
 and some functions that need to be hard-coded into HTTPi. If you just hit
-ENTER with nothing entered, the default (in [ ]) will be selected.
+RETURN/ENTER with nothing entered, the default (in [ ]) will be selected.
 
+Answering questions incorrectly, or giving the configure script nonsense or
+gibberish (like alpha where a number is expected), will undoubtedly give
+you a defective executable. If it parses, it will probably not work quite
+right. Common sense is a virtue :-)
+
+Press RETURN or ENTER to continue.
+EOF
+
+$INSTALL_PATH = &prompt(<<"EOF", "/usr/local/bin/httpi", 1);
 Where do you want the resultant script placed? If you're using configure to
 build multiple instances of HTTPi on different ports, make sure this changes
 unless you're darn certain that they'll all be configured the same way.
@@ -123,15 +135,14 @@ EOF
 $DEF_MRESTRICTIONS = ($DEF_MRESTRICTIONS eq 'y') ? 1 : 0;
 
 $bleh = &prompt(<<"EOF", "2", 1);
-Webserver logs are a pain in the butt, if you'll pardon the pun and the
-expression, particularly when they get lengthy.
+Webserver logs are a pain, particularly when they get lengthy.
 
 Logging format 1 (here a more CERN compliant variant) was what was supported
-in earlier version of HTTPi:
+in the earliest versions of HTTPi:
 
 host - - [CERNdate] "METHOD address HTTP/V.v" returncode contentlength\\
 	 "referer" ""
-(example: stockholm.ptloma.edu - - [31/Jan/1969:00:00:00] "GET / HTTP/1.0"
+(example: stockholm.floodgap.com - - [31/Jan/1969:00:00:00] "GET / HTTP/1.0"
 200 1000 "http://somewhere.com/" "")
 
 This is a compatible and valid CERN-style log entry, but it doesn't keep or
@@ -175,7 +186,37 @@ EOF
 
 $DEF_MHTTPERL = (($DEF_MHTTPERL eq 'y') ? 1 : 0);
 
+if ($DEF_CANFORK) {
+	$q = &prompt(<<"EOF", "n", 1);
+Address->hostname resolution can be expensive. Since you have fork(), this
+version of HTTPi offers you the ability to make logging asynchronous, i.e.,
+logging and reverse lookup occur in parallel with the actual handling of the
+client request.
+
+This has the advantage of increasing your server's apparent responsiveness,
+but makes logging slightly more kludgy, and may cause transiently higher
+subprocess load (for example, when a client handled by a particularly bad
+nameserver has multiple requests pending simultaneously).
+
+Since this option is experimental, this option defaults to no. If you would
+rather dispense with name lookups all together for maximal speed, consider
+the next option instead of this one.
+
+Use asynchronous logging?
+EOF
+	$DEF_MASYNCLOG = (($q eq 'y') ? 1 : 0);
+} else {
+	print <<"EOF";
+Sorry, without fork() I can't offer you asynchronous logging to improve
+hostname lookup performance. But ...
+
+EOF
+}
+
 $q = &prompt(<<"EOF", "y", 1);
+Speaking of resolving hostnames/expensive logging, here's an option that
+might be good for the performance-minded.
+
 If you don't really care if a hostname or an IP address appears in your
 access logs, you can save (in some cases substantial) time by instructing
 HTTPi not to bother doing name lookups when logging. Most of you will
@@ -190,7 +231,7 @@ $DEF_MHOSTNAMES = (($q eq 'y') ? 1 : 0);
 $q = &prompt(<<"EOF", "n", 1);
 HTTPi 0.99 and up can do IP-less virtual hosting by redirecting host
 aliases to addresses. For example, you might define (as I do) the alias
-httpi.ptloma.edu to point to http://stockholm.ptloma.edu/httpi.
+httpi.floodgap.com to point to http://www.floodgap.com/httpi/.
 
 This is useful for large hosting sites and aliases, but probably not for
 HTTPi's prototypical usage of a little server on a little system, so it's
@@ -206,6 +247,53 @@ Enable host name redirects?
 EOF
 
 $DEF_NAMEREDIR = (($q eq 'y') ? 1 : 0);
+
+$q = &prompt(<<"EOF", "n", 1);
+The New Security Model, introduced in 1.4, adds a additional level of control
+over how files are served.
+
+In the older model, HTTPi only changed uid for executables. In this model,
+HTTPi changes uid for *all* files, meaning even preparsed documents cannot
+take over the webserver. Furthermore, you can specify a uid for which it and
+all UIDs lower, is illegal: the server will not change uid to them, and will
+not, as a consequence, serve files owned by them (root uid is always illegal)
+or run executables on behalf of them (again, root uid is always illegal too).
+Other consequences exist -- PLEASE READ THE DOCUMENTATION FIRST.
+
+The New Security Model is ONLY SALIENT IF YOU RUN HTTPi AS ROOT. Otherwise,
+it simply adds bulk and overhead.
+
+The New Security Model is experimental in this version, so this option
+defaults to n (No). If you use the user filesystem, or preparsing, however,
+and you are running your server as root, it is strongly recommended.
+
+Use the New Security Model?
+EOF
+$DEF_MNSECMODEL = (($q eq 'y') ? 1 : 0);
+if ($DEF_MNSECMODEL) {
+	$DEF_NSECUID = &prompt(<<"EOF", 1, 1);
+Specify the *lowest* UID that is ALLOWED to serve files. For example, consider
+this hypothetical /etc/passwd file (crypts and uids changed to protect the
+guilty^Winnocent):
+
+root:xyzPDQ12:0:0:The Root of All Evil:/doom:/usr/local/bin/mammonsh
+daemon:xyzPDQ12:1:1::/etc:
+bin:xyzPDQ12:2:2::/bin:
+sys:xyzPDQ12:3:3::/usr/sys:
+adm:xyzPDQ12:4:4::/var/adm:
+ftp:xyzPDQ12:100:100:FTP User:/home/ftp:/bin/false
+www:xyzPDQ12:500:500:Webmaster Goddess:/usr/local/htdocs:/usr/local/bin/tcsh
+joeuser:xyzPDQ12:501:501:Joe User:/home/joeuser:/usr/local/bin/tcsh
+
+Presumably, we only want www and joeuser to serve files, so we specify
+uid 500 so that no UID of 499 or lower will be permitted, even users that
+haven't been created yet. AGAIN, THIS IS ONLY RELEVANT IF YOU ARE RUNNING
+HTTPi as ROOT! Also note that root can NEVER serve files, so specifying zero
+as the minimum UID is meaningless.
+
+Lowest UID to serve files?
+EOF
+}
 
 if (!&yncheck("Can we use getpwnam()?",
 	"print scalar(getpwnam('root')), ' ... '")) {
@@ -225,6 +313,10 @@ between the root server documents and users', so users may also run executables
 (and if HTTPi can't change its uid to the executable's owner, this could be
 a rather large security hole). For this reason, this option defaults to no.
 
+If you have the New Security Model on, *and* you're running as root, HTTPi
+will also change its UID to match the document's, which is useful for
+protecting things like /etc/passwd, and for preparsing.
+
 Enable user filesystem?
 EOF
 	$DEF_MUSERFS = ($q eq 'y') ? 1 : 0;
@@ -232,19 +324,18 @@ EOF
 
 $q = &prompt(<<"EOF", "n", 1);
 HTTPi now enables preparsing of selected content types. With the new preparse
-module loaded, you can:
-
-	* insert inline Perl with the <perl></perl> tags and access server
-	  internals
+module loaded, you can insert inline Perl with the <perl></perl> tags and
+access server internals.
 
 Preparsing is done only on files with extensions .sht, .shtm and .shtml, 
 unless you say otherwise.
 
-Because this runs as the UID of the webserver, this can be a VERY BIG security
+UNLESS YOU HAVE THE NEW SECURITY MODEL ON *AND* YOU'RE RUNNING HTTPi AS ROOT,
+preparsing runs as the UID of the webserver and this can be a *huge* security
 hole if enabled with the user filesystem. Enable only if you really trust
 your users, or if you will be the sole person creating content for HTTPi (or
 if you're running HTTPi as some unprivileged user that can't do anything
-antisocial). Enable only under severe, serious advisement!
+antisocial) -- under severe, serious advisement!
 
 For information on how to program with inline Perl, see the programming manual.
 
@@ -270,6 +361,68 @@ EOF
 #	$DEF_PREGEXPB = ($q eq 'y') ? '' : '?';
 }
 
+$q = &prompt(<<"EOF", "n", 1);
+Now that I actually pay for my bandwidth, I've become a lot more jealous of
+it, which is the rationale for building in a primitive throttling facility.
+
+Primitive means exactly that; you are only guaranteed an approximate maximum
+K/sec rating, and even then it's not smooth or well-conditioned. However, it
+was easy to implement and it does work. Please note that the throttle settings
+are PER PROCESS INSTANCE, not per server en toto.
+
+You may specify how many bytes to suck in and spit out at a swallow, and
+how long said swallows take (so, 32,768 bytes and 1 second wait time means,
+roughly, 32K/sec maximum output rate per process instance).
+
+Throttling does not yet apply to executable output, virtual file output,
+or preparsed file output. These omissions, however, may be useful for
+finer-grained throttle control. See the manual for more information.
+
+With throttling off, HTTPi spews files as fast as it can, subject to network
+and connection speed.
+
+Use throttling?
+EOF
+$DEF_MTHROTTLE = ($q eq 'y') ? 1 : 0;
+unless ($DEF_MTHROTTLE) {
+	print "Hmm, bandwidth leeches ahoy, eh? ;-)\nSkipping onward ...\n\n";
+	$DEF_READBUFFER = 16384;
+	$DEF_THROTWAIT = 0;
+} else {
+	$DEF_READBUFFER = &prompt(<<"EOF", "16384", 1);
+How much to consume at one gulp? Remember, larger numbers mean larger
+HTTPi, but mean faster throughput, so make your decision based on how
+practical you want large transfers to be.
+
+The default is 16K, which is good for most sites. Entering multi-megabytes
+here is probably silly and unnecessary, but the option is offered anyway.
+ENTER THIS NUMBER IN BYTES, NOT KILOBYTES, NOT MEGABYTES, NOT GIGABYTES!
+(Remember, 1MB = 1024KB = 1048576 bytes; 1K = 1024 bytes)
+
+Enter a higher number like 32768 or 65536 for 32K and 64K respectively,
+which may be appropriate for bigger LANs, or your private internal network.
+
+Number of bytes to consume per gulp?
+EOF
+	$DEF_THROTWAIT = &prompt(<<"EOF", "1", 1);
+How long to wait between gulps? If you're pathological, or want your
+bandwidth usage curves to decline really fast by setting the 'bytes per
+gulp' high and this high as well, you can set this to two or more seconds.
+Otherwise, waiting one second between gulps is usually plenty, and is as
+granular as this gets.
+
+Since this uses 'sleep' to achieve its voodoo, it is subject to all the
+limitations thereof, including that it may not sleep the complete time
+given, *and* most implementations that I know of do not support fractions.
+
+If you enter 1 here (the default), then your theoretical max throughput is
+bytes per gulp/sec (so using default for both, you get 16K/sec per
+individual process instance).
+
+Gulp delay (in seconds)?
+EOF
+}
+	
 if ($DEF_MCANALARM) {
 	$q = &prompt(<<"EOF", "n", 1);
 Now the ugly kludge section. This is really only relevant to inetd users, but
@@ -290,6 +443,8 @@ running inetd HTTPi.
 Note that many inetds will not require this (AIX and HP/UX don't seem to).
 Don't turn it on unless you think it's necessary for your OS or security.
 
+This may have interesting interactions with the throttling option, by the way.
+
 Auto-kill the link on slow data transfers?
 EOF
 	$DEF_MAUTOKILL = ($q eq 'y') ? 1 : 0;
@@ -303,6 +458,8 @@ seconds before inetd will actually close the port down.
 
 If this is just for security purposes, set it to whatever you like. Sixty
 seconds seems good for not-too-busy sites with not-too-big files.
+
+Remember, throttling may cause unusual interaction if this is set too low.
 
 Auto-kill timeout?
 EOF

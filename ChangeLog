@@ -1,3 +1,33 @@
+Changes since 1.3.2:
+
+	new:
+	* change log now divided into new stuff, enhancements, and fixes
+	* New Security Model enables granular and more secure
+		document access by matching uids to documents
+	* primitive bandwidth throttling facility
+	* logging now can be asynchronous (requires fork support)
+	* cookies now handled
+	enhanced:
+	* include facility for pre-parsed files
+	* process string now displays request on those systems allowing it
+	* sock_to_host now caches DNS reverse lookups ... much faster
+	* more content types
+	* hooks within HTTPi for handlers and proxies (see tools/phproxy/)
+	fixes:
+	* tested "guaranteed" with 5.8.* and 5.6.*
+	* subtle bug in /setr?e?uid/ logic fixed
+	* installation as root no longer fails taint checking in 5.6.1 and up
+		(thanks Nick Brown)
+	* logging bug where $variables == 0 (smacks self on head)
+	* one less sockcons.c warning with gcc
+	* port binding bug on multi-homed Demonic fixed
+	* several erroneous content types fixed
+	* better handling of systems without a working setruid() (AIX4, ...)
+	* somewhat more resistant of stupid clients not parsing paths right
+	* startup failure with missing virtual files fixed (properly issues
+		non-fatal warning now)
+	* incorrect transcript filenames now properly error out
+
 Changes since 1.3.1:
 
 	* possible security exploit allowing HTTPi to escape its mount

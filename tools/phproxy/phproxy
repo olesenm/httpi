@@ -1,0 +1,135 @@
+#!/usr/bin/perl
+
+## PHPROXY/0.1 ##################################################
+#
+# This script provides just enough of the CGI specification and
+# some additional kludge hack logic to allow HTTPi/1.4 and up to
+# directly execute PHP scripts. You must have the CGI-environment
+# PHP (usually in sapi/cgi/) installed. See the documentation.
+#
+# (C)2003 Cameron Kaiser. Provided under the terms of the HTTPi
+# license. All rights reserved. Suggestions welcome to
+# httpi@floodgap.com.
+#
+############ THIS SCRIPT MUST BE CONFIGURED FIRST BEFORE USAGE ##
+#
+# Specify the location of your CGI-environment sAPI PHP interpreter
+# below. A full path is required.
+#
+$PHP = '/usr/pkg/bin/php.cgi';
+
+# This should be set to zero unless you're unsure whether the
+# script is understanding headers correctly. If you wish to test
+# its interpretation, switch this to 1.
+$doing_debugging = 0;
+
+# Finally, delete the line below. You're done. Copy this program
+# to the location you specified in modules.in.
+die "you didn't read the directions, did you?\n"; # delete me
+
+#
+#
+## NO USER SERVICEABLE PARTS BELOW ##############################
+
+$ENV{'DOCUMENT_ROOT'} = "$path";
+$ENV{'REDIRECT_STATUS'} = "200";
+$ENV{'REDIRECT_URL'} = $address;
+$ENV{'REQUEST_URI'} = "${address}?${variables}";
+$ENV{'SCRIPT_NAME'} = $address;
+$ENV{'PATH_INFO'} = $address;
+$ENV{'SCRIPT_FILENAME'} = $ENV{'PATH_TRANSLATED'} = "$path$address";
+$ENV{'REDIRECT_QUERY_STRING'} = $ENV{'QUERY_STRING'} = $variables;
+
+# throw away phony requests immediately
+open(S, "$path$address") || &hterror404;
+
+# set our uid if requested
+&nsecmodel;
+
+# need to handle POST data?
+if ($ENV{'REQUEST_METHOD'} eq 'POST') {
+	read(stdin, $buf, ($cl = 0+$ENV{'CONTENT_LENGTH'}));
+}
+
+if ($doing_debugging) {
+	print <<"EOF";
+HTTP/1.0 200 OK
+Server: PHProxy
+Content-type: text/plain
+
+** Doing debugging **
+
+Invoking $PHP upon $address
+EOF
+}
+
+# parse through the output and adjust the return code appropriately
+# the child is (effectively) the php-cgi interpreter
+if(open(K, "-|")) { # parent
+	$heads = 0;
+	undef $rc;
+	undef %http_h;
+	while(<K>) {
+		unless ($heads) {
+			s/[\r\l\n\s]$//sg;
+			if (/^$/) {
+				$heads = 1;
+				if ($rc) {
+					print stdout "$rc\r\n";
+				} else {
+					if (defined($http_h{'Location'})) {
+						print stdout
+"HTTP/1.0 302 Temporary Redirect\r\n";
+					} else {
+						print stdout
+"HTTP/1.0 200 OK\r\n";
+					}
+				}
+				print stdout
+"Server: $ENV{'SERVER_SOFTWARE'}\r\n";
+				foreach $e (keys %http_h) {
+					print "$e: $http_h{$e}\r\n";
+				}
+				print "\r\n";
+			} else {
+				if (m#^HTTP/#) { # yes, I'm lazy
+					$rc = $_;
+				} else {
+					($k, $v) = split(/:\s*/, $_);
+					$k = ucfirst(lc($k));
+					$http_h{$k} = $v;
+					print ">> Got header $k => $v\n"
+						if ($doing_debugging);
+				}
+			}
+		} else {
+			print stdout $_;
+		}
+	}
+} else { # child
+	if ($cl) {
+		if(open(W, "|$PHP")) {
+			print W $buf;
+			close(W);
+		} else { &pherror; }
+	} else {
+		exec($PHP);
+		&pherror;
+	}
+	exit;
+}
+close(K);
+
+exit;
+
+sub pherror {
+	&htsponse(500, "PHP Failure");
+	&hterror("PHP Failure", <<"EOF");
+Unable to properly execute PHP resource $address -- please make sure that
+PHP and the PHP execution proxy are correctly configured.
+<p>
+Additional information:<pre>
+$!
+</pre>
+EOF
+}

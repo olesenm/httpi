@@ -10,7 +10,7 @@
  * and gcc on HP/UX, and gcc on SunOS, Linux, AIX and NetBSD.
  */
 
-void main(argv, argc) {
+int main(argv, argc) {
 	printf("cons %i %i %i %i %i %i %i\n", AF_INET, PF_INET, SOCK_STREAM,
 		SOL_SOCKET, SO_REUSEADDR, SOMAXCONN, IPPROTO_TCP);
 	exit(0);

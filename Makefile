@@ -1,4 +1,4 @@
-# Useless makefile for managing HTTPi versions (C)1999-2001 Cameron Kaiser
+# Useless makefile for managing HTTPi versions (C)1999-2003 Cameron Kaiser
 #
 # This is really only needed for my use, but if you want, here it is, no
 # support or strings attached, if you want to roll your own dists. The guts
@@ -60,10 +60,12 @@ install: version
 
 # DO NOT RUN THIS TARGET DIRECTLY
 _testdir: version clean unrevert
-	@echo "ABOUT TO OVERWRITE OLD INSTALL! CHECK THIS IS CORRECT!!!!!"
+	@echo "ABOUT TO OVERWRITE OLD INSTALL! STOP NOW IF THIS ISN'T CORRECT!"
 	@${SLEEP} 3
 	${RM} -f configure Manifest
-	echo "${RM} -rf ../`${HEAD} -1 VERSION` ../`${HEAD} -1 VERSION`.ta*"\			> /tmp/httpinst
+	echo "#####" > /tmp/httpinst
+	echo "${RM} -rf ../`${HEAD} -1 VERSION` ../`${HEAD} -1 VERSION`.ta*"\
+		>> /tmp/httpinst
 	echo "${CP} -r . ../`${HEAD} -1 VERSION`" >> /tmp/httpinst
 	echo "cd ../`${HEAD} -1 VERSION`" >> /tmp/httpinst
 	echo "${LN} -s configure.inetd configure"\
@@ -71,6 +73,8 @@ _testdir: version clean unrevert
 	echo "${LS} -lRF > /tmp/Manifest" >> /tmp/httpinst
 	echo "${MV} /tmp/Manifest ." >> /tmp/httpinst
 	echo "cd .." >> /tmp/httpinst
+	echo "#####" >> /tmp/httpinst
+	${CAT} /tmp/httpinst
 
 dist: _testdir
 	echo\

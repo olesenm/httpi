@@ -1,8 +1,9 @@
 ** Installation procedure for HTTPi
-** Copyright 1998-2001 Cameron Kaiser
+** Copyright 1998-2003 Cameron Kaiser
 
 1. Check that all files are present. Make sure you have Perl 5 installed.
    You only need the executable, not the standard distribution in full.
+
    If you aren't sure if you have all the files, look in the Manifest file
    (it's an ls -lR of the development directory, minus, of course, the
    Manifest file itself) and compare it with an ls -lR of your directory.
@@ -64,7 +65,8 @@ $ perl configure.xinetd	 # smart unices/sysadmins that want inetd installation
 $ perl configure.generic # others
 
 Do *not* use the Makefile. The Makefile is not intended for installation;
-it's used for rolling your own distributions.
+it's used for rolling your own distributions. Do *not* use the Makefile.
+Do *not* chew your nails.
 
 NOTE TO (x)inetd INSTALLERS:
 If you're on a Unix box, you must run as root for full install options.
@@ -79,7 +81,9 @@ configuration files.
 	httpi@floodgap.com
 
 9. DO NOT TOAST THE INSTALL DIRECTORY. If you make config changes, etc.,
-   you will need these files again. Don't lose them.
+   you will need these files again. Don't lose them. Especially hold on
+   to the configure transcript file, as it will make tweaking HTTPi's code
+   much more painless.
 
 10. Enjoy your new, small and extremely sexy web server.
 

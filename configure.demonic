@@ -9,7 +9,7 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "") unless ($DEFAULT);
-Configure (demonic) for HTTPi/$ACTUAL_VERSION (C)1998-2001 Cameron Kaiser
+Configure (demonic) for HTTPi/$ACTUAL_VERSION (C)1998-2003 Cameron Kaiser
 
 This is the configure script for Demonic HTTPi, the daemonized HTTPi version.
 
@@ -113,9 +113,9 @@ trying to use HTTPi to support virtual servers.
 Bind to which numerical IP address?
 EOF
 
-$DEF_INADDR_ANY = 'pack("l", "\0\0\0\0")';
+$DEF_INADDR_ANY = '"\0\0\0\0"';
 if (($o1, $o2, $o3, $o4) = split(/\./, $DEF_IP_ADDR)) {
-	$DEF_INADDR_ANY = "pack('l', chr($o1).chr($o2).chr($o3).chr($o4))";
+	$DEF_INADDR_ANY = "chr($o1).chr($o2).chr($o3).chr($o4)";
 }
 $DEF_IP_ADDR = "ANY" if ($DEF_IP_ADDR eq '0.0.0.0');
 
@@ -256,7 +256,9 @@ If you want to continue, just press ENTER.
 If you don't, press CTRL-C NOW!
 EOF
 
+$INSTALL_PATH = &detaint($INSTALL_PATH);
 print "Writing out the configured httpi to $INSTALL_PATH ... ";
+
 (open(S, "httpi.in") && open(T, ">$INSTALL_PATH")) || die(<<"EOF");
 
 Couldn't write out the new httpi. Check permissions on httpi.in in the

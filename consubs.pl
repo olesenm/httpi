@@ -1,6 +1,11 @@
-$version_key = "HTTPi/1.3";
+$version_key = "HTTPi/1.4";
 $my_version_key = 0;
-$ACTUAL_VERSION = "1.3.2";
+$ACTUAL_VERSION = "1.4";
+
+sub detaint { # sigh
+	my ($w) = (@_);
+	($w =~ m#([^\\|><]+)#) && (return $1);
+}
 
 sub yncheck {
 	local ($prompt, $evals, $fatal) = (@_);
@@ -117,7 +122,7 @@ HIT CTRL-C NOW IF THIS IS NOT WHAT YOU WANT!
 EOF
 	sleep 1;
 	$DEFAULT = 1;
-	if (-e $ARGV[1]) {
+	if (length($ARGV[1]) && -e $ARGV[1]) {
 		open(P, "$ARGV[1]");
 		while(<P>) {
 			chomp;
@@ -148,6 +153,12 @@ EOF
 		close(P);
 		print "Loaded responses from $ARGV[1].\n\n";
 		$DEFAULT = 2;
+	} elsif (length($ARGV[1])) {
+		print <<"EOF";
+Can't load transcript file $ARGV[1]! ("$!")
+Check your permissions or your typing.
+EOF
+		exit;
 	}
 }
 

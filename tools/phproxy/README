@@ -1,0 +1,33 @@
+PHProxy is an actually marginally useful example of the inelegant and kludgy 
+handler logic in HTTPi/1.4. It implements just enough of the CGI specification
+to allow PHP scripts to run through HTTPi.
+
+When correctly configured, any file ending in .php will be automatically
+and invisibly sent to PHP for interpretation by the server itself. phproxy
+also honours New Security Model restrictions on UID access.
+
+Requirements:
+
+* PHP (tested with 4.3.4) -- you must compile the CGI server API version
+  (usually in <php source directory>/sapi/cgi)
+* HTTPi/1.4 (this will not work with previous versions)
+* HTTPerl MUST be turned on in HTTPi -- see the configuration scripts
+
+Installation:
+
+* Make sure your PHP CGI server API executable is in a public place.
+* Edit phproxy and follow the directions within to have it point to your
+  CGI-based PHP executable. Put phproxy in a public place.
+* Edit add_to_modules.in and follow the directions within to have it point
+  to phproxy.
+* Append the file add_to_modules.in to your server's modules.in.
+* (Re)configure your HTTPi to incorporate the changes. ** REMEMBER: YOU
+  MUST ENABLE HTTPerl OR PHPROXY CANNOT OPERATE! **
+* Put phproxy_test.php in your document root and access it with a web
+  browser. You should see the internal dump from phpInfo().
+
+This code is at best hack-quality. Send bug reports and feature requests,
+both of which will likely be sizable in quantity, to httpi@floodgap.com.
+
+Cameron Kaiser
+
