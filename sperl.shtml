@@ -1,0 +1,34 @@
+<html>
+<head><title>HTTPi Programming Manual</title></head>
+<body bgcolor = "#ffffff" vlink = "#0000ff" link = "#0000ff" text = "#000000">
+<a href ="program.html"><img src = "pix/httpismall.gif" alt = "[&lt;&lt;]"
+height = 32 width = 91 border = 0></a><i>Back to the programming manual</i>
+<hr>
+<img src = "pix/httpibig.gif" align = right alt = " ">
+<h1>Programming Manual: Inline Perl Sample</h1>
+A typical inline Perl application looks like this:
+<pre>
+Any particular reason why you want
+&lt;code&gt;&lt;perl&gt;$address;&lt;/perl&gt;&lt;/code&gt;?
+Don't you have something better to do at
+&lt;perl&gt;scalar localtime&lt;/perl&gt; instead of waste
+&lt;perl&gt;$hostname || (&amp;sock_to_host())[0];&lt;/perl&gt;'s time?
+</pre>
+which comes out like<p>
+<center>
+<table cellspacing = 0 cellpadding = 5 border = 0><tr><td bgcolor = "#e0e0ff"
+align = left valign = middle width = 100%>
+Any particular reason why you want <code><perl>$address;</perl></code>?
+Don't you have something better to do at <perl>scalar localtime</perl>
+instead of waste <perl>$hostname || (&sock_to_host())[0];</perl>'s time?
+</td></tr></table>
+</center>
+<p>
+In this example, we've done three things: retrieved a server-internal
+variable, returned an arbitrary Perl expression ("<code>scalar
+localtime</code>") and made a HTTPi-internal function call. All of these
+items <code>return</code>ed something, which was displayed. 
+<hr>
+<address>Cameron Kaiser</address>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<html>
+<head><title>HTTPi Programming Manual</title></head>
+<body bgcolor = "#ffffff" vlink = "#0000ff" link = "#0000ff" text = "#000000">
+<a href ="program.html"><img src = "pix/httpismall.gif" alt = "[&lt;&lt;]"
+height = 32 width = 91 border = 0></a><i>Back to the programming manual</i>
+<hr>
+<img src = "pix/httpibig.gif" align = right alt = " ">
+<h1>HTTPi Programming Manual: Inline Perl Sample 2</h1>
+<perl>
+	if ($variables eq 'yes') {
+		&output("Groovy show, wasn't it? Movie sucked, though.");
+	} else {
+		&output("Well, forget you. Go back to <i>Friends</i>.");
+	}
+	return &flush();
+</perl>
+<p>
+Here was the code that HTTPi executed:
+
+<pre>
+	if ($variables eq 'yes') {
+		&amp;output("Groovy show, wasn't it? Movie sucked, though.");
+	} else {
+		&amp;output("Well, forget you. Go back to &lt;i&gt;Friends&lt;/i&gt;.");
+	}
+	return &amp;flush();
+</pre>
+<hr>
+<address>Cameron Kaiser</address>
+</body>
+</html>

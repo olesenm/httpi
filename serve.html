@@ -1,0 +1,190 @@
+<html>
+<head><title>HTTPi Installation/User's Manual</title></head>
+<body bgcolor = "#ffffff" vlink = "#0000ff" link = "#0000ff" text = "#000000">
+<a href ="./"><img src = "pix/httpismall.gif" alt = "[&lt;&lt;]" height = 32
+width = 91 border = 0></a><i>Back to the main page</i>
+<hr>
+<img src = "pix/httpibig.gif" align = right alt = " ">
+<h1>Installation/User's Manual</h1>
+<a name = "ins"></a>
+<h3>Installation and Configuration</h3>
+<h4>What you'll need</h4>
+<ul><li>Perl 5, though you can probably very easily make it run under Perl 4
+(signal handlers might need to be tweaked, but that's it). No additional
+modules, not even the ones included with the distribution, are
+required -- you can make do with just the executable, which is in fact
+exactly the setup <code>stockholm</code> is using. If you don't have Perl,
+you can get versions from <a href = "http://www.perl.com/">Perl.com</a>.
+<li><code>inetd</code> or a moral equivalent. I don't know of anything like
+<code>inetd</code> other than <code>inetd</code> itself, but if you have
+such an application, try it and tell me if it works so I can support it in
+future releases. This means you will probably also have to have a Unix box.
+<li>Root access, because <code>/etc/inetd.conf</code> and
+possibly also <code>/etc/services</code> need to be modified, unless you have
+a very permissive/stupid system administrator. :-)
+</ul>
+<h4>Installation and Initial Configuration</h4>
+Run the <code>configure</code> script in the distribution. No changes can
+be made to <code>inetd</code>'s configuration files if you don't run it as
+root. Invoke it under Perl:
+<pre>
+# perl configure
+</pre>
+The configure script figures out system settings and builds a custom version
+of HTTPi for you. It will also add the necessary lines to
+<code>/etc/services</code> and <code>/etc/inetd.conf</code>, provided you
+have the appropriate permission.
+<h4>Putting Another Copy On Another Port</h4>
+This is done with the <code>configure</code> script and is invoked the same
+way. Depending on how you answer the questions, the <code>configure</code>
+script will either build a new HTTPi for the new port, or have the old HTTPi
+map to both the previous port and this port.
+<h4>Changing The Configuration Later</h4>
+The <code>configure</code> script does the initial configuration for you.
+Should you wish to change settings later, you may either need to edit
+<code>inetd</code>'s files, or re-run <code>configure</code>.
+<ul>
+<li><b><i>Can be configured by re-running the configuration script.</i></b><P>
+The following options can be re-configured by re-running the configuration
+script, answering no to the first question, and making sure that the config
+script overwrites the old build of the server.
+<p>
+<ul>
+<li><b>Setting the location for documents</b>
+<p>
+<li><b>Setting the location of the log file</b> If you are not running
+HTTPi as root, you will need to make sure that the log file or directory
+structure is writable to that user.
+<p>
+<li><b>HTTP/1.1 settings (both enabled/disabled and timeout)</b><p>
+</ul>
+<li><b><i>Require editing of</i></b> <code>/etc/inetd.conf</code><p>
+These options require editing <code>/etc/inetd.conf</code>. <b>Alternatively,
+you can re-run the</b> <code>configure</code> <b>script, allow it to add
+the new line to</b> <code>/etc/inetd.conf</code>, <b>and delete the old
+one. The</b> <code>configure</code> <b>script never removes lines.</b>
+Make sure to send a <code>-HUP</code> signal to <code>inetd</code> after.<p>
+<ul>
+<li><b>Setting the UID of the server</b> This needs to
+be root if you want the euid of executables to be the euid of the executable's
+owner. Find the line in the file that the <code>configure</code> script
+added, and change the current username listed to the one desired.<p>
+<li><b>Setting single- or multi-instance options</b> Find the line in
+the file that the <code>configure</code> script added, and replace 
+<code>wait</code> or <code>nowait</code> with <code>wait</code> (for single
+process only) or <code>nowait</code> (for multiple sockets).<p>
+</ul>
+<li><b><i>Require editing of both</i></b> <code>/etc/inetd.conf</code> and
+<code>/etc/services</code><p>
+These options require editing <code>/etc/inetd.conf</code> and possibly
+adding new services in <code>/etc/services</code>. <b>Alternatively,
+you can re-run the</b> <code>configure</code> <b>script, let it figure out if
+modifications to</b> <code>/etc/services</code> <b>are needed (and make them
+if so), allow it to add
+the new line to</b> <code>/etc/inetd.conf</code>, <b>and delete the old
+one. The</b> <code>configure</code> <b>script never removes lines.</b>
+Make sure to send a <code>-HUP</code> signal to <code>inetd</code> after.<p>
+<ul>
+<li><b>Changing the port number of an existing server</b> You will need to
+add the port number to <code>/etc/services</code> as a new service, unless this
+has already been done (very likely for port numbers under 3000 or so). Change
+HTTPi's entry in <code>/etc/inetd.conf</code> to point to this new service.
+<b>Do not do this to add a new server to a different port -- you need only
+run</b> <code>configure</code> <b>for that.</b>
+<p>
+</ul>
+<li><b><i>Require editing of HTTPi itself</i></b><p>
+More information on this is in the <a href = "program.html">Programming
+Manual</a>.<p>
+To make these changes, load the <code>httpi.in</code> into your favourite
+editor and follow the appropriate directions below.
+After making the changes, re-run <code>configure</code>, answering no to
+the initial question and answering all other questions as you did previously.
+This will overwrite your old build with the new one.
+<p>
+<ul>
+<li><b>Adding content types</b> HTTPi by default serves up MIME types for
+.html, .htm, .txt, .gif, .jpg, .gz and .zip. Add new content types
+to the <code>%content_types</code> hash; be sure to follow the format used
+in the file. Content types HTTPi doesn't know how to handle are dumped as
+text/plain.
+<p>
+</ul>
+</ul>
+<a name = "ser"></a>
+<h3>Document Serving and Executable Support</h3>
+HTTPi follows a simple rule. If the requested file is readable and exists, it
+loads it and displays it. If the requested file is executable by the current
+uid, it runs it instead. Everything else gets a 404 error.
+Therefore, all you need to do to serve documents is make sure that HTTPi can
+read it. If HTTPi is running as root, no worries; if it is running as nobody,
+make sure you
+<pre>
+% chmod ugo+r {filename}
+</pre>
+so that it can see it, and
+<pre>
+% chmod ugo+rx {directory}
+</pre>
+on directories. Naturally, all documents must be in the documents directory
+HTTPi is looking in, to ensure that naughtyness like
+<a href = "/../../../etc/password">/../../../etc/password</a> doesn't work.
+Good thing, too.
+<p>
+Unlike just about every other webserver, if you don't have an
+<code>index.html</code> file in a directory, you'll get an error, not a
+directory tree. This is to save program code and server size, and also
+offers a modicum of security so that people can't just riffle your files.
+<p>
+Requests have to be received within ten seconds of startup, after which the
+socket is closed. This prevents
+people from opening up socket after socket to try DoS attacks on you.
+Ten seconds is probably more than any client needs, of course.
+<h4>Executables</h4>
+As mentioned, HTTPi supports executable programs of a fashion, but not as
+CGI, though some interface features are common.
+<p>
+When a file being requested is executable by HTTPi's uid, it sets a few
+environment variables and <code>exec()</code>s into the executable instead
+(unlike other webservers which may fork a process). If HTTPi is running as
+root, it gives the executable the egid and euid of the executable's owner.
+It does not act like
+CGI: <i>you must explicitly set an HTTP response code</i> and <i>you do not
+have all the CGI environment variables at your disposal</i>. Think of it as
+a very stripped down NPH-CGI environment, where no headers are provided you.
+<p>
+The file <code>noodle</code>, included with the distribution in the
+<code>tools/</code> directory, allows you to
+see what happens. <code>chmod</code> it executable (e.g.
+<pre>
+% chmod ugo+x noodle
+</pre>
+), pop it in the documents directory, and access it as a regular resource
+(try it <a href = "noodle?this+is+a+variable&q=here+is+another">on this
+server</a> and see for yourself). It
+will display its uid, gid, euid, egid, arguments and environments. You are
+provided the <code>REMOTE_HOST</code> (aliased as <code>REMOTE_ADDR</code>),
+<code>REMOTE_PORT</code> and <code>QUERY_STRING</code> variables. There is no
+POST support in the current version.
+<p>
+CGIs that use GET will probably translate just fine. You will need to add an
+extra header to explicitly set an HTTP response code, i.e. add
+<pre>
+HTTP/1.1 200 OK
+</pre>
+as the first line of whatever output the CGI spews. CGIs need not have the
+<code>.cgi</code> extension, and they don't have to be in any particular
+directory save the document one (i.e. there is no explicit
+<code>/cgi-bin</code> directory).
+<p>
+Because HTTPi has already ceased to exist by the time the executable starts,
+there is no way it can know if the executable succeeded or failed. 
+Executables appear in the log file with a status code of 100 instead of 200,
+302 or 500, the normal codes seen associated with executables.
+<h3>Questions and Bug Reports</h3>
+Send all outstanding issues to <b><a href =
+"mailto:httpi@stockholm.ptloma.edu">httpi@stockholm.ptloma.edu</a></b>.
+<hr>
+<address>Cameron Kaiser</address>
+</body>
+</html>
