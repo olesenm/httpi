@@ -1,142 +1,64 @@
 <html>
-<head><title>HTTPi Installation/User's Manual</title></head>
+<head><title>HTTPi User's Manual</title></head>
 <body bgcolor = "#ffffff" vlink = "#0000ff" link = "#0000ff" text = "#000000">
 <a href ="./"><img src = "pix/httpismall.gif" alt = "[&lt;&lt;]" height = 32
 width = 91 border = 0></a><i>Back to the main page</i>
 <hr>
 <img src = "pix/httpibig.gif" align = right alt = " ">
-<h1>Installation/User's Manual</h1>
-<a name = "ins"></a>
-<h3>Installation and Configuration</h3>
-<h4>What you'll need</h4>
-<ul><li>Perl 5, though you can probably very easily make it run under Perl 4
-(signal handlers might need to be tweaked, and there's a couple Perl5-only
-constructions, but that's it). No additional
-modules, not even the ones included with the distribution, are
-required -- you can make do with just the executable, which is in fact
-exactly the setup <code>stockholm</code> is using. If you don't have Perl,
-you can get versions from <a href = "http://www.perl.com/">Perl.com</a>.
-<li><code>inetd</code> or a moral equivalent. If you have the resources, I
-heartily recommend <a
-href = "http://synack.net/xinetd/"><code>xinetd</code></a>, a blindingly
-fast <code>inetd</code> replacement (I run it here). It's very secure and
-offers gallons of features, and you'll get out of the box 25% increase in
-speed (according to my unofficial, over-my-lunch-break benchmarks).
-Unfortunately, I am not aware of any <code>inetd</code> clones for Windows
-or Macintosh, but I'm sure there are some. You'll definitely need one, because
-HTTPi does not offer operation as a daemon currently, and you will need to
-configure your <code>inetd</code> clone to run HTTPi by hand.
-<li>Root access, because <code>/etc/inetd.conf</code> and
-possibly also <code>/etc/services</code>, or <code>/etc/xinetd.conf</code>,
-need to be modified, unless you have
-a very permissive/stupid system administrator. :-)
-</ul>
-<h4>Installation and Initial Configuration</h4>
-Run the appropriate <code>configure</code> script in the distribution. If you
-have <code>inetd</code>, run <code>configure.inetd</code>; if you have
-<code>xinetd</code>, run <code>configure.xinetd</code>; if you have neither
-one, run <code>configure.generic</code>. <b>From this point on, when you
-see <code>configure</code>, replace it with the <code>configure.*</code>
-script appropriate for your setup.</b>
+<h1>User's Manual</h1>
+It would be greatly amiss if HTTPi didn't work at all like any other
+webserver. Most of the time, you'll find that HTTPi behaves and operates
+Pretty Much Like You'd Expect (tm). In fact, once running, it is actually
+simpler (in the programmer's very biased opinion) to operate and maintain,
+enable executables, and make documents available to be served; but, like
+every piece of software, it does have its own idiosyncrasies.
+If you think every webserver acts like Apache, you'd better read this
+thoroughly first.
+<a name = "ssto"><h3>Starting and Stopping HTTPi</h3></a>
+Invoking and managing HTTPi sessions is very simple to do, and depending
+on the way you have HTTPi installed, literally automatic.
 <p>
-Note that no changes can be made to <code>inetd</code>'s or
-<code>xinetd</code>'s configuration files if you don't run the appropriate
-<code>configure</code> as root.
+If you have installed HTTPi to run in <code>(x)inetd</code>, HTTPi will 
+be managed by <code>(x)inetd</code>. <i>You'll never need to start your
+server manually or place it in your system's <code>rc</code> scripts,
+and <code>xinetd</code> will automatically manage all your virtual servers
+for you if you have them set up.</i> You will not see any HTTPi processes
+running when there are no requests pending. To stop the server, you must
+manually remove the entry from your <code>(x)inetd</code>'s configuration file.
 <p>
-Invoke the appropriate script under Perl:
-<pre>
-# perl configure
-</pre>
-The configure script figures out system settings and builds a custom version
-of HTTPi for you. The <code>inetd</code> version will also add the necessary
-lines to
-<code>/etc/services</code> and <code>/etc/inetd.conf</code>, provided you
-have the appropriate permission; the <code>xinetd</code> version will add
-the necessary lines to <code>/etc/xinetd.conf</code>, provided you have the
-appropriate permission.
+Demonic HTTPi has some special care and feeding rules that are slightly
+different than other webservers. In particular, you need one Demonic HTTPi
+executable running per IP address it is bound to (so multiple virtual
+servers require multiple instances of Demonic HTTPi built for each IP address
+to separate executables). <i>This is unlike Apache or Roxen,
+which manage their server processes in one master process.</i>
+These processes do not autostart, and should be
+invoked in your system's <code>rc</code> scripts or equivalent to make sure
+that your server comes up on reboot. 
 <p>
-After running <code>configure</code>, you are left with a transcript file
-(named something like <code>configure.transcript.0</code>), which you can
-pass to <code>configure</code> with the <code>-d</code> option to save
-a lot of typing later. See the <a href = "program.html">Programming Manual</a>.
-<h4>Special Note on <code>configure.generic</code></h4>
-<code>configure.generic</code> simply builds an executable. It does <i>no</i>
-installation. You must connect it with your inetd or equivalent manually.
-Please send me details of what you do to <a href = 
-"mailto:httpi@stockholm.ptloma.edu"><b>httpi@stockholm.ptloma.edu</b></a>
-so I can add support for it in later versions.
-<h4>Putting Another Copy On Another Port (<code>configure.inetd</code>
-and <code>configure.xinetd</code>)</h4>
-This is done with the <code>configure</code> script and is invoked the same
-way. Depending on how you answer the questions, the <code>configure</code>
-script will either build a new HTTPi for the new port, or have the old HTTPi
-map to both the previous port and this port.
-<h4>Changing The Configuration Later</h4>
-The <code>configure</code> script does the initial configuration for you.
-Should you wish to change settings later, you may need to edit
-<code>inetd/xinetd</code>'s files and/or or re-run <code>configure</code>.
-Some settings are HTTPi-internal.
-<ul>
-<li><b><i>Can be configured by re-running the configuration script.</i></b><P>
-The following options can be re-configured by re-running the configuration
-script and making sure that the <code>configure</code>
-script overwrites the old build of the server.
+Demonic HTTPi
+is invoked by simply calling it from the command line. You must be
+<code>root</code> to bind TCP port numbers lower than 1024. If you look at the
+system's process list, Demonic HTTPi (which calls itself <code>dhttpi</code>)
+will display its current bound IP address, bound TCP port and the time of
+last request,
+allowing you to monitor the server remotely without sending fake requests to
+check response.
+To stop the server, or a particular instance, simply <code>kill(1)</code> it.
 <p>
-<ul>
-<li><b>Setting the location for documents</b>
-<li><b>Setting the location of the log file</b> If you are not running
-HTTPi as root, you will need to make sure that the log file or directory
-structure is writable to that user.
-<li><b>HTTP/1.1 settings (both enabled/disabled and timeout)</b>
-<li><b>Turning on/off the restriction matrix</b> Note that this does not
-actually change the values of the matrix. See below.
-</ul>
+Demonic HTTPi autothrottles to maximum three simultaneous processes (one
+master, one slave and one executable fork), and queues all incoming requests
+for later. It will not spawn more children or spew multiple simultaneous
+instances, unlike Apache.
 <p>
-<li><b><i>Require editing files after running</i></b> <code>configure</code><p>
-The following options require removing lines from <code>/etc/inetd.conf</code>
-(for <code>inetd</code> users) or from <code>/etc/xinetd.conf</code> (for
-<code>xinetd</code> users), after running the configure script.
-<p>
-In all cases, simply remove the lines previously added by
-<code>configure</code> from the file, making
-sure that the most recently added lines are still there.
-<p>
-<ul>
-<li><b>Changing the UID of the server</b>
-<li><b>Changing the number of processes</b> (<code>xinetd</code> only)
-<li><b>Changing from single-to-multi processes</b> (<code>inetd</code> only)
-<li><b>Changing the TCP port of the server</b>
-For <code>inetd</code> only:
-This option may require removing old services from <code>/etc/services</code>,
-particularly if this file gets lengthy.
-</ul>
-<p>
-<li><b><i>Require editing of HTTPi itself</i></b><p>
-More information on this is in the <a href = "program.html">Programming
-Manual</a>.<p>
-To make these changes, load the <code>httpi.in</code> into your favourite
-editor and follow the appropriate directions below.
-After making the changes, re-run <code>configure</code> and pass it the
-<code>-d</code> option and the
-name of the transcript with your desired settings in it (usually something
-like <code>perl configure -d configure.transcript.0</code>).
-This will overwrite your old build with the new one. Again, please read
-the section specifically on this in the <a href = "program.html">Programming
-Manual</a>.
-<p>
-<ul>
-<li><b>Adding content types</b> HTTPi by default serves up MIME types for
-.html, .htm, .txt, .gif, .jpg, .gz and .zip. Add new content types
-to the <code>%content_types</code> hash; be sure to follow the format used
-in the file. Content types HTTPi doesn't know how to handle are dumped as
-text/plain.
-<br>
-<li><b>Changing the restriction matrix</b> See the section on HTTPi security.
-<p>
-</ul>
-</ul>
-<a name = "ser"></a>
-<h3>Document Serving and Executable Support</h3>
+<table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
+<td bgcolor = "#e0e0ff">
+As of 0.99, Demonic HTTPi optionally includes STATIOS, a configure-time
+option allowing you to monitor your server's activity. You can see
+<a href = "/status">an example of the information it provides</a>
+on this server. Log in as <code>voyeur</code>, password <code>wannapeek</code>.
+</td></tr></table>
+<a name = "desrv"><h3>Document Serving</h3></a>
 HTTPi follows a simple rule. If the requested file is readable and exists, it
 loads it and displays it. If the requested file is executable by the current
 uid, it runs it instead. Everything else gets a 404 error.
@@ -160,23 +82,140 @@ Unlike just about every other webserver, if you don't have an
 directory tree. This is to save program code and server size, and also
 offers a modicum of security so that people can't just riffle your files.
 <p>
-Requests have to be received within ten seconds of startup, after which the
+<table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
+<td bgcolor = "#e0e0ff">
+As of 0.99, HTTPi does include a tool to let you make a directory browseable
+if you like (but subdirectories of that directory won't be unless you take
+the same steps with them). Copy <code>browsed</code> from the
+<code>tools/</code> directory in the distribution to the desired directory.
+Rename it to <code>index.html</code> and make sure it's executable, e.g.
+<pre>
+% chmod ugo+x index.html
+</pre>
+Then access the directory like a regular resource (try <a href =
+"old-dists/"><code>http://httpi.ptloma.edu/old-dists/</code></a> for an
+example).
+</td></tr></table><p>
+<p>
+If your Perl supports the <code>alarm()</code> system call, which any
+port worth its salt does,
+requests have to be received within ten seconds of startup or the
 socket is closed. This prevents
 people from opening up socket after socket to try DoS attacks on you.
 Ten seconds is probably more than any client needs, of course.
-<h4>Executables</h4>
+<h4>User Filesystems</h4>
+As of 0.99, you can now allow your users to serve documents from the
+<code>public_html/</code> subdirectory in their home directories with a
+URL &aacute; la <a href =
+"/~spectre/"><code>http://stockholm.ptloma.edu/~spectre/</code></a>.
+This is a configure-time option done at time of installation. (This is
+assuming you're using Unix; other OSes may tune out for a bit.) The same
+rules apply: if it's readable relative to the web server's uid, it's
+displayed; if it's executable, it's executed; if it's neither, the client
+gets a 404.
+<p>
+<table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
+<td bgcolor = "#ffe0e0">
+<b>Attention!</b>
+Executables are an issue, as you might be running untrusted code under the
+web server's uid if you're not careful. <i>There is no current way to
+selectively allow only some users or no users at all to have executables.</i>
+Read the section on <a href = "#exec">executable support</a> carefully before
+you enable the user filesystem.
+</td></tr></table><p>
+<a name = "htho"><h3>Virtual Hosting with HTTPi</h3></a>
+<h4>IP-Based Virtual Hosting</h4>
+<table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
+<td bgcolor = "#ffe0e0">
+This option is <b>not</b> available to <code>inetd</code> installations,
+but only to <code>xinetd</code> and Demonic installations.
+</td></tr></table><p>
+IP-based virtual hosting (one IP address per virtual host) is handled by
+individual, distinct instances of HTTPi binding each IP address. <b>You must
+run <code>configure</code> for each build, and specify different absolute
+paths for each build so that each <code>configure</code> does not overwrite
+others.</b>
+<p>
+Each IP-based virtual server is an individual, distinct process and is
+separate from all others. If you are using Demonic HTTPi, each server must
+also be booted separately; if you are using <code>xinetd</code> HTTPi, each
+server must have its own, separate entry in <code>xinetd.conf</code>. For
+managing these individual processes, see <a href = "#ssto">Starting and
+Stopping HTTPi</a>.
+<h4>IP-Less Virtual Hosting Using <code>%nameredir</code></h4>
+<table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
+<td bgcolor = "#e0e0ff">
+This option is available to all flavours of HTTPi.
+</td></tr></table><p>
+<b>This is only applicable if you have enabled IP-less virtual hosting with
+<code>configure</code> in your HTTPi build. Warning: Perl knowledge required
+for this section.</b>
+<p>
+The IP-less virtual hosting feature uses a hash, with your virtual servers as
+the keys mapping to locations in the real file system on the actual server
+(the actual server is based on whatever you entered as the fully-qualified
+domain name of the server during the <code>configure</code> process, so this
+last is very important). Here's the entry from this server's:
+<pre>
+%nameredir =
+        ("stockholm" => "http://stockholm.ptloma.edu",
+         "terapede.ptloma.edu" => "http://terapede.ptloma.edu:81",
+         "httpi.ptloma.edu" => "http://stockholm.ptloma.edu/httpi");
+</pre>
+For example, a request for <code>http://httpi.ptloma.edu/serve.html</code>
+becomes mapped to <code>http://stockholm.ptloma.edu/httpi/serve.html</code>.
+In the same way, a request for <code>http://terapede.ptloma.edu/</code>
+becomes mapped to <code>http://terapede.ptloma.edu:81/</code>, which is
+actually a separate HTTPi server process listening on port 81 instead of 80.
+<p>
+Note the presence of <code>stockholm</code> as an alias for
+<code>stockholm.ptloma.edu</code>. If IP-less virtual hosting is turned on,
+then if the request is not for the real name of the server or for any of
+the aliases in <code>%nameredir</code>, the client gets a 404. To allow lazy
+me to continue to leave off <code>.ptloma.edu</code> for local accesses,
+I added that line, also, so that it will fully qualify the name for me.
+Note that, using the redirection hash above as written, a request for
+<code>http://httpi/</code> will fail: it must be
+<code>http://httpi.ptloma.edu/</code>.
+<p>
+Also note that, unlike IP-based virtual hosting, this all occurs within one
+server process. <b>You do not need individual processes per IP-less virtual
+server.</b>
+<p>
+<b>To edit the <code>%nameredir</code> hash, please see the <a href =
+"program.html">programming manual</a> about using the <code>configure</code>
+system to help you build new versions of HTTPi, and then edit the
+<code>httpi.in</code> file in the distribution according to the manual's
+instructions.</b>
+<a name = "exec"><h3>Executables</h3></a>
+<table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
+<td bgcolor = "#ffe0e0">
+<b>Attention!</b> Your CGIs will almost certainly <i>not work directly</i> in
+HTTPi! Read carefully!
+</td></tr></table><p>
 As mentioned, HTTPi supports executable programs of a fashion, but not as
 CGI, though some interface features are common.
 <p>
 When a file being requested is executable by HTTPi's uid, it sets a few
-environment variables and <code>exec()</code>s into the executable instead
-(unlike other webservers which may fork a process). If HTTPi is running as
-root, it gives the executable the egid and euid of the executable's owner.
-It does not act like
-CGI: <i>you must explicitly set an HTTP response code</i> and <i>you do not
-have all the CGI environment variables at your disposal</i>. Think of it as
+environment variables and transforms itself (via <code>exec()</code> or
+another method, explained later) into the executable instead,
+unlike other webservers which may fork a process. If HTTPi is running as
+root, it and therefore the executable will assume the egid and euid of the
+executable's owner. <i>It does not act like
+CGI: you must explicitly set an HTTP response code and you do not
+have all the CGI environment variables at your disposal.</i> Think of it as
 a very stripped down NPH-CGI environment, where no headers are provided you.
+Executables need not have a
+<code>.cgi</code> extension, and they don't have to be in any particular
+directory save the document one (i.e. there is no explicit
+<code>/cgi-bin</code> directory).
 <p>
+<table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
+<td bgcolor = "#e0e0ff">
+Executables owned by root, unless the web server is not running as the
+superuser and therefore cannot change uid to the owner of the executable,
+are never run. This would be a fantastic security hole otherwise.
+</td></tr></table><p>
 The file <code>noodle</code>, included with the distribution in the
 <code>tools/</code> directory, allows you to
 see what happens. <code>chmod</code> it executable (e.g.
@@ -189,25 +228,89 @@ server</a> and see for yourself). It
 will display its uid, gid, euid, egid, arguments and environments. You are
 provided the <code>REMOTE_HOST</code>, <code>REMOTE_ADDR</code>,
 <code>REMOTE_PORT</code>, <code>QUERY_STRING</code>,
+<code>SCRIPT_NAME</code>, <code>SCRIPT_FILENAME</code>,
+<code>SERVER_PROTOCOL</code>, <code>SERVER_PORT</code>,
+<code>SERVER_SOFTWARE</code>, <code>REQUEST_METHOD</code>,
+<code>SERVER_URL</code>, <code>CONTENT_TYPE</code> (for POST requests),
+<code>CONTENT_LENGTH</code> (for POST requests),
 <code>HTTP_USER_AGENT</code> and <code>HTTP_REFERER</code> environment
-variables. There is no POST support in the current version.
+variables.
 <p>
-CGIs that use GET will probably translate just fine. You will need to add an
+Here's the good news:
+most NPH CGIs will probably need no modification at all, and most other CGIs
+will simply need you to add an
 extra header to explicitly set an HTTP response code, i.e. add
 <pre>
-HTTP/1.1 200 OK
+HTTP/1.0 200 OK
 </pre>
-as the first line of whatever output the CGI spews. CGIs need not have the
-<code>.cgi</code> extension, and they don't have to be in any particular
-directory save the document one (i.e. there is no explicit
-<code>/cgi-bin</code> directory).
+as the first line of whatever output the CGI spews. In Perl, you might use
+<pre>
+print stdout "HTTP/1.0 200 OK\r\n";
+</pre>
+to do this, and then call whatever routine prints your content-type.
 <p>
 Because HTTPi has already ceased to exist by the time the executable starts,
 there is no way it can know if the executable succeeded or failed. 
 Executables appear in the log file with a status code of 100 instead of 200,
 302 or 500, the normal codes seen associated with executables.
-<a name = "sec"></a>
-<h3>HTTPi Security and the Restriction Matrix</h3>
+<h4>HTTPerl vs. <code>exec()</code></h4>
+As of 0.7, HTTPi gives you two ways of running your executables.
+When configuring HTTPi, you can either choose to use the HTTPerl hack, or do a
+regular <code>exec()</code>. There are significant advantages and
+disadvantages to both.
+<p>
+The normal method, and the method used in HTTPi 0.4 and earlier, is to
+<code>exec()</code> into a new process and completely replace HTTPi and Perl
+with whatever the new executable process will be. This works everywhere
+and on just about everything,
+but is needless overhead if the new executable process happens to be Perl
+or a Perl script because now Perl needs to be re-invoked all over again.
+<p>
+The HTTPerl hack, then, is pretty easy to understand conceptually.
+HTTPerl works by re-using the current Perl interpreter that is running HTTPi
+to run the executable. This has one obvious advantage and one obvious
+disadvantage: you don't need to re-invoke Perl again, but at the same time
+every one of your executables that HTTPi runs directly must be in Perl. This
+means that if you have any binary executables, you must make a Perl wrapper
+for them that will do the <code>exec()</code> at that point. On the other
+hand, HTTPerl is in
+general much, much faster than blindly <code>exec()</code>ing into
+a new process.
+<p>
+There is one other major quirk in HTTPerl that you need to be aware of:
+HTTPerl basically does the equivalent of a <code>require</code> on the
+executable. This means that your executable also has access to all the
+<a href = "program.html">internal globals and functions</a> that HTTPi
+exposes, a double-edged sword as your executable or its modules might already
+be using globals and functions with the same names, but at the same time you
+don't have to provide any HTTP negotiation code yourself. Moreover, as a
+result of the way it is invoked, your
+executable runs within the server (it becomes <i>part</i> of the server),
+so HTTPi will do error handling for you unless you catch the
+<code>__DIE__</code> psuedosignal handler first. One big gotcha is that
+the server will gripe if you don't return a true value
+(adding a <code>1;</code> at the end will suffice, and keep it compatible
+with regular CGI-based webservers).
+<p>
+In short, <code>exec()</code> is the default because it will handle all
+cases with no problems. However, if your Perl executables work with HTTPerl,
+you will find it a much faster solution. <i>Just test thoroughly first!</i>
+<p>
+(Note that speed gains will be negligible if your Perl doesn't get paged
+out often. This may be the case on systems with lots of memory; in those cases,
+HTTPerl's quirks may not be worth the slight speed edge. Try it and see.)
+<a name = "inpl"><h3>Inline Perl and the <code>&lt;perl&gt;</code> Tag</h3></a>
+<b>This is only applicable if you have enabled inline Perl when you built
+your executable with <code>configure</code>.</b><p>
+HTTPi 1.0 and up offer the ability to embed Perl in server-parsed HTML files.
+This feature is very useful and also very <i>dangerous</i> (particularly if
+you have the user filesystem enabled, as it allows anyone to execute arbitrary
+Perl with the webserver's UID).
+<p>
+As this feature requires some knowledge of the internals of HTTPi, it is
+given its own section in the <a href = "program.html#inpl"><b>Programmer's
+Manual</b></a>.
+<a name = "secu"><h3>HTTPi Security and the Restriction Matrix</h3></a>
 <b>This is only applicable if you have enabled the restriction matrix
 facility when you built your executable with <code>configure</code>.</b>
 <p>
@@ -218,17 +321,19 @@ sensitive.
 <p>
 HTTPi has an allow/deny authorization scheme called the <i>restriction
 matrix</i>, a hash in the program that allows the user to create restrictions
-for a particular directory or resource to certain network addresses or even
-user agents, browsers, or clients. <b>Warning: Perl knowledge required
-below this point.</b>
+for a particular directory or resource to certain network addresses,
+user agents, browsers, or clients, or (as of 0.99) specified user/password
+pairs. <b>Warning: Perl knowledge required for this section.</b>
 <p>
-The restriction matrix is hard-coded into HTTPi. Here's a sample entry (in
-fact, the default one that is included in HTTPi):
+The restriction matrix is hard-coded into HTTPi. Here's two sample entries (in
+fact, the default ones included in HTTPi):
 <pre>
 %restrictions =
-        ("/nw/" => "^10\.##^Mozilla#MSIE");
+        ("/nw" => "^10\.##^Mozilla#MSIE",
+         "/status" => "####voyeur:daNrZR3TcSwD2");
 </pre>
-This restriction matrix says that for all resources in <code>/nw/</code>, only
+The first entry indicates that for all resources starting with
+<code>/nw/</code>, only
 addresses 10.*.*.* are allowed, and of that set, only browsers that report a
 user agent string of Mozilla (Netscape) and do not have MSIE. By now it should
 be obvious that this is nothing more than four regular expressions concatenated
@@ -240,6 +345,23 @@ together with #s, in this order:
 <li>allowed user agents/browsers
 <li>denied user agents/browsers
 </ul>
+The second entry has no allow/deny rules, but does have an optional fifth
+parameter valid only as of 0.99. This entry restricts all resources starting
+with <code>/status</code> (so the Demonic STATIOS module) to any IP address
+and any browser, but only those logging in as <code>voyeur</code> with
+password <code>wannapeek</code>, which is put in the file in
+<code>crypt()</code>
+format. Multiple user name:password pairs can be here, separated by commas.
+<p>
+<table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
+<td bgcolor = "#e0e0ff">
+The <code>crapword</code> utility in the <code>tools/</code> distribution
+directory is a quick way to encrypt a password. Alternatively, you could
+copy the username-password pair from <code>/etc/password</code> (Unix) or
+use the common <code>htpasswd</code> utility. For compatibility reasons,
+HTTPi does not use <code>getpwnam()</code> or <code>getpwent()</code> to
+access the password file.
+</td></tr></table><p>
 Allow/deny rules have this precedence:
 <p>
 <ul>
@@ -258,8 +380,12 @@ If the allow rule is satisfied, and the deny rule is not, the client is
 <b>allowed</b>. Otherwise, the client is <b>disallowed</b>.
 <p>
 </ul>
-In the above example, there is an allow and deny rule for the user agent.
-Microsoft Internet Explorer exports a user-agent string of the form
+Once the allow/deny rules have been passed, HTTPi checks the user credentials
+required, if specified in the matrix. If the user credentials are correct,
+the client is <b>allowed</b>. Otherwise, the client is <b>disallowed</b>.
+<p>
+In the first line of the example, there is an allow and deny rule for the user
+agent. Microsoft Internet Explorer exports a user-agent string of the form
 <code>Mozilla/V.v (... MSIE ...)</code>. It will satisfy the allow rule
 <code>^Mozilla</code> <i>and</i> the deny rule <code>MSIE</code>, and thus
 be <b>disallowed</b>. Netscape Navigator exports a user-agent string of the
@@ -269,6 +395,9 @@ form <code>Mozilla/V.v (...)</code>. It will satisfy the allow rule
 deny rule, and will be <b>disallowed</b>.
 <p>
 The IP address scheme works similarly.
+<p>
+There is no user:password pair, so HTTP authentication is not required for the
+first example. The second example does require it.
 <p>
 To add additional restrictions for additional directories, simply add hash
 rows with the resource prefix, directory, etc., as the key and the restriction
@@ -281,12 +410,18 @@ resource prefix length (i.e. <code>"/foo/bar"</code> takes precedence over
 no restriction matrix entry exists that matches a particular resource, it
 is allowed to all clients and all network addresses.
 <p>
-When a client is disallowed, it is sent the standard HTTP error code 403,
-along with an explanation. With the rule above in place,
+When a client is disallowed due to a disallowed IP address or client, it is
+sent the standard HTTP error code 403
+along with an explanation. With the first rule above in place,
 <a href = "/nw/">this resource</a>
 can only be accessed from <code>ptloma.edu</code> local hosts on the internal
 network, and then only by Netscape clients.
 <p>
+When a client is disallowed due to an incorrect user name or password, it is
+sent the standard HTTP error code 401 and an explanation. With the second
+rule above in place, <a href = "/status">this resource</a>
+can only be accessed by users providing username <code>voyeur</code> and
+password <code>wannapeek</code>.
 <h3>Questions and Bug Reports</h3>
 Send all outstanding issues to <b><a href =
 "mailto:httpi@stockholm.ptloma.edu">httpi@stockholm.ptloma.edu</a></b>.
