@@ -6,9 +6,14 @@ $DEF_MCANALARM = &yncheck('Can we use alarm()?', 'alarm 0;');
 &prompt(<<"EOF", "") if (!$DEF_MCANALARM);
 Let me guess. You're not using a Unix Perl.
 
-alarm() is no longer required for install, but you should be warned that
-you cannot use HTTP/1.1 Keep-Alive connections without it. Also, alarm()
+alarm() is no longer required for install, but you should be warned that it
 allows better process control, which reduces the chance of system overload.
+
+More importantly, if you intend to use inetd HTTPi on a system that times
+inetd processes out if sockets remain open, you will be running a very
+unstable server without alarm() support. (This is only an issue with inetd
+HTTPi, not Demonic or xinetd HTTPis.)
+
 You can still install HTTPi, but consider running this on a system that
 supports alarm() in its Perl port.
 
@@ -82,41 +87,6 @@ five-character timezone here (e.g., if you're on Pacific time, like I am,
 enter -0800 for 8 hours behind Greenwich mean).
 EOF
 
-print "You can't use alarm(), so no HTTP/1.1 for you.\n\n"
-	unless ($DEF_MCANALARM);
-
-$DEF_HTTP11WAIT = &prompt(<<"EOF", "n", 1) unless (!$DEF_MCANALARM);
-HTTPi supports HTTP/1.1 persistent connections, but very few clients do right
-now. It's nice to have though, for those that do, and it means that it will
-spawn fewer processes sum total if the client is nice enough to do all its
-requests on a single socket.
-
-The downside is, due to the current implementation, clients that do not
-properly support HTTP/1.1 persistent connections (but advertise they do) will
-have slightly slower access. As of this writing, Netscape is particularly bad
-on this point. Unfortunately, there's nothing the server can do about that.
-
-Enable HTTP/1.1 support?
-EOF
-$DEF_HTTP11WAIT = ($DEF_HTTP11WAIT eq 'y') ? 1 : 0;
-
-$DEF_TIME_OUT = &prompt(<<"EOF", "1", 1) unless (!$DEF_HTTP11WAIT);
-And speaking of supposedly compliant clients ...
-
-HTTPi has a funky kludge in it to better handle supposedly HTTP/1.1-compliant
-clients that really aren't by waiting a specified number of seconds before
-dying off to see if another request comes down the pike. Increasing this
-number makes it more tolerant of slower clients, but degrades overall
-connection speed. This only applies to clients that advertise the
-"Connection: Keep-Alive" header. The default should be satisfactory here.
-
-SPECIAL CASE: If you answer zero to this question, it will wait forever.
-This is probably NOT what you want, but I guess one of you might ...
-
-Number of seconds to wait for slow HTTP/1.1 clients?
-EOF
-$DEF_TIME_OUT += 0;
-
 $DEF_MRESTRICTIONS = &prompt(<<"EOF", "y", 1);
 HTTPi's answer to .htaccess and access control is the restriction matrix, 
 allowing access control based on IP address, agent/browser type, and, in
@@ -130,9 +100,9 @@ like TCP wrappers are probably faster. xinetd also has IP address-based
 restriction built in. In those cases, you would probably do better without
 the restriction matrix involved.
 
-The settings for the restriction matrix are hardcoded into httpi.in. If you
-choose to enable this option, you must edit httpi.in to change your settings.
-Please refer to the programming manual.
+The settings for the restriction matrix are hardcoded into uservar.in, and
+to change your settings you must edit that file and rebuild HTTPi. For help,
+please refer to the programming manual.
 
 Enable restriction matrix?
 EOF
@@ -214,9 +184,9 @@ not enabled by default. If your HTTPi supports it (both xinetd and Demonic
 do), you may wish to consider IP-based virtual hosting where you can do
 multihoming with individual HTTPi processes as an alternative.
 
-The settings for IP-less virtual hosting are hardcoded into httpi.in. If you
-choose to enable this option, you must edit httpi.in to change your settings.
-Please refer to the programming manual.
+The settings for IP-less virtual hosting are hardcoded into uservar.in, and
+to change your settings you must edit that file and rebuild HTTPi. For help,
+please refer to the programming manual.
 
 Enable host name redirects?
 EOF
@@ -286,6 +256,56 @@ EOF
 #	$DEF_PREGEXPB = ($q eq 'y') ? '' : '?';
 }
 
+if ($DEF_MCANALARM) {
+	$q = &prompt(<<"EOF", "n", 1);
+Now the ugly kludge section. This is really only relevant to inetd users, but
+this option may be occasionally useful to Demonic and xinetd installs.
+
+Some inetds will time out, and then shut down, services that hold sockets
+open for longer than a critical period of time (Linux inetd is the most
+notorious). This usually happens when a very large file is being downloaded
+over a very slow link. The upshot is, HTTPi will be turned off by inetd and
+fail to respond to requests until inetd gets another -HUP signal. This might
+be the basis of a nasty DoS attack, so here it is as a configure option.
+HTTPi will simply kill the link if too much time passes, and save itself, if
+this option is enabled. You can adjust the timeout with the next question.
+You might also want to enable this if you get besieged with requests that
+just hang sockets up on your system, but you don't need it if you're not
+running inetd HTTPi.
+
+Note that many inetds will not require this (AIX and HP/UX don't seem to).
+Don't turn it on unless you think it's necessary for your OS or security.
+
+Auto-kill the link on slow data transfers?
+EOF
+	$DEF_MAUTOKILL = ($q eq 'y') ? 1 : 0;
+	if ($DEF_MAUTOKILL) {
+		$DEF_AK_TIMEOUT = &prompt(<<"EOF", "25", 1);
+Enter the timeout (in seconds) before HTTPi should auto-kill the link. This
+is system dependent. Some inetds will kick HTTPi down after as little as
+thirty seconds but most are usually up to sixty. Tune this to whatever seems
+to give the best performance and stability, which usually is five or ten
+seconds before inetd will actually close the port down.
+
+If this is just for security purposes, set it to whatever you like. Sixty
+seconds seems good for not-too-busy sites with not-too-big files.
+
+Auto-kill timeout?
+EOF
+	} else {
+		print <<"EOF";
+Murderous tendencies quelled.
+
+EOF
+	}
+} else {
+	print <<"EOF";
+You don't support alarm(), so I can't give you the ugly kludge for keeping
+inetd HTTPis stable on certain platforms (notably Linux) even though you
+might need it.
+
+EOF
+}
 # leave alone
 1;
 

@@ -1,7 +1,40 @@
+Changes since 1.2.1:
+
+	* fixed possible exploit that might allow HTTPi to inadvertently
+		access files outside its mountpoint (thanks Marcus
+		Kreutzberger)
+
+Changes since 1.2:
+
+	* fixed bug with bad port redirects (where port wasn't 80) --
+		thanks Aaron Spangler
+	* fixed bug with null Host: header when virtual hosting was
+		disabled (thanks Glauber Ribeiro)
+
+Changes since 1.0b2:
+
+	* HTTP/1.1 KeepAlive now removed: Connections all non-persistent.
+		Never worked right anyway :-) also aids speed and spec
+		compliancy (thanks Marc Slemko)
+	* Linux inetd kills HTTPi under conditions of slow links and
+		big files. Timeout kludge added. Other OSes may also
+		need this (inetd version only, thanks Bill Benedetto)
+	* user-modifiable hashes, restriction matrix, etc. now in outside
+		files to aid upgrading
+	* and speaking of upgrading: new UPGRADING file, some changes to
+		preprocessor to facilitate nested includes
+	* couple extra MIME types
+	* saves memory: file serves now in a read loop rather than a big
+		slurp-up when it can
+	* fixed: URL-escaped requests now work (thanks Marc Slemko)
+	* understands Expect header
+	* proper handling of methods other than GET, HEAD and POST
+	* proper handling of 1.1 requests w/o Host: header
+
 Changes since first 1.0:
 
 	* fixed configure-time bug that caused syntax errors if preparsing
-		not turned on. duh. thanks Fergus Gallagher.
+		not turned on. duh. (thanks Fergus Gallagher)
 	* better socket handling for Demonic
 	
 Changes since 0.99:

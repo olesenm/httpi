@@ -1,4 +1,4 @@
-# Useless makefile for managing HTTPi versions (C) 1999 Cameron Kaiser
+# Useless makefile for managing HTTPi versions (C)1999, 2000 Cameron Kaiser
 # This is really only needed for my use, but if you want, here it is, no
 # support or strings attached.
 
@@ -19,11 +19,17 @@ REPOSITORY	= /home/spectre/htdocs/httpi
 
 default_target: install
 
-spotless: clean
-realclean: clean
+spotless: clean revert
+realclean: clean revert
 
+unrevert:
+	${CP} -f *.in stock
+
+revert:
+	${CP} -f stock/*.in .
+	
 clean:
-	${RM} -f transcript.* sockcons
+	${RM} -f transcript.* sockcons testtpi
 
 version:
 	@${CAT} VERSION
@@ -43,7 +49,7 @@ install: version
 	@echo
 	@echo "If you don't know which to use, read the INSTALL file."
 
-dist: version clean
+dist: version clean unrevert
 	@echo "ABOUT TO OVERWRITE OLD INSTALL! CHECK THIS IS CORRECT!!!!!"
 	@${SLEEP} 3
 	${RM} -f configure Manifest

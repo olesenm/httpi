@@ -1,0 +1,69 @@
+~check MFALSE
+
+This is the user variables file rolled into HTTPi at configure-time.
+
+** MAKE YOUR CHANGES TO GLOBAL CONFIGURABLE HASHES AND SCALARS HERE. **
+
+If you don't know what all this means or what to do, see the Programming
+Manual for a clue.
+
+~
+~
+
+%content_types =
+	("html" => "text/html",
+~check MPREPARSE
+	 "shtml" => "text/html",
+	 "shtm" => "text/html",
+	 "sht" => "text/html",
+~
+~
+	 "xbm" => "image/x-xbitmap",
+	 "pdf" => "application/pdf",
+	 "fdf" => "application/vnd.fdf",
+	 "htm" => "text/html",
+	 "bin" => "application/octet-stream",
+	 "class" => "application/octet-stream",
+	 "wav" => "audio/x-wav",
+	 "txt" => "text/plain",
+	 "gif" => "image/gif",
+	 "zip" => "application/x-zip-compressed",
+	 "lzh" => "application/octet-stream",
+	 "lha" => "application/octet-stream",
+	 "gz"  => "application/x-gzip",
+	 "jpeg" => "image/jpeg",
+	 "jpg" => "image/jpeg");
+~check MFALSE
+
+*** The restrictions matrix is documented in the manual. The keys are the
+    filepaths and the values are the matrices themselves.
+
+*** The host redirect matrix is also documented, the keys being the simulated
+    host names and the values being the redirect prefix. 
+
+### THESE ARE JUST EXAMPLES: YOU SHOULD CHANGE TO YOUR OWN. :-) IF YOU AREN'T
+    USING THE RESTRICTIONS MATRIX AND/OR HOST REDIRECTION, THEY WILL BE
+    AUTOMAGICALLY IGNORED. ###
+
+~
+~
+~check MRESTRICTIONS
+%restrictions =
+	("/nw" => "^10\.##^Mozilla#MSIE",
+	 "/status" => "####voyeur:daNrZR3TcSwD2");
+		# See documentation for interpreting this string.
+~
+~
+~check NAMEREDIR
+%nameredir =
+	("stockholm" => "http://stockholm.ptloma.edu",
+	 "terapede.ptloma.edu" => "http://terapede.ptloma.edu:81",
+	 "httpi.ptloma.edu" => "http://stockholm.ptloma.edu/httpi");
+~
+~
+
+$headers = <<"EOF";
+Server: HTTPi/$VERSION
+MIME-Version: 1.0
+EOF
+

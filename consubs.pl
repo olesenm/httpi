@@ -1,4 +1,4 @@
-$version_key = "HTTPi/1.0";
+$version_key = "HTTPi/1.2";
 $my_version_key = 0;
 
 sub yncheck {
@@ -41,15 +41,20 @@ sub wherecheck {
 }
 
 sub preproc {
-	local($infile, $outfile, $fatal) = (@_);
-	local $ifl, $def, $j;
-	open(S, "$infile") || (print($fatal), exit);
-	open(T, ">$outfile") || (print($fatal), exit);
+	local ($mf) = (@_);
+	local $kvbuf, $ifl;
 
 	$ifl = 0;
-	while(<S>) {
+	while(<$mf>) {
+		chomp;
+		if (/^~$/) {
+			next if (!$ifl);
+			$ifl = abs($ifl);
+			$ifl--;
+			next;
+		}
+		next if ($ifl > 0);
 		if (/^~check/) {
-			chomp;
 			(/^~check (.+)$/) && ($def = $1);
 			eval "\$j = \$DEF_$def;";
 			if ($j) {
@@ -59,19 +64,24 @@ sub preproc {
 			}
 			next;
 		}
-		if (/^~/) {
-			$ifl = abs($ifl);
-			$ifl--;
+		if (/^~insert/) {
+			(/^~insert (.+)$/) && ($def = $1);
+			open(Q, $def) || (print(stdout <<"EOF"), exit);
+
+COMPILATION FAILURE: Could not include file $def.
+($@ $!)
+
+EOF
+			$kvbuf .= &preproc(\*Q);
+			close(Q);
 			next;
 		}
-		next if ($ifl > 0);
 		while((/(DEF_[A-Z_]+)/) && ($def = $1)) {
 			eval "s/DEF_[A-Z_]+/\$$def/";
 		}
-		print T $_;
+		$kvbuf .= "$_\n";
 	}
-	close(S);
-	close(T);
+	return $kvbuf;
 }
 
 sub prompt {

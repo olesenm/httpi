@@ -9,7 +9,7 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "") unless ($DEFAULT);
-Configure (xinetd) for HTTPi/0.99 (C)1998, 1999 Cameron Kaiser
+Configure (xinetd) for HTTPi/1.2 (C)1998, 1999 Cameron Kaiser
 
 This is the configure script for xinetd systems.
 
@@ -201,12 +201,13 @@ If you don't, press CTRL-C NOW!
 EOF
 
 print "Writing out the configured httpi to $INSTALL_PATH ... ";
-&preproc("httpi.in", "$INSTALL_PATH", <<"EOF");
+(open(S, "httpi.in") && open(T, ">$INSTALL_PATH")) || die(<<"EOF");
 
 Couldn't write out the new httpi. Check permissions on httpi.in in the
 current directory and the destination path.
 
 EOF
+print T &preproc(\*S); close(T); close(S);
 print "done.\n\n";
 
 if ($DO_INSTALL) {

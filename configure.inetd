@@ -11,11 +11,12 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "") unless ($DEFAULT);
-Configure (inetd) for HTTPi/0.99 (C)1998, 1999 Cameron Kaiser
+Configure (inetd) for HTTPi/1.2 (C)1998, 1999 Cameron Kaiser
 
 This is the configure script for inetd systems (most Unix boxen).
 
 DO NOT RUN THIS IF:
+	* you want to run HTTPi as a >> daemon << (run configure.demonic)
 	* you have xinetd (run configure.xinetd instead)
 	* you have NO inetd or an unsupported one (run configure.generic)
 
@@ -163,11 +164,8 @@ $DEF_CANDOSETRUID = &yncheck("Can we use setruid()?",
 
 $WAIT_MODE = &prompt(<<"EOF", "n") unless (!$DO_INSTALL);
 A further bonus to slow systems is, because HTTPi runs out of inetd, the
-ability to restrict the number of simultaneous HTTPis that can run. Since
-HTTPi supports persistent connections, if your clients are suitably clued,
-you can get by with a practically invisible webserver by answering yes to
-this question.
-
+ability to restrict the number of simultaneous HTTPis that can run. With
+this set to a single process, the webserver can be practically invisible.
 However, if you intend to put a little strain on HTTPi, this will not help
 (and in fact make it worse on inetd), particularly with rude clients like
 Netscape that insist on opening up multiple connections to a server.
@@ -260,12 +258,13 @@ If you don't, press CTRL-C NOW!
 EOF
 
 print "Writing out the configured httpi to $INSTALL_PATH ... ";
-&preproc("httpi.in", "$INSTALL_PATH", <<"EOF");
+(open(S, "httpi.in") && open(T, ">$INSTALL_PATH")) || die(<<"EOF");
 
 Couldn't write out the new httpi. Check permissions on httpi.in in the
-current directory (you *are* root, right?) and the destination path.
+current directory and the destination path.
 
 EOF
+print T &preproc(\*S); close(T); close(S);
 print "done.\n\n";
 
 if ($DO_INSTALL) {

@@ -1,5 +1,5 @@
 
-HTTPi is (C)1998, 1999 Cameron Kaiser. All rights reserved.
+HTTPi is (C)1998, 1999, 2000 Cameron Kaiser. All rights reserved.
 
 ** While HTTPi is free, it is NOT distributed under CopyLeft or GPL. Please **
 ** read on to find out what the differences are. Licenses protect author    **
@@ -27,10 +27,12 @@ You MAY NOT:
 	  remains.
 
 	* supersede the license agreement here. You may not charge a fee for a
-	  HTTPi distribution, for example (though you may include it as part
-	  of a larger for-sale package as long as it is not being purchased as
-	  an item). Derivatives count as distributions. This license agreement,
-	  therefore, applies IN FULL to any distribution or derivative work.
+	  HTTPi distribution, for example. Derivatives count as distributions.
+	  This license agreement, therefore, applies IN FULL to any
+	  distribution or derivative work.
+
+	  The exception: you MAY include HTTPi as part of an operating system
+	  distribution and sell that. Linux dists and FreeBSD dists are okay.
 
 	  You also MAY NOT place your derivative work under GPL, because that
 	  is a different, though similar, licensing agreement, and the
@@ -44,8 +46,8 @@ You MAY NOT:
 	  state the copyright (i.e.
 
 Contains or is based on the HTTPi web server
-(C)1998, 1999 Cameron Kaiser. All rights reserved.
-http://stockholm.ptloma.edu/httpi/
+(C)1998, 1999, 2000 Cameron Kaiser. All rights reserved.
+http://httpi.ptloma.edu/
 
 	  would be just about perfect), or make or distribute a derivative of
 	  HTTPi that does not clearly state the copyright.
@@ -87,4 +89,4 @@ States of America.
 
 Other than that, have a blast! Keep software free.
 
-Revised 04/21/1999
+Revised 02/03/2000

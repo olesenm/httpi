@@ -1,28 +1,39 @@
-total 151
--rw-r--r--   1 spectre  staff       3784 Oct 28 07:57 ChangeLog
--rw-r--r--   1 spectre  staff       2910 Oct 28 07:57 INSTALL
--rw-r--r--   1 spectre  staff       4285 Oct 28 07:57 LICENSE
--rw-r--r--   1 spectre  staff       1801 Oct 28 07:57 Makefile
--rw-r--r--   1 spectre  staff       1066 Oct 28 07:57 README
--rw-r--r--   1 spectre  staff         42 Oct 28 07:57 VERSION
-lrwxrwxrwx   1 spectre  staff         15 Oct 28 07:57 configure@ -> configure.inetd
--rw-r--r--   1 spectre  staff       7659 Oct 28 07:57 configure.demonic
--rw-r--r--   1 spectre  staff       2130 Oct 28 07:57 configure.generic
--rw-r--r--   1 spectre  staff      10228 Oct 28 07:57 configure.inetd
--rw-r--r--   1 spectre  staff       8766 Oct 28 07:57 configure.xinetd
--rw-r--r--   1 spectre  staff      11567 Oct 28 07:57 conquests.pl
--rw-r--r--   1 spectre  staff       3234 Oct 28 07:57 consubs.pl
--rw-r--r--   1 spectre  staff      14231 Oct 28 07:57 httpi.in
--rw-r--r--   1 spectre  staff        446 Oct 28 07:57 sockcons.c
--rw-r--r--   1 spectre  staff        134 Oct 28 07:57 sockcons.pl
-drwxr-xr-x   2 spectre  staff        512 Oct 28 07:57 tools/
-drwxr-xr-x   2 spectre  staff        512 Oct 28 07:57 toys/
+total 169
+-rw-r--r--   1 spectre  staff       5023 May 15 11:03 ChangeLog
+-rw-r--r--   1 spectre  staff       2991 May 15 11:03 INSTALL
+-rw-r--r--   1 spectre  staff       4314 May 15 11:03 LICENSE
+-rw-r--r--   1 spectre  staff       1902 May 15 11:03 Makefile
+-rw-r--r--   1 spectre  staff       1244 May 15 11:03 README
+-rw-r--r--   1 spectre  staff        294 May 15 11:03 THANKS
+-rw-r--r--   1 spectre  staff       3589 May 15 11:03 UPGRADING
+-rw-r--r--   1 spectre  staff         42 May 15 11:03 VERSION
+lrwxrwxrwx   1 spectre  staff         15 May 15 11:03 configure@ -> configure.inetd
+-rw-r--r--   1 spectre  staff       7721 May 15 11:03 configure.demonic
+-rw-r--r--   1 spectre  staff       2192 May 15 11:03 configure.generic
+-rw-r--r--   1 spectre  staff      10240 May 15 11:03 configure.inetd
+-rw-r--r--   1 spectre  staff       8828 May 15 11:03 configure.xinetd
+-rw-r--r--   1 spectre  staff      12235 May 15 11:03 conquests.pl
+-rw-r--r--   1 spectre  staff       3366 May 15 11:03 consubs.pl
+-rw-r--r--   1 spectre  staff      13365 May 15 11:03 httpi.in
+-rw-r--r--   1 spectre  staff        137 May 15 11:03 modules.in
+-rw-r--r--   1 spectre  staff        446 May 15 11:03 sockcons.c
+-rw-r--r--   1 spectre  staff        134 May 15 11:03 sockcons.pl
+drwxr-xr-x   2 spectre  staff        512 May 15 11:03 stock/
+drwxr-xr-x   2 spectre  staff        512 May 15 11:03 tools/
+drwxr-xr-x   2 spectre  staff        512 May 15 11:03 toys/
+-rw-r--r--   1 spectre  staff       1787 May 15 11:03 uservar.in
+./stock:
+total 32
+-rw-r--r--   1 spectre  staff      13365 May 15 11:03 httpi.in
+-rw-r--r--   1 spectre  staff        137 May 15 11:03 modules.in
+-rw-r--r--   1 spectre  staff       1787 May 15 11:03 uservar.in
+
 ./tools:
 total 6
--rwxr-xr-x   1 spectre  staff       1091 Oct 28 07:57 browsed*
--rwxr-xr-x   1 spectre  staff        598 Oct 28 07:57 crapword*
--rwxr-xr-x   1 spectre  staff        364 Oct 28 07:57 noodle*
+-rwxr-xr-x   1 spectre  staff       1102 May 15 11:03 browsed*
+-rwxr-xr-x   1 spectre  staff        598 May 15 11:03 crapword*
+-rwxr-xr-x   1 spectre  staff        364 May 15 11:03 noodle*
 
 ./toys:
 total 3
--rw-r-----   1 spectre  staff       1310 Oct 28 07:57 httpismall.gif
+-rw-r-----   1 spectre  staff       1310 May 15 11:03 httpismall.gif
