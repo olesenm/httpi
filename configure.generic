@@ -1,0 +1,70 @@
+eval 'require "consubs.pl";'; die(<<"EOF") if ($@);
+
+Could not load consubs.pl, which is required for running the configure script.
+Please make sure it's in the current directory.
+
+EOF
+
+&prompt(<<"EOF", "");
+Configure (GENERIC) for HTTPi/0.4 (C)1998 Cameron Kaiser
+
+This is a generic configuration script.
+
+DO NOT RUN THIS IF:
+	* you have inetd (run configure.inetd instead)
+	* you have xinetd (run configure.xinetd instead)
+
+DO RUN THIS IF:
+	* you don't have an inetd but want to build an executable
+	* you don't have an inetd that HTTPi supports, but want an executable
+
+Win32 and MacPerl, thus, should be running this script. Virtually all modern
+Unices, Linux, etc. SHOULD NOT!
+
+Note that you will need to roll your own changes to whatever inetd equivalent
+you have (configure.generic will tell you). YOU MUST HAVE AN INETD OR SOME
+EQUIVALENT TO RUN HTTPi.
+
+Press ENTER to continue, or BREAK/CTRL-C to bail out now:
+EOF
+
+eval 'require "conquests.pl";'; die(<<"EOF") if ($@);
+
+Could not load conquests.pl, which is required as part of the standard
+questions suite for all of the configure scripts. Please make sure it's in 
+the current directory.
+
+EOF
+
+$j = &prompt(<<"EOF", "");
+LAST CHANCE BEFORE CHANGES ARE COMMITTED!
+
+If you continue beyond this point, configure will build your HTTPi and
+overwrite any file currently at $INSTALL_PATH.
+
+If you want to continue, just press ENTER.
+If you don't, press CTRL-C NOW!
+EOF
+
+print "Writing out the configured httpi to $INSTALL_PATH ... ";
+&preproc("httpi.in", "$INSTALL_PATH", <<"EOF");
+
+Couldn't write out the new httpi. Check permissions on httpi.in in the
+current directory and the destination path.
+
+EOF
+print "done.\n\n";
+
+print <<"EOF";
+Done.
+
+Now you must do the following:
+
+1. Create a service or equivalent for the desired port number.
+2. Tell your inetd or equivalent to launch "perl $INSTALL_PATH" for
+   access to that service or port number.
+3. Tell me (httpi\@stockholm.ptloma.edu) how you did the above and on what
+   platform, so I can attempt to add support for it in later versions.
+
+Bye!
+EOF

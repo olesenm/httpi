@@ -6,7 +6,7 @@ Thanks.
 ~
 ~
 #!DEF_PERL
-$VERSION = "0.1";
+$VERSION = "0.4";
 
 # HTTPi Hypertext Tiny Truncated Process Implementation
 # Copyright 1998 Cameron Kaiser # All rights reserved # Please read LICENSE
@@ -23,9 +23,16 @@ $TIME_OUT = DEF_TIME_OUT;
 	 "zip" => "application/x-zip-compressed",
 	 "gz"  => "application/x-gzip",
 	 "jpg" => "image/jpeg");
+~check MRESTRICTIONS
+%restrictions =
+	("/nw" => "^10\.##^Mozilla#MSIE");
+		# See documentation for interpreting this string.
+~
+~
 
 $headers = <<"EOF";
 Server: HTTPi/$VERSION
+MIME-Version: 1.0
 EOF
 
 ###############################################################
@@ -33,13 +40,11 @@ EOF
 ###############################################################
 
 sub sock_to_host {
-	local($sock) = (@_);
-	return ($ENV{'REMOTE_HOST'} || $ENV{'REMOTE_ADDR'}, 0) if (!$sock);
 	local($sockaddr) = 'S n a4 x8';
 	local($AFC, $port, $thataddr, $zero) = unpack($sockaddr, $sock);
-	local($hn) = gethostbyaddr($thataddr, 2) ||
-		join('.', unpack("C4", $thataddr));
-	return ($hn, $port);
+	local($ip) = join('.', unpack("C4", $thataddr));
+	local($hn) = gethostbyaddr($thataddr, 2) || $ip;
+	return ($hn, $port, $ip);
 }
 
 sub htsponse {
@@ -74,10 +79,26 @@ sub htcontent {
 
 sub log {
  	if (open(J, ">>$logfile")) {
-		$sock = getpeername(STDIN);
-		($hostname, $port) = &sock_to_host($sock);
+		local $q = $address . (($variables) ? "?$variables" : "");
+		$contentlength += 0;
+		local ($hostname, $port) = &sock_to_host();
+~check ORIG_LOG
 		print J <<"EOF";
-$hostname $httpref - [$date] "$method $address HTTP/$httpver" $currentcode $contentlength
+$hostname $httpref - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength
+~
+~
+~check GROSS_LOG
+		local ($escua) = $httpua;
+		$escua =~ s/\s/%20/g;
+		print J <<"EOF";
+$hostname $httpref $escua [$date] "$method $q HTTP/$httpver" $currentcode $contentlength
+~
+~
+~check TERSE_LOG
+		print J <<"EOF";
+$hostname - - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength
+~
+~
 EOF
 		close(J); }
 	}
@@ -101,6 +122,7 @@ $SIG{'__DIE__'} = \&dead;
 $SIG{'ALRM'} = \&bye;
 
 select(STDOUT); $|=1;
+$sock = getpeername(STDIN);
 $rfcdate = scalar gmtime;
 ($dow, $mon, $dt, $tm, $yr) = ($rfcdate =~
 	m/(...) (...) (..) (..:..:..) (....)/);
@@ -109,8 +131,9 @@ $rfcdate = "$dow, $dt $mon $yr $tm GMT";
 $date = scalar localtime;
 ($dow, $mon, $dt, $tm, $yr) = ($date =~
 	m/(...) (...) (..) (..:..:..) (....)/);
+$dt += 0;
 $dt = substr("0$dt", length("0$dt") - 2, 2);
-$date = "$dt/$mon/$yr $tm DEF_TIME_ZONE"; 
+$date = "$dt/$mon/$yr:$tm DEF_TIME_ZONE"; 
 
 $address = 0;
 	alarm 10;
@@ -120,6 +143,7 @@ while (<>) {
 		$address = $2; 
 		$httpver = $3;
 		$httpref = '-';
+		$httpua = '-';
 		$httpver = ($httpver =~ m#HTTP/([0-9]\.[0-9]+)#) ?
 			($1) : (0.9);
 		next unless ($httpver < 1);
@@ -129,7 +153,8 @@ while (<>) {
 ~
 ~
 		s/[\r\l\n]+$//;
-		(/^Referer: (.+)/) && ($httpref = $1);
+		(/^Referer: (.+)/i) && ($httpref = $1);
+		(/^User-agent: (.+)/i) && ($httpua = $1);
 		next unless (/^$/);
 	}
 	if (!$address) {
@@ -148,12 +173,53 @@ while (<>) {
 		$keep = 0; &log; exit;
 	}
 	$address = "${address}index.html" if (-d "$path$address");
+
+######## ADD YOUR HANDLERS OR MODULES HERE #########
+
 	if(!open(S, "$path$address"))  {
 		&htsponse(404, "File Not Found");
 		&hterror("File Not Found",
 			"The resource $address was not found on this system.");
-		# but let it make other requests ...
 	} else {
+~check MRESTRICTIONS
+		$fail = 0;
+		J: foreach(sort { length $a <=> length $b }
+				keys %restrictions) {
+			next if ($address !~ /^$_/);
+			($allowip, $denyip, $allowua, $denyua) =
+				split(/#/, $restrictions{$_});
+			if ($allowip || $denyip) {
+				($hn, $port, $ip) = &sock_to_host();
+				($allowip && $ip !~ /$allowip/) && ($fail = 1,
+					last J);
+				($denyip && $ip =~ /$denyip/) && ($fail = 1,
+					last J);
+			}
+			($allowua && $httpua !~ /$allowua/) &&
+				($fail = 2, last J);
+			($denyua && $httpua =~ /$denyua/) &&
+				($fail = 2, last J);
+		}
+		if ($fail) {
+			&htsponse(403, "Forbidden");
+			if ($fail == 1) {
+				&hterror("Forbidden (Client Disallowed)",
+					<<"EOF");
+Your network address is not allowed to access this resource. Please contact
+the server administrator if this message is in error.
+EOF
+				&log; exit;
+			} else {
+				&hterror("Forbidden (Browser Disallowed)",
+					<<"EOF");
+The browser you are using (<i>$httpua</i></code>) is not capable of or
+is not allowed access to this resource.
+EOF
+				&log; exit;
+			}
+		}
+~
+~
 		if (-x "$path$address") {
 			$currentcode = 100;
 			&log;
@@ -167,12 +233,13 @@ while (<>) {
 				$> = $uid || die "can't set effuid";
 				$) = $gid || die "can't set effgid";
 			}
-			$sock = getpeername(STDIN);
-			($hostname, $port) = &sock_to_host($sock);
-			$ENV{'REMOTE_HOST'} = $ENV{'REMOTE_ADDR'} =
-				$hostname;
+			($hostname, $port, $ip) = &sock_to_host();
+			$ENV{'REMOTE_HOST'} = $hostname;
+			$ENV{'REMOTE_ADDR'} = $ip;
 			$ENV{'REMOTE_PORT'} = $port;
 			$ENV{'QUERY_STRING'} = $variables;
+			$ENV{'HTTP_USER_AGENT'} = $httpua;
+			$ENV{'HTTP_REFERER'} = $httpref;
 			exec "$path$address", "$variables";
 			die "exec() returned -1";
 		}

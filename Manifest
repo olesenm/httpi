@@ -1,28 +1,25 @@
-Check the length of all files included for veracity of transfer. Modified
-times always seem to change, sadly.
+Ignore modification dates, files may be slightly newer.
 
-total 47
--rw-r--r--   1 spectre  staff        533 Nov 11 10:16 INSTALL
--rw-r--r--   1 spectre  staff       2312 Nov 11 10:13 LICENSE
+total 84
+-rw-r--r--   1 spectre  staff        631 Jan 05 14:45 ChangeLog
+-rw-r--r--   1 spectre  staff       1757 Jan 05 14:45 INSTALL
+-rw-r--r--   1 spectre  staff       2312 Jan 05 14:45 LICENSE
+-rw-r--r--   1 spectre  staff       1229 Jan 05 14:47 Manifest
+-rw-r--r--   1 spectre  staff        758 Jan 05 14:45 README
+lrwxrwxrwx   1 spectre  staff         15 Jan 05 14:46 configure@ -> configure.in
+-rw-r--r--   1 spectre  staff       2061 Jan 05 14:45 configure.generic
+-rw-r--r--   1 spectre  staff       8711 Jan 05 14:45 configure.inetd
+-rw-r--r--   1 spectre  staff       8183 Jan 05 14:45 configure.xinetd
+-rw-r--r--   1 spectre  staff       5565 Jan 05 14:45 conquests.pl
+-rw-r--r--   1 spectre  staff       2451 Jan 05 14:45 consubs.pl
+-rw-r--r--   1 spectre  staff       7009 Jan 05 14:45 httpi.in
+drwxr-xr-x   2 spectre  staff        512 Jan 05 14:45 tools/
+drwxr-xr-x   2 spectre  staff        512 Jan 05 14:45 toys/
 
-PLEASE READ THIS!
-
--rw-r--r--   1 spectre  staff        927 Nov 11 12:51 Manifest
--rw-r--r--   1 spectre  staff        758 Nov 11 10:15 README
--rw-r--r--   1 spectre  staff      12641 Nov 11 09:33 configure
--rw-r--r--   1 spectre  staff       5347 Nov 11 12:47 httpi.in
-drwxr-xr-x   2 spectre  staff        512 Nov 11 09:45 tools/
-drwxr-xr-x   2 spectre  staff        512 Nov 11 09:45 toys/
-
-./tools: (Contains useful utilities.)
+./tools: useful utilities.
 total 1
--rwxr-xr-x   1 spectre  staff        249 Nov 11 09:45 noodle*
+-rwxr-xr-x   1 spectre  staff        249 Jan 05 14:45 noodle*
 
-Use this to test executable support in your HTTPi build. See documentation.
-
-./toys: (Fun stuff.)
+./toys: fun things. Use this .gif to proudly show you run HTTPi.
 total 3
--rw-r-----   1 spectre  staff       1310 Nov 11 09:45 httpismall.gif
-
-The HTTPi icon, if you feel like showing it off.
-
+-rw-r-----   1 spectre  staff       1310 Jan 05 14:45 httpismall.gif

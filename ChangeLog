@@ -1,0 +1,17 @@
+Changes since 0.1:
+
+	* new environment variables: HTTP_REFERER, HTTP_USER_AGENT
+	* REMOTE_ADDR and REMOTE_HOST no longer equivalent, in line with CGI
+		spec
+	* fixed CERN date bug
+	* your choice of logging: with referer/useragent, with referer, or
+		neither
+	* user agent now acquired in this version
+	* restriction matrix security
+	* generic configure script for non-inetd systems
+	* xinetd configure script for xinetd systems
+	* common config questions and subroutines moved to conquests.pl
+		and consubs.pl, respectively
+	* sock_to_host internal function hardcoded to use STDIN filehandle
+	* new globals $httpua, %restrictions
+

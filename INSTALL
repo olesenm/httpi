@@ -1,4 +1,4 @@
-** Installation procedure for HTTPi/0.1
+** Installation procedure for HTTPi/0.4
 ** Copyright 1998 Cameron Kaiser
 
 1. Check that all files are present and proper size (see Manifest). Make sure
@@ -10,12 +10,38 @@
 
 4. Read the ... have you read it yet?
 
-5. Do
+5. Determine which configure file you should be running on your platform.
+YOU NEED AN INETD OR MORAL EQUIVALENT. NO EXCEPTIONS!
 
-$ perl configure
+configure.inetd		Most Unix boxen. Use this if you use the vanilla
+			inetd. Will autoconfigure your files for you if root.
 
-(as root for full install options, or any other user just to build an object).
+configure.xinetd	For users of the xinetd clone http://synack.net/xinetd/
+			Will autoconfigure your files for you. Tres cool.
 
-6. Follow the handy and verbose prompts. The configure program may have
+configure.generic	Don't know what inetd you have, or one I don't support
+			yet. Win32, Mac users should run this right now. Tells
+			you what configuration changes you need to make.
+
+xinetd is vewwy vewwy fast. If you have the means, I highly recommend it. (To
+quote Ferris Bueller.) You'll realise about a 25% speed increase with it,
+at least according to my numbers. It assumes, however, that your .conf file
+is /etc/xinetd.conf, which is xinetd's default.
+
+Most of you will be running configure.inetd, so for backwards compatibility
+it's still named configure (just a symlink to configure.inetd).
+
+Make sure that consubs.pl and conquests.pl are in the current directory.
+
+6. Run that config file.
+
+$ perl configure.inetd	# most unices
+$ perl configure.xinetd	# smart unices/sysadmins
+C:\>perl.exe configure.generic		# Win32, Mac, others
+
+If you're on a Unix box, run as root for full install options,
+or any other user just to build an object.
+
+7. Follow the handy and verbose prompts. The configure program may have
    additional directions to follow. Follow them.
 
