@@ -10,97 +10,119 @@ width = 91 border = 0></a><i>Back to the main page</i>
 <h3>Installation and Configuration</h3>
 <h4>What you'll need</h4>
 <ul><li>Perl 5, though you can probably very easily make it run under Perl 4
-(signal handlers might need to be tweaked, but that's it). No additional
+(signal handlers might need to be tweaked, and there's a couple Perl5-only
+constructions, but that's it). No additional
 modules, not even the ones included with the distribution, are
 required -- you can make do with just the executable, which is in fact
 exactly the setup <code>stockholm</code> is using. If you don't have Perl,
 you can get versions from <a href = "http://www.perl.com/">Perl.com</a>.
-<li><code>inetd</code> or a moral equivalent. I don't know of anything like
-<code>inetd</code> other than <code>inetd</code> itself, but if you have
-such an application, try it and tell me if it works so I can support it in
-future releases. This means you will probably also have to have a Unix box.
+<li><code>inetd</code> or a moral equivalent. If you have the resources, I
+heartily recommend <a
+href = "http://synack.net/xinetd/"><code>xinetd</code></a>, a blindingly
+fast <code>inetd</code> replacement (I run it here). It's very secure and
+offers gallons of features, and you'll get out of the box 25% increase in
+speed (according to my unofficial, over-my-lunch-break benchmarks).
+Unfortunately, I am not aware of any <code>inetd</code> clones for Windows
+or Macintosh, but I'm sure there are some. You'll definitely need one, because
+HTTPi does not offer operation as a daemon currently, and you will need to
+configure your <code>inetd</code> clone to run HTTPi by hand.
 <li>Root access, because <code>/etc/inetd.conf</code> and
-possibly also <code>/etc/services</code> need to be modified, unless you have
+possibly also <code>/etc/services</code>, or <code>/etc/xinetd.conf</code>,
+need to be modified, unless you have
 a very permissive/stupid system administrator. :-)
 </ul>
 <h4>Installation and Initial Configuration</h4>
-Run the <code>configure</code> script in the distribution. No changes can
-be made to <code>inetd</code>'s configuration files if you don't run it as
-root. Invoke it under Perl:
+Run the appropriate <code>configure</code> script in the distribution. If you
+have <code>inetd</code>, run <code>configure.inetd</code>; if you have
+<code>xinetd</code>, run <code>configure.xinetd</code>; if you have neither
+one, run <code>configure.generic</code>. <b>From this point on, when you
+see <code>configure</code>, replace it with the <code>configure.*</code>
+script appropriate for your setup.</b>
+<p>
+Note that no changes can be made to <code>inetd</code>'s or
+<code>xinetd</code>'s configuration files if you don't run the appropriate
+<code>configure</code> as root.
+<p>
+Invoke the appropriate script under Perl:
 <pre>
 # perl configure
 </pre>
 The configure script figures out system settings and builds a custom version
-of HTTPi for you. It will also add the necessary lines to
+of HTTPi for you. The <code>inetd</code> version will also add the necessary
+lines to
 <code>/etc/services</code> and <code>/etc/inetd.conf</code>, provided you
-have the appropriate permission.
-<h4>Putting Another Copy On Another Port</h4>
+have the appropriate permission; the <code>xinetd</code> version will add
+the necessary lines to <code>/etc/xinetd.conf</code>, provided you have the
+appropriate permission.
+<p>
+After running <code>configure</code>, you are left with a transcript file
+(named something like <code>configure.transcript.0</code>), which you can
+pass to <code>configure</code> with the <code>-d</code> option to save
+a lot of typing later. See the <a href = "program.html">Programming Manual</a>.
+<h4>Special Note on <code>configure.generic</code></h4>
+<code>configure.generic</code> simply builds an executable. It does <i>no</i>
+installation. You must connect it with your inetd or equivalent manually.
+Please send me details of what you do to <a href = 
+"mailto:httpi@stockholm.ptloma.edu"><b>httpi@stockholm.ptloma.edu</b></a>
+so I can add support for it in later versions.
+<h4>Putting Another Copy On Another Port (<code>configure.inetd</code>
+and <code>configure.xinetd</code>)</h4>
 This is done with the <code>configure</code> script and is invoked the same
 way. Depending on how you answer the questions, the <code>configure</code>
 script will either build a new HTTPi for the new port, or have the old HTTPi
 map to both the previous port and this port.
 <h4>Changing The Configuration Later</h4>
 The <code>configure</code> script does the initial configuration for you.
-Should you wish to change settings later, you may either need to edit
-<code>inetd</code>'s files, or re-run <code>configure</code>.
+Should you wish to change settings later, you may need to edit
+<code>inetd/xinetd</code>'s files and/or or re-run <code>configure</code>.
+Some settings are HTTPi-internal.
 <ul>
 <li><b><i>Can be configured by re-running the configuration script.</i></b><P>
 The following options can be re-configured by re-running the configuration
-script, answering no to the first question, and making sure that the config
+script and making sure that the <code>configure</code>
 script overwrites the old build of the server.
 <p>
 <ul>
 <li><b>Setting the location for documents</b>
-<p>
 <li><b>Setting the location of the log file</b> If you are not running
 HTTPi as root, you will need to make sure that the log file or directory
 structure is writable to that user.
+<li><b>HTTP/1.1 settings (both enabled/disabled and timeout)</b>
+<li><b>Turning on/off the restriction matrix</b> Note that this does not
+actually change the values of the matrix. See below.
+</ul>
 <p>
-<li><b>HTTP/1.1 settings (both enabled/disabled and timeout)</b><p>
-</ul>
-<li><b><i>Require editing of</i></b> <code>/etc/inetd.conf</code><p>
-These options require editing <code>/etc/inetd.conf</code>. <b>Alternatively,
-you can re-run the</b> <code>configure</code> <b>script, allow it to add
-the new line to</b> <code>/etc/inetd.conf</code>, <b>and delete the old
-one. The</b> <code>configure</code> <b>script never removes lines.</b>
-Make sure to send a <code>-HUP</code> signal to <code>inetd</code> after.<p>
-<ul>
-<li><b>Setting the UID of the server</b> This needs to
-be root if you want the euid of executables to be the euid of the executable's
-owner. Find the line in the file that the <code>configure</code> script
-added, and change the current username listed to the one desired.<p>
-<li><b>Setting single- or multi-instance options</b> Find the line in
-the file that the <code>configure</code> script added, and replace 
-<code>wait</code> or <code>nowait</code> with <code>wait</code> (for single
-process only) or <code>nowait</code> (for multiple sockets).<p>
-</ul>
-<li><b><i>Require editing of both</i></b> <code>/etc/inetd.conf</code> and
-<code>/etc/services</code><p>
-These options require editing <code>/etc/inetd.conf</code> and possibly
-adding new services in <code>/etc/services</code>. <b>Alternatively,
-you can re-run the</b> <code>configure</code> <b>script, let it figure out if
-modifications to</b> <code>/etc/services</code> <b>are needed (and make them
-if so), allow it to add
-the new line to</b> <code>/etc/inetd.conf</code>, <b>and delete the old
-one. The</b> <code>configure</code> <b>script never removes lines.</b>
-Make sure to send a <code>-HUP</code> signal to <code>inetd</code> after.<p>
-<ul>
-<li><b>Changing the port number of an existing server</b> You will need to
-add the port number to <code>/etc/services</code> as a new service, unless this
-has already been done (very likely for port numbers under 3000 or so). Change
-HTTPi's entry in <code>/etc/inetd.conf</code> to point to this new service.
-<b>Do not do this to add a new server to a different port -- you need only
-run</b> <code>configure</code> <b>for that.</b>
+<li><b><i>Require editing files after running</i></b> <code>configure</code><p>
+The following options require removing lines from <code>/etc/inetd.conf</code>
+(for <code>inetd</code> users) or from <code>/etc/xinetd.conf</code> (for
+<code>xinetd</code> users), after running the configure script.
 <p>
+In all cases, simply remove the lines previously added by
+<code>configure</code> from the file, making
+sure that the most recently added lines are still there.
+<p>
+<ul>
+<li><b>Changing the UID of the server</b>
+<li><b>Changing the number of processes</b> (<code>xinetd</code> only)
+<li><b>Changing from single-to-multi processes</b> (<code>inetd</code> only)
+<li><b>Changing the TCP port of the server</b>
+For <code>inetd</code> only:
+This option may require removing old services from <code>/etc/services</code>,
+particularly if this file gets lengthy.
 </ul>
+<p>
 <li><b><i>Require editing of HTTPi itself</i></b><p>
 More information on this is in the <a href = "program.html">Programming
 Manual</a>.<p>
 To make these changes, load the <code>httpi.in</code> into your favourite
 editor and follow the appropriate directions below.
-After making the changes, re-run <code>configure</code>, answering no to
-the initial question and answering all other questions as you did previously.
-This will overwrite your old build with the new one.
+After making the changes, re-run <code>configure</code> and pass it the
+<code>-d</code> option and the
+name of the transcript with your desired settings in it (usually something
+like <code>perl configure -d configure.transcript.0</code>).
+This will overwrite your old build with the new one. Again, please read
+the section specifically on this in the <a href = "program.html">Programming
+Manual</a>.
 <p>
 <ul>
 <li><b>Adding content types</b> HTTPi by default serves up MIME types for
@@ -108,6 +130,8 @@ This will overwrite your old build with the new one.
 to the <code>%content_types</code> hash; be sure to follow the format used
 in the file. Content types HTTPi doesn't know how to handle are dumped as
 text/plain.
+<br>
+<li><b>Changing the restriction matrix</b> See the section on HTTPi security.
 <p>
 </ul>
 </ul>
@@ -128,7 +152,7 @@ so that it can see it, and
 </pre>
 on directories. Naturally, all documents must be in the documents directory
 HTTPi is looking in, to ensure that naughtyness like
-<a href = "/../../../etc/password">/../../../etc/password</a> doesn't work.
+<a href = "/../../../etc/passwd">/../../../etc/passwd</a> doesn't work.
 Good thing, too.
 <p>
 Unlike just about every other webserver, if you don't have an
@@ -163,9 +187,10 @@ see what happens. <code>chmod</code> it executable (e.g.
 (try it <a href = "noodle?this+is+a+variable&q=here+is+another">on this
 server</a> and see for yourself). It
 will display its uid, gid, euid, egid, arguments and environments. You are
-provided the <code>REMOTE_HOST</code> (aliased as <code>REMOTE_ADDR</code>),
-<code>REMOTE_PORT</code> and <code>QUERY_STRING</code> variables. There is no
-POST support in the current version.
+provided the <code>REMOTE_HOST</code>, <code>REMOTE_ADDR</code>,
+<code>REMOTE_PORT</code>, <code>QUERY_STRING</code>,
+<code>HTTP_USER_AGENT</code> and <code>HTTP_REFERER</code> environment
+variables. There is no POST support in the current version.
 <p>
 CGIs that use GET will probably translate just fine. You will need to add an
 extra header to explicitly set an HTTP response code, i.e. add
@@ -181,6 +206,87 @@ Because HTTPi has already ceased to exist by the time the executable starts,
 there is no way it can know if the executable succeeded or failed. 
 Executables appear in the log file with a status code of 100 instead of 200,
 302 or 500, the normal codes seen associated with executables.
+<a name = "sec"></a>
+<h3>HTTPi Security and the Restriction Matrix</h3>
+<b>This is only applicable if you have enabled the restriction matrix
+facility when you built your executable with <code>configure</code>.</b>
+<p>
+Since HTTPi lends itself to adding a quick webserver wrapper around
+applications, a frequent use for HTTPi is as a cheap interface to a network
+monitor or some data acquisition tool. Equally frequently, this data is
+sensitive.
+<p>
+HTTPi has an allow/deny authorization scheme called the <i>restriction
+matrix</i>, a hash in the program that allows the user to create restrictions
+for a particular directory or resource to certain network addresses or even
+user agents, browsers, or clients. <b>Warning: Perl knowledge required
+below this point.</b>
+<p>
+The restriction matrix is hard-coded into HTTPi. Here's a sample entry (in
+fact, the default one that is included in HTTPi):
+<pre>
+%restrictions =
+        ("/nw/" => "^10\.##^Mozilla#MSIE");
+</pre>
+This restriction matrix says that for all resources in <code>/nw/</code>, only
+addresses 10.*.*.* are allowed, and of that set, only browsers that report a
+user agent string of Mozilla (Netscape) and do not have MSIE. By now it should
+be obvious that this is nothing more than four regular expressions concatenated
+together with #s, in this order:
+<p>
+<ul>
+<li>allowed hosts (IP numbers only)
+<li>denied hosts (IP numbers only)
+<li>allowed user agents/browsers
+<li>denied user agents/browsers
+</ul>
+Allow/deny rules have this precedence:
+<p>
+<ul>
+<li>
+If an allow rule is present, but no deny rule, then if the rule
+is satisfied by the current parameter (user agent, IP
+number), the client is <b>allowed</b>.
+<p>
+<li>
+If a deny rule is present, but no allow rule, then if the rule
+is satisfied by the current parameter, the client is <b>disallowed</b>.
+<p>
+<li>
+If both rules are present, the allow rule is tested, and then the deny rule.
+If the allow rule is satisfied, and the deny rule is not, the client is
+<b>allowed</b>. Otherwise, the client is <b>disallowed</b>.
+<p>
+</ul>
+In the above example, there is an allow and deny rule for the user agent.
+Microsoft Internet Explorer exports a user-agent string of the form
+<code>Mozilla/V.v (... MSIE ...)</code>. It will satisfy the allow rule
+<code>^Mozilla</code> <i>and</i> the deny rule <code>MSIE</code>, and thus
+be <b>disallowed</b>. Netscape Navigator exports a user-agent string of the
+form <code>Mozilla/V.v (...)</code>. It will satisfy the allow rule
+<code>^Mozilla</code>, but not satisfy the deny rule, and thus will be
+<b>allowed</b>. Lynx (<code>Lynx ...</code>) will fail the allow rule and the
+deny rule, and will be <b>disallowed</b>.
+<p>
+The IP address scheme works similarly.
+<p>
+To add additional restrictions for additional directories, simply add hash
+rows with the resource prefix, directory, etc., as the key and the restriction
+string as the value to the <code>%restrictions</code> hash -- <b>please
+read <a href = "program.html">the programmer's guide</a> for important
+information on building new HTTPi versions.</b> Restrictions are prioritized
+in descending order by
+resource prefix length (i.e. <code>"/foo/bar"</code> takes precedence over
+<code>"/foo/"</code> takes precedence over <code>"/"</code>). Naturally, if
+no restriction matrix entry exists that matches a particular resource, it
+is allowed to all clients and all network addresses.
+<p>
+When a client is disallowed, it is sent the standard HTTP error code 403,
+along with an explanation. With the rule above in place,
+<a href = "/nw/">this resource</a>
+can only be accessed from <code>ptloma.edu</code> local hosts on the internal
+network, and then only by Netscape clients.
+<p>
 <h3>Questions and Bug Reports</h3>
 Send all outstanding issues to <b><a href =
 "mailto:httpi@stockholm.ptloma.edu">httpi@stockholm.ptloma.edu</a></b>.
