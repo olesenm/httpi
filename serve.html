@@ -46,10 +46,9 @@ allowing you to monitor the server remotely without sending fake requests to
 check response.
 To stop the server, or a particular instance, simply <code>kill(1)</code> it.
 <p>
-Demonic HTTPi autothrottles to maximum three simultaneous processes (one
-master, one slave and one executable fork), and queues all incoming requests
-for later. It will not spawn more children or spew multiple simultaneous
-instances, unlike Apache.
+Demonic HTTPi autothrottles to as few processes as possible, typically one
+process per client request. Otherwise, when idle, only one instance
+will be running.
 <p>
 <table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
 <td bgcolor = "#e0e0ff">
@@ -93,7 +92,7 @@ Rename it to <code>index.html</code> and make sure it's executable, e.g.
 % chmod ugo+x index.html
 </pre>
 Then access the directory like a regular resource (try <a href =
-"old-dists/"><code>http://httpi.ptloma.edu/old-dists/</code></a> for an
+"old-dists/"><code>http://httpi.floodgap.com/old-dists/</code></a> for an
 example).
 </td></tr></table><p>
 <p>
@@ -107,7 +106,7 @@ Ten seconds is probably more than any client needs, of course.
 As of 0.99, you can now allow your users to serve documents from the
 <code>public_html/</code> subdirectory in their home directories with a
 URL &aacute; la <a href =
-"/~spectre/"><code>http://stockholm.ptloma.edu/~spectre/</code></a>.
+"/~spectre/"><code>http://www.floodgap.com/~spectre/</code></a>.
 This is a configure-time option done at time of installation. (This is
 assuming you're using Unix; other OSes may tune out for a bit.) The same
 rules apply: if it's readable relative to the web server's uid, it's
@@ -158,15 +157,20 @@ domain name of the server during the <code>configure</code> process, so this
 last is very important). Here's the entry from this server's:
 <pre>
 %nameredir =
-        ("stockholm" => "http://stockholm.ptloma.edu",
-         "terapede.ptloma.edu" => "http://terapede.ptloma.edu:81",
-         "httpi.ptloma.edu" => "http://stockholm.ptloma.edu/httpi");
+        ("stockholm" => "http://stockholm.ptloma.edu:8080",
+         "stockholm.ptloma.edu" => "http://stockholm.ptloma.edu:8080",
+         "stockholm.floodgap.com" => "http://www.floodgap.com",
+         "httpi.ptloma.edu" => "http://stockholm.ptloma.edu:8080/httpi",
+         "httpi.floodgap.com" => "http://www.floodgap.com/httpi");
 </pre>
-For example, a request for <code>http://httpi.ptloma.edu/serve.html</code>
-becomes mapped to <code>http://stockholm.ptloma.edu/httpi/serve.html</code>.
-In the same way, a request for <code>http://terapede.ptloma.edu/</code>
-becomes mapped to <code>http://terapede.ptloma.edu:81/</code>, which is
-actually a separate HTTPi server process listening on port 81 instead of 80.
+For example, a request for <code>http://httpi.floodgap.com/serve.html</code>
+becomes mapped to <code>http://www.floodgap.com/httpi/serve.html</code>.
+In the same way, a request for <code>http://stockholm.ptloma.edu/</code>
+becomes mapped to <code>http://stockholm.ptloma.edu:8080/</code>, which is
+actually a separate HTTPi server process listening on port 8080 instead of 80.
+Since HTTPi has been told the real name of the server is
+<code>www.floodgap.com</code>, HTTPi then relies on this hash to
+handle requests for the other virtual servers this machine runs.
 <p>
 Note the presence of <code>stockholm</code> as an alias for
 <code>stockholm.ptloma.edu</code>. If IP-less virtual hosting is turned on,
@@ -175,8 +179,8 @@ the aliases in <code>%nameredir</code>, the client gets a 404. To allow lazy
 me to continue to leave off <code>.ptloma.edu</code> for local accesses,
 I added that line, also, so that it will fully qualify the name for me.
 Note that, using the redirection hash above as written, a request for
-<code>http://httpi/</code> will fail: it must be
-<code>http://httpi.ptloma.edu/</code>.
+<code>http://httpi/</code> will fail with a 404: it must be
+<code>http://httpi.floodgap.com/</code>.
 <p>
 Also note that, unlike IP-based virtual hosting, this all occurs within one
 server process. <b>You do not need individual processes per IP-less virtual
@@ -370,7 +374,8 @@ format. Multiple user name:password pairs can be here, separated by commas.
 <td bgcolor = "#e0e0ff">
 The <code>crapword</code> utility in the <code>tools/</code> distribution
 directory is a quick way to encrypt a password. Alternatively, you could
-copy the username-password pair from <code>/etc/password</code> (Unix) or
+copy the username-password pair from <code>/etc/passwd</code> or your
+appropriate shadow password file (Unix) or
 use the common <code>htpasswd</code> utility. For compatibility reasons,
 HTTPi does not use <code>getpwnam()</code> or <code>getpwent()</code> to
 access the password file.
@@ -435,9 +440,89 @@ sent the standard HTTP error code 401 and an explanation. With the second
 rule above in place, <a href = "/status">this resource</a>
 can only be accessed by users providing username <code>voyeur</code> and
 password <code>wannapeek</code>.
+<a name = "virt"><h3>Virtual Filesystem Support</h3></a>
+<table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
+<td bgcolor = "#e0e0ff">
+This option is supported in Demonic HTTPi only.
+</td></tr></table><p>
+<b>This is only applicable if you have enabled the virtual file system with
+<code>configure</code> in your HTTPi build. Warning: Perl knowledge required
+for this section.</b>
+<p>
+The virtual filesystem allows you to "preload" files, or even embed them
+in the server, and then have them served completely from memory. Think of it
+as a fast, stupid, non-dynamic disk cache. This is particularly useful for
+small images that get frequently referenced, for example, or other kinds of
+small files. There are a few caveats:
+<p>
+<ul><li>Each virtual file entry takes memory, obviously.
+<li>The file cannot be changed throughout the life of the master server. If
+you alter the file, you must reboot Demonic HTTPi for the change to take
+effect.
+<li>You cannot preload an entire filesystem (it would probably require
+prohibitive memory overhead anyway), but must do files individually.
+<li>You need to know your file's MIME type.<p>
+</ul>
+The entries that make up the virtual filesystem are in the
+<code>%virtual_files</code> hash in <code>uservar.in</code>. Each hash key
+is a fully-qualified file specification, and references an list reference
+that has three elements. The first element is the virtual file's MIME type
+(yes, it's redundant, but you also have the flexibility to override this for
+other purposes). The second is the type of data to follow: <code>FILE</code>
+if you wish to reference an actual file and preload that, or <code>DATA</code>
+if you're actually inlining data. The third is the data itself: either an
+absolute, fully-specified path to the file to be preloaded, or data to be
+inlined.
+<p>
+The default <code>%virtual_files</code> hash in the HTTPi distribution
+looks like this:
+<pre>
+%virtual_files =
+        ("/httpi/pix/httpismall.gif" => [ "image/gif", "FILE",
+                "/usr/local/htdocs/httpi/pix/httpismall.gif" ] ,
+         "/httpi/virtualfile.html" => [ "text/html", "DATA",
+                "&lt;html&gt;&lt;body&gt;Look, Ma, I'm virtual!&lt;/body&gt;&lt;/html&gt;" ] ,
+        );
+</pre>
+The first hash entry tells Demonic HTTPi to load
+<code>/usr/local/htdocs/httpi/pix/httpismall.gif</code> into memory and
+when a request comes along, instead of looking for it on disk, to serve
+it directly from its memory store with a MIME type of <code>image/gif</code>.
+Try <a href = "/httpi/pix/httpismall.gif">downloading the image</a>.
+<p>
+The second hash entry tells Demonic HTTPi to match the inlined text data
+with any requests for <code>/httpi/virtualfile.html</code>. When a request
+for that file comes along, instead of looking for it on disk, the server
+instead retrieves it from its memory store and serves it with a MIME type
+of <code>text/html</code>. Most important of all, this file actually
+does not exist anywhere on this server's hard disk -- it is entirely a
+figment of HTTPi's imagination, so to speak. Try <a href =
+"/httpi/virtualfile.html">viewing it</a>.
+<p>
+The <code>Last-Modified</code> HTTP header works slightly bizarrely when a
+virtual file is served. Instead of being that of the original file referenced,
+since there may not even <i>be</i> an original file to reference, the
+modification date of virtual files is considered to be the time when the
+server was invoked, which, if you think about it, is technically true, too.
+(The <code>$statiosuptime</code> variable is used for this purpose, so
+even if you don't have STATIOS enabled, this is still defined.)
+This makes the code simpler rather than having to carry around file attributes
+as excess memory baggage, and allows the interface to be abstracted to
+include files that really <i>are</i> virtual and wouldn't have a
+modification date per se, as well.
+<p>
+If an entry in the hash is the same as a file that really does exist, the
+virtual filesystem entry always takes precedence.
+<p>
+<b>To edit the <code>%virtual_files</code> hash, please see the <a href =
+"program.html">programming manual</a> about using the <code>configure</code>
+system to help you build new versions of HTTPi, and then edit the
+<code>uservar.in</code>
+file in the distribution according to the <a href
+= "program.html#uvar">manual's instructions.</a></b>
 <h3>Questions and Bug Reports</h3>
 Send all outstanding issues to <b><a href =
-"mailto:httpi@stockholm.ptloma.edu">httpi@stockholm.ptloma.edu</a></b>.
+"mailto:httpi@floodgap.com">httpi@floodgap.com</a></b>.
 <hr>
 <address>Cameron Kaiser</address>
 </body>

@@ -18,7 +18,7 @@ base.</b> However, I or an authorised maintainer reserve the right to choose
 what gets checked in. Remember the philosophy: "more with less" :-)
 <p>
 Send your questions or difficulties to <b><a href =
-"mailto:httpi@stockholm.ptloma.edu">httpi@stockholm.ptloma.edu</a></b>.
+"mailto:httpi@floodgap.com">httpi@floodgap.com</a></b>.
 <p>
 <a name = "cnfg"><h3>Getting Started with the
 HTTPi <tt>configure</tt> Script</h3></a>
@@ -260,7 +260,9 @@ filehandles. Don't mess with them unless you know what you're doing!</b>
 <dd>A simple scalar containing additional headers to be sent to the client.
 <dt><code>%content_types</code>
 <dd>A hash with file extensions as the keys and their respective MIME-types
-for values. Additional file extensions should be added here.
+for values. Additional file extensions should be added here. If any entries
+conflict with keys in <code>%system_content_types</code> (see below), the
+entries in <code>%content_types</code> take precedence.
 <dt><code>%restrictions</code>
 <dd>The restriction matrix, specifying security options for HTTPi resources.
 See the <a href = "serve.html#secu">manual</a> for the format of values in this
@@ -268,6 +270,9 @@ hash.
 <dt><code>%nameredir</code>
 <dd>The HTTP name redirect. See the <a href = "serve.html#htho">manual</a>
 for the format of values in this hash.
+<dt><code>%virtual_files</code>
+<dd>Definitions for the virtual filesystem. See the <a href =
+"serve.html#virt">manual</a> for the format of values in this hash.
 </dl>
 <h4>Globals maintained in <code>httpi.in</code></h4>
 <dl>
@@ -284,6 +289,12 @@ the provided string (e.g. "OK", "File Not Found", etc.) Set by
 <dd>The current date and time, in GMT and RFC format.
 <dt><code>$date</code>
 <dd>The current local date and time, in CERN log format.
+<dt><code>$statiosuptime, $statios*</code>
+<dd>Any variable starting with <code>$statios</code> is part of the Demonic
+STATIOS module, and is only defined when that module is enabled <i>except</i>
+for <code>$statiosuptime</code>, which defines the <code>time()</code> when
+the server was started and is always defined since many portions of code now
+reference it.
 <dt><code>$method, $address, $httpver</code>
 <dd>Respectively, the HTTP method (e.g. GET), requested resource, and HTTP
 version (0.9, 1.0, 1.1). Set after receipt of a valid request from the
@@ -313,6 +324,10 @@ others only set after restriction matrix checks are passed.
 <dd>Last modify date of the currently selected resource as indicated by
 <code>$address</code>; set after successfully verifying resource's existence
 and a successful <code>stat()</code>, in <code>ctime()</code> format.
+<dt><code>%system_content_types</code>
+<dd>Holding area for content types defined in <code>httpi.in</code> and
+thus maintained as part of the basic distribution. It is merged with
+<code>%content_types</code> and then destroyed.
 </dl>
 <a name="inpl"><h3>Inline Perl with the <code>&lt;perl&gt;</code> Tag</h3></a>
 The inline Perl module, introduced in HTTPi 1.0, is simultaneously
