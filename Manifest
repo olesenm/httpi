@@ -1,0 +1,28 @@
+Check the length of all files included for veracity of transfer. Modified
+times always seem to change, sadly.
+
+total 47
+-rw-r--r--   1 spectre  staff        533 Nov 11 10:16 INSTALL
+-rw-r--r--   1 spectre  staff       2312 Nov 11 10:13 LICENSE
+
+PLEASE READ THIS!
+
+-rw-r--r--   1 spectre  staff        927 Nov 11 12:51 Manifest
+-rw-r--r--   1 spectre  staff        758 Nov 11 10:15 README
+-rw-r--r--   1 spectre  staff      12641 Nov 11 09:33 configure
+-rw-r--r--   1 spectre  staff       5347 Nov 11 12:47 httpi.in
+drwxr-xr-x   2 spectre  staff        512 Nov 11 09:45 tools/
+drwxr-xr-x   2 spectre  staff        512 Nov 11 09:45 toys/
+
+./tools: (Contains useful utilities.)
+total 1
+-rwxr-xr-x   1 spectre  staff        249 Nov 11 09:45 noodle*
+
+Use this to test executable support in your HTTPi build. See documentation.
+
+./toys: (Fun stuff.)
+total 3
+-rw-r-----   1 spectre  staff       1310 Nov 11 09:45 httpismall.gif
+
+The HTTPi icon, if you feel like showing it off.
+

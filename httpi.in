@@ -1,0 +1,221 @@
+~check ISNTINSTALLEDYET
+
+******* HEY! THIS ISN'T THE REAL WEBSERVER! DON'T RUN THIS! RUN CONFIGURE!
+
+Thanks.
+~
+~
+#!DEF_PERL
+$VERSION = "0.1";
+
+# HTTPi Hypertext Tiny Truncated Process Implementation
+# Copyright 1998 Cameron Kaiser # All rights reserved # Please read LICENSE
+# Do not strip this copyright message.
+
+$logfile = "DEF_ACCESS_LOG";
+$path = "DEF_HTDOCS_PATH";
+$TIME_OUT = DEF_TIME_OUT;
+%content_types =
+	("html" => "text/html",
+	 "htm" => "text/html",
+	 "txt" => "text/plain",
+	 "gif" => "image/gif",
+	 "zip" => "application/x-zip-compressed",
+	 "gz"  => "application/x-gzip",
+	 "jpg" => "image/jpeg");
+
+$headers = <<"EOF";
+Server: HTTPi/$VERSION
+EOF
+
+###############################################################
+# WHITE HATS ONLY BELOW THIS POINT -- SEE DOCUMENTATION FIRST #
+###############################################################
+
+sub sock_to_host {
+	local($sock) = (@_);
+	return ($ENV{'REMOTE_HOST'} || $ENV{'REMOTE_ADDR'}, 0) if (!$sock);
+	local($sockaddr) = 'S n a4 x8';
+	local($AFC, $port, $thataddr, $zero) = unpack($sockaddr, $sock);
+	local($hn) = gethostbyaddr($thataddr, 2) ||
+		join('.', unpack("C4", $thataddr));
+	return ($hn, $port);
+}
+
+sub htsponse {
+	($currentcode, $currentstring) = (@_);
+	return if (0+$httpver < 1);
+	local($what) = <<"EOF";
+HTTP/$httpver $currentcode $currentstring
+${headers}Date: $rfcdate
+EOF
+	$what =~ s/\n/\r\n/g;
+	print stdout $what;
+~check HTTP11WAIT
+	&hthead("Connection: Keep-Alive") if (0+$httpver > 1 || $keep);
+~
+~
+}
+
+sub hthead {
+	local($header, $term) = (@_);
+	return if (0+$httpver < 1);
+	print stdout "$header\r\n" , ($term) ? "\r\n" : "";
+}
+
+sub htcontent {
+	local($what, $ctype) = (@_);
+	($contentlength) = length($what);
+	&hthead("Content-Length: $contentlength");
+	&hthead("Content-Type: $ctype", 1);
+	return if ($method eq 'HEAD');
+	print stdout $what;
+}
+
+sub log {
+ 	if (open(J, ">>$logfile")) {
+		$sock = getpeername(STDIN);
+		($hostname, $port) = &sock_to_host($sock);
+		print J <<"EOF";
+$hostname $httpref - [$date] "$method $address HTTP/$httpver" $currentcode $contentlength
+EOF
+		close(J); }
+	}
+
+sub bye { exit; }
+
+sub dead {
+	&htsponse(500, "Server Error");
+	&hterror("Server Error", <<"EOF");
+While handling a request for resource $address, the server crashed. Please
+attempt to notify the administrators.
+<p>Useful(?) debugging information:
+<pre>
+@_
+</pre>
+EOF
+	&log; exit;
+}
+
+$SIG{'__DIE__'} = \&dead;
+$SIG{'ALRM'} = \&bye;
+
+select(STDOUT); $|=1;
+$rfcdate = scalar gmtime;
+($dow, $mon, $dt, $tm, $yr) = ($rfcdate =~
+	m/(...) (...) (..) (..:..:..) (....)/);
+$dt += 0; $yr += 0;
+$rfcdate = "$dow, $dt $mon $yr $tm GMT";
+$date = scalar localtime;
+($dow, $mon, $dt, $tm, $yr) = ($date =~
+	m/(...) (...) (..) (..:..:..) (....)/);
+$dt = substr("0$dt", length("0$dt") - 2, 2);
+$date = "$dt/$mon/$yr $tm DEF_TIME_ZONE"; 
+
+$address = 0;
+	alarm 10;
+while (<>) {
+	if(/^(GET|HEAD)\s+([^\s]+)\s+([^\s\r\l\n]*)/) {
+		$method = $1;
+		$address = $2; 
+		$httpver = $3;
+		$httpref = '-';
+		$httpver = ($httpver =~ m#HTTP/([0-9]\.[0-9]+)#) ?
+			($1) : (0.9);
+		next unless ($httpver < 1);
+	} else {
+~check HTTP11WAIT
+		$keep = 1 if (/^Connection: Keep-Alive/i);
+~
+~
+		s/[\r\l\n]+$//;
+		(/^Referer: (.+)/) && ($httpref = $1);
+		next unless (/^$/);
+	}
+	if (!$address) {
+		&htsponse(400, "Bad Request");
+		&hterror("Bad Request",
+			"The server cannot understand your request.");
+		&log; exit;
+	}
+	($address, $variables) = split(/\?/, $address);
+	1 while $address =~ s#/\./#/#;
+	1 while $address =~ s#^/\.\./#/#;
+	1 while $address =~ s#/[^/]+/\.\./#/#;
+	if ($address !~ m#/$# && -d "$path$address") {
+		&htsponse(301, "Moved Permanently");
+		&hthead("Location: $address/", 1);
+		$keep = 0; &log; exit;
+	}
+	$address = "${address}index.html" if (-d "$path$address");
+	if(!open(S, "$path$address"))  {
+		&htsponse(404, "File Not Found");
+		&hterror("File Not Found",
+			"The resource $address was not found on this system.");
+		# but let it make other requests ...
+	} else {
+		if (-x "$path$address") {
+			$currentcode = 100;
+			&log;
+			if (!$<) {
+				($x,$x,$x,$x,$uid,$gid) = stat(S);
+~check CANDOSETRUID
+				$< = $uid || die "can't set uid";
+				$( = $gid || die "can't set gid";
+~
+~
+				$> = $uid || die "can't set effuid";
+				$) = $gid || die "can't set effgid";
+			}
+			$sock = getpeername(STDIN);
+			($hostname, $port) = &sock_to_host($sock);
+			$ENV{'REMOTE_HOST'} = $ENV{'REMOTE_ADDR'} =
+				$hostname;
+			$ENV{'REMOTE_PORT'} = $port;
+			$ENV{'QUERY_STRING'} = $variables;
+			exec "$path$address", "$variables";
+			die "exec() returned -1";
+		}
+		($x,$x,$x,$x,$x,$x,$x,$x,$x,$mtime) = stat(S);
+		$mtime = scalar gmtime $mtime;
+		($dow, $mon, $dt, $tm, $yr) = ($mtime =~
+			m/(...) (...) (..) (..:..:..) (....)/);
+		$dt += 0; $yr += 0;
+		$ctype = 0;
+		foreach(keys %content_types) {
+			if ($address =~ /\.$_$/) {
+				$ctype = $content_types{$_};
+			}
+		}
+		$ctype ||= "text/plain";
+		&htsponse(200, "OK");
+		&hthead("Last-Modified: $dow, $dt $mon $yr $tm GMT");
+		$j = $/; undef $/; $q = <S>; $/ = $j; close(S);
+		&htcontent($q, $ctype);
+	}
+	&log;
+~check HTTP11WAIT
+	exit if (!$keep);
+	alarm $TIME_OUT;
+~
+	exit;
+~
+}
+
+exit;
+
+sub hterror {
+	local($errstr, $expl) = (@_);
+	&htcontent(<<"EOF", "text/html");
+<html>
+<body>
+<h1>$errstr</h1>
+$expl
+<hr>
+<address><a href = "http://stockholm.ptloma.edu/httpi/">httpi/$VERSION</a>
+by Cameron Kaiser</address>
+</body>
+</html>
+EOF
+	}
+

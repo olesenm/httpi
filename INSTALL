@@ -1,0 +1,21 @@
+** Installation procedure for HTTPi/0.1
+** Copyright 1998 Cameron Kaiser
+
+1. Check that all files are present and proper size (see Manifest). Make sure
+   you have Perl 5 installed. You only need the executable.
+
+2. Read the LICENSE file.
+
+3. Read the LICENSE file.
+
+4. Read the ... have you read it yet?
+
+5. Do
+
+$ perl configure
+
+(as root for full install options, or any other user just to build an object).
+
+6. Follow the handy and verbose prompts. The configure program may have
+   additional directions to follow. Follow them.
+

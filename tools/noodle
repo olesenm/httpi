@@ -1,0 +1,18 @@
+#!/usr/bin/perl
+
+print <<"EOF";
+HTTP/1.0 200 OK
+Content-type: text/plain
+
+My uid: $<
+My gid: $(
+My euid: $>
+My egid: $)
+My arguments: @ARGV
+EOF
+
+foreach (sort keys %ENV) {
+	print "$_=$ENV{$_}\n";
+}
+
+open(S, ">/usr/local/htdocs/tester") && close(S);

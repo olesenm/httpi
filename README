@@ -1,0 +1,27 @@
+Be sure you read the LICENSE file and the INSTALL file!!! The LICENSE
+file, especially, because HTTPi is NOT GPL. It's free, but it's NOT GPL.
+
+--
+
+HTTPi's current web home is
+
+	http://stockholm.ptloma.edu/httpi/
+
+Running vanilla HTTPi, of course, with no extra Perl modules. Just the
+executable, a bottle of wine, and thou. The manuals and documentation for
+patching and using HTTPi are all there.
+
+If you plan to be using a lot of executables, read the manual first. They
+differ in HTTPi -- not violently, but significantly. CGIs won't work out
+of the box, most likely.
+
+
+Suggestions, patches, questions, bug reports?
+
+	httpi@stockholm.ptloma.edu
+
+I would really love feedback, so please, send me an E-mail and let me know
+what you think.
+
+Cameron Kaiser
+

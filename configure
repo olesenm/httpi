@@ -1,0 +1,412 @@
+sub yncheck {
+	local ($prompt, $evals, $fatal) = (@_);
+	local $setv;
+
+	print stdout "$prompt ... ";
+	eval $evals;
+	if (!$@) {
+		print "yes\n"; $setv = 1;
+	} else {
+		chomp($q = $@);
+		print "no ($q)\n"; $setv = 0;
+		die($fatal) if ($fatal);
+	}
+	return $setv;
+}
+
+sub wherecheck {
+	local ($prompt, $filename, $fatal) = (@_);
+	local(@paths) = split(/\:/, $ENV{'PATH'});
+	unshift(@paths, '/usr/bin'); # the usual place
+	@paths = ('') if ($filename =~ m#^/#); # for absolute paths
+	local $setv = 0;
+
+	print stdout "$prompt ... ";
+	foreach(@paths) {
+		if (-r "$_/$filename") {
+			$setv = "$_/$filename";
+			1 while $setv =~ s#//#/#;
+			print "$setv\n";
+			last;
+		}
+	}
+	if (!$setv) {
+		print "not found.\n";
+		die($fatal) if ($fatal);
+	}
+	return $setv;
+}
+
+sub preproc {
+	local($infile, $outfile, $fatal) = (@_);
+	local $ifl, $def, $j;
+	open(S, "$infile") || die($fatal);
+	open(T, ">$outfile") || die($fatal);
+
+	$ifl = 0;
+	while(<S>) {
+		if (/^~check/) {
+			chomp;
+			(/^~check (.+)$/) && ($def = $1);
+			eval "\$j = \$DEF_$def;";
+			if ($j) {
+				$ifl = -2;
+			} else {
+				$ifl = 1;
+			}
+			next;
+		}
+		if (/^~/) {
+			$ifl = abs($ifl);
+			$ifl--;
+			next;
+		}
+		next if ($ifl > 0);
+		while((/(DEF_[A-Z_]+)/) && ($def = $1)) {
+			eval "s/DEF_[A-Z_]+/\$$def/";
+		}
+		print T $_;
+	}
+	close(S);
+	close(T);
+}
+
+sub prompt {
+	local($prompt, $default) = (@_);
+	local $entry;
+
+	chomp $prompt;
+	print stdout "$prompt [$default]: ";
+	chomp($entry = <STDIN>);
+	$entry = (length($entry) ? $entry : $default);
+	print <<"EOF" unless ($entry eq '');
+
+$entry selected.
+
+EOF
+	return $entry;
+}			
+
+select(STDOUT); $|++;
+
+print <<"EOF";
+Configure for HTTPi/0.1 (C)1998 Cameron Kaiser
+
+Checking some system defaults...
+
+EOF
+$DEF_ROOT = &yncheck("Are we running as root?", "die if ($<);");
+if (!$DEF_ROOT) {
+	&prompt(<<"EOF", "");
+
+You will only be able to write out the object file, and you might not be
+able to even do that without appropriate permissions. Consider running this
+Configure script as root if you want to install HTTPi fully.
+
+Press ENTER to continue.
+EOF
+	$DO_INSTALL = 0;
+} else {
+	$DO_INSTALL = &prompt(<<"EOF", "y");
+You're running as root, so we can do the whole caboodle, including write out
+the object file and patch your inetd's configuration files. If you say "n"
+to this question, we'll just write out the object file.
+
+If you are just patching an already existing and running HTTPi installation
+(i.e. the changes are already in /etc/services and /etc/inetd.conf, and it's
+going to go to the same install path), you should answer "n".
+
+If you are starting from scratch -- nothing installed -- answer "y" unless
+you really don't want inetd to know about HTTPi yet.
+
+Do everything, including inetd.conf and services modifications?
+EOF
+	$DO_INSTALL = ($DO_INSTALL eq 'y') ? 1 : 0;
+}
+if (!$DO_INSTALL) {
+	print <<"EOF";
+Questions pertaining to inetd installation won't be asked by this script.
+
+EOF
+	}
+$DEF_UNAME = &wherecheck("Finding uname", "uname");
+if ($DEF_UNAME) {
+	chomp($arch = `$DEF_UNAME -s`);
+	print "Smells like $arch.\n";
+} else {
+	print "Hmm. This might not be a Unix box, but we'll keep trying.\n";
+}
+$DEF_PERL = &wherecheck("Finding your perl", "perl", <<"EOF");
+
+Good grief, you've managed to run this with Perl not in your path. Where
+the heck is it, anyway? Put Perl in your path and rerun.
+
+EOF
+$DEF_SERV = &wherecheck("Verifying /etc/services", "/etc/services", <<"EOF");
+
+Without /etc/services, your inetd won't know what port to run HTTPi on. You
+*do* have inetd, don't you?
+
+EOF
+$DEF_INCONF = &wherecheck("Verifying /etc/inetd.conf", "/etc/inetd.conf", 
+	<<"EOF");
+
+Without /etc/inetd.conf, your inetd won't know what services should be
+running and active. You *do* have inetd, don't you?
+
+EOF
+
+$INSTALL_PATH = &prompt(<<"EOF", "/usr/local/bin/httpi");
+
+Cool, we made it that far.
+
+Now you'll need to answer a few questions about your installation options
+and some functions that need to be hard-coded into HTTPi. If you just hit
+ENTER with nothing entered, the default (in [ ]) will be selected.
+
+Where do you want the resultant script placed? If you're using configure to
+build multiple instances of HTTPi on different ports, make sure this changes
+unless the timeout, mount directory and log file path are identical.
+
+WARNING: If you're doing a full install, including modifying inetd's config
+files, THIS MUST BE AN ABSOLUTE PATH.
+
+Install path?
+EOF
+$DEF_HTDOCS_PATH = &prompt(<<"EOF", "/usr/local/htdocs");
+Where do you want the server to serve documents from? All files that HTTPi
+will make available, executables included, must be under this tree (i.e.
+no ~ or user filesystem). This is the webserver's mount directory.
+
+EOF
+print <<"EOF" if (!-d $DEF_HTDOCS_PATH);
+WARNING: That directory hasn't been created yet. Make sure you create it.
+
+EOF
+$USER_ID = &prompt(<<"EOF", "nobody") unless (!$DO_INSTALL);
+What user do you want the server to run as? If you select someone other than
+'root', the server will not be able to change (e)uid to an executable's owner,
+and you'll need to make sure the access log (getting to that) is writeable
+to them.
+
+On the other hand, if you select 'root', be forewarned this is a potential
+security hole (to run *any* webserver as root, not just HTTPi).
+
+What user do you want the script to run as?
+EOF
+$DEF_CANDOSETRUID = &yncheck("Can we use setruid()?", '$< = 65534;');
+$DEF_ACCESS_LOG = &prompt(<<"EOF", "$DEF_HTDOCS_PATH/access.log");
+
+Where do you want the server to put the access log? If you don't want
+logging, specify /dev/null. This is the webserver's log file path.
+
+EOF
+print <<"EOF" if ($USER_ID ne 'root' && $DO_INSTALL);
+WARNING: Make sure the access log is writeable to user '$USER_ID', since
+you're not running HTTPi as root.
+
+EOF
+$DEF_TIME_ZONE = &prompt(<<"EOF", "+0000");
+HTTPi does CERN logging format making it compatible with most log analysers.
+However, to make it as compatible as possible on as wide a range of Perls as
+possible, it doesn't do locale() work to find out what your timezone is.
+
+If you don't care, you can accept the default. If you do, enter a
+five-character timezone here (e.g., if you're on Pacific time, like I am,
+enter -0800 for 8 hours behind Greenwich mean).
+EOF
+
+$DEF_HTTP11WAIT = &prompt(<<"EOF", "n");
+HTTPi supports HTTP/1.1 persistent connections, but very few clients do right
+now. It's nice to have though, for those that do, and it means that it will
+spawn fewer processes sum total if the client is nice enough to do all its
+requests on a single socket.
+
+The downside is, due to the current implementation, clients that do not
+properly support HTTP/1.1 persistent connections (but advertise they do) will
+have slightly slower access. As of this writing, Netscape is particularly bad
+on this point. Unfortunately, there's nothing the server can do about that.
+
+Enable HTTP/1.1 support?
+EOF
+$DEF_HTTP11WAIT = ($DEF_HTTP11WAIT eq 'y') ? 1 : 0;
+
+$DEF_TIME_OUT = &prompt(<<"EOF", "1") unless (!$DEF_HTTP11WAIT);
+And speaking of supposedly compliant clients ...
+
+HTTPi has a funky kludge in it to better handle supposedly HTTP/1.1-compliant
+clients that really aren't by waiting a specified number of seconds before
+dying off to see if another request comes down the pike. Increasing this
+number makes it more tolerant of slower clients, but degrades overall
+connection speed. This only applies to clients that advertise the
+"Connection: Keep-Alive" header. The default should be satisfactory here.
+
+SPECIAL CASE: If you answer zero to this question, it will wait forever.
+This is probably NOT what you want, but I guess one of you might ...
+
+Number of seconds to wait for slow HTTP/1.1 clients?
+EOF
+$DEF_TIME_OUT += 0;
+
+$WAIT_MODE = &prompt(<<"EOF", "n") unless (!$DO_INSTALL);
+A further bonus to slow systems is, because HTTPi runs out of inetd, the
+ability to restrict the number of simultaneous HTTPis that can run. Since
+HTTPi supports persistent connections, if your clients are suitably clued,
+you can get by with a practically invisible webserver by answering yes to
+this question.
+
+However, if you intend to put a little strain on HTTPi, this will not help
+(and in fact make it worse on inetd), particularly with rude clients like
+Netscape that insist on opening up multiple connections to a server.
+
+HTTPi's default is to have inetd open up one HTTPi process per open socket,
+and kill each off after it completes its job (answer no to this question).
+Unless you're masochistic or have a real anal-retentive streak about CPU time
+usage, the default is probably just fine.
+
+Restrict HTTPi to a single process?
+EOF
+
+$PORT_NO = &prompt(<<"EOF", "80") unless (!$DO_INSTALL);
+What numerical TCP port do you want the webserver to run on? 80 is the default
+but if you're using configure to build multiple HTTPis on multiple ports,
+make sure you give a different answer this time.
+
+Which TCP port number?
+EOF
+
+if ($DO_INSTALL) {
+print "Seeing what services you have for that port number ... ";
+open(S, "/etc/services") || die(
+	"\n\nYou lied! I can't read /etc/services after all!\n\n");
+while(<S>) {
+	chomp;
+	($serv, $port, $junk) = split(/\s+/, $_);
+	if ($port eq "$PORT_NO/tcp") {
+		print "$serv\nSo we'll use that.\n\n";
+		$SERV_NAME = $serv;
+		last;
+	}
+}
+if (!$SERV_NAME) {
+	$serv = 0; # so we remember
+	$SERV_NAME = &prompt(<<"EOF", ($PORT_NO eq '80')?"www":"www$PORT_NO");
+not found.
+We must create one for you.
+
+To run properly in inetd, /etc/services must contain a service mapped to
+the TCP port number you chose ($PORT_NO). Each name must be unique to its
+port number so that inetd can unambiguously decipher which goes where.
+
+Avoid having multiple services mapped to the same port number -- it's really
+very confusing.
+
+Which service name?
+EOF
+}
+
+print "Checking /etc/inetd.conf for competing services ... ";
+open(S, "/etc/inetd.conf") || die("\nNo read access.\n\n");
+$j = 0; while(<S>) {
+	/^$SERV_NAME\b/ && ($j = $_);
+}
+if ($j) {
+	print <<"EOF";
+found:
+$j
+
+YOU WILL NEED TO EDIT /etc/inetd.conf AFTERWARDS, BEFORE YOU START THE
+WEBSERVER UP! Otherwise, inetd will be very confused. Make sure you select
+ONLY ONE -- either HTTPi's line or this one. You may need to re-run
+configure and select a new port (configure will build the service for you).
+
+EOF
+} else {
+	print "none found.\nWhew!\n\n";
+}
+}
+
+$j = &prompt(<<"EOF", "") unless (!$DO_INSTALL);
+LAST CHANCE BEFORE CHANGES ARE COMMITTED!
+
+If you continue beyond this point, configure will alter your /etc/services,
+/etc/inetd.conf and place the new HTTPi build in $INSTALL_PATH.
+
+If you want to continue, just press ENTER.
+If you don't, press CTRL-C NOW!
+EOF
+$j = &prompt(<<"EOF", "") unless ($DO_INSTALL);
+LAST CHANCE BEFORE CHANGES ARE COMMITTED!
+
+If you continue beyond this point, configure will build your HTTPi and
+overwrite any file currently at $INSTALL_PATH.
+
+If you want to continue, just press ENTER.
+If you don't, press CTRL-C NOW!
+EOF
+
+print "Writing out the configured httpi to $INSTALL_PATH ... ";
+&preproc("httpi.in", "$INSTALL_PATH", <<"EOF");
+
+Couldn't write out the new httpi. Check permissions on httpi.in in the
+current directory (you *are* root, right?) and the destination path.
+
+EOF
+print "done.\n\n";
+
+if ($DO_INSTALL) {
+print "Need changes to /etc/services? ... ";
+if (!$serv) {
+	print "yes, working ... ";
+	open(S, ">>/etc/services") || die(
+		"\n\nShee, still no write access.\n");
+	print S <<"EOF";
+$SERV_NAME	$PORT_NO/tcp		# added by HTTPi install
+$SERV_NAME	$PORT_NO/udp		# added by HTTPi install
+EOF
+	close(S);
+	print "done.";
+} else { print "no"; }
+print "\n\nWriting changes to /etc/inetd.conf ... ";
+open(S, ">>/etc/inetd.conf") || die(
+	"\n\nAre you really root? I can't write to this file.\n");
+$wmode = ($WAIT_MODE eq 'n') ? 'nowait' : 'wait';
+print S <<"EOF";
+
+# added by HTTPi install
+$SERV_NAME	stream	tcp	$wmode	$USER_ID	$INSTALL_PATH
+
+EOF
+close(S);
+print "done.\n\nchmod()ding $INSTALL_PATH to 0755 ... ";
+chmod 0755, "$INSTALL_PATH" || die("\n\nWhat the heck? Can't do it.\n");
+print "done.\n\n";
+
+print <<"EOF";
+Successfully configured!
+
+Now, you must send a HUP signal to your inetd process to enable the webserver.
+AIX: refresh -s inetd
+Linux: killall -HUP inetd
+
+Other systems, find its PID with ps first.
+
+Remember to read the documentation for last minute information! Bye now.
+EOF
+exit; } else {
+	print <<"EOF";
+Done.
+
+IF THIS IS A FIRST-TIME INSTALL:
+Note that no changes have been made to inetd, so the webserver will not
+actually run yet. You will need to re-run as root and answer yes to the
+first question for that to happen.
+
+IF NOT:
+The changes should take effect on the webserver's next access (assuming it's
+running).
+
+Remember to read the documentation file for last minute information. Bye!
+
+EOF
+}
