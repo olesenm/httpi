@@ -6,7 +6,12 @@ width = 91 border = 0></a><i>Back to the main page</i>
 <hr>
 <img src = "pix/httpibig.gif" align = right alt = " ">
 <h1>Programming Manual</h1>
-This describes HTTPi internals to people interested in writing or patching
+HTTPi was designed first and foremost to be a hacker's webserver that was
+easily understood, easily patched and trivially maintainable -- thus this
+document.
+<p>
+The Programming Manual
+describes HTTPi internals to people interested in writing or patching
 their own applications into HTTPi. <b>Perpetually under construction.
 Additions and suggestions, user patches, etc., are welcomed to the code
 base.</b> However, I or an authorised maintainer reserve the right to choose
@@ -15,33 +20,51 @@ what gets checked in. Remember the philosophy: "more with less" :-)
 Send your questions or difficulties to <b><a href =
 "mailto:httpi@stockholm.ptloma.edu">httpi@stockholm.ptloma.edu</a></b>.
 <p>
-<a name = "cnfg"><h3>Why You Should Be Making Changes With The
+<a name = "cnfg"><h3>Getting Started with the
 HTTPi <tt>configure</tt> Script</h3></a>
-<b>READ THIS SECTION! PLEASE!</b><p>
-You can simply change the HTTPi executable that the <code>configure</code>
-script builds, since, after all, it's just Perl. However, if you decide to
-make configuration changes at a later date, your code will be obliterated,
-and that's why
+If you didn't read this page thoroughly, you would probably just go to
+where your configure script dropped the Perl executable and merrily edit
+it in-place. And it would probably work, too. Well, I've got three words for
+that:
+<p>
+<b><i>Don't do it!</i></b>
+<p>
+Why?
+If you decide to make configuration changes at a later date, or upgrade
+to a later version of HTTPi, guess what happens to your changes when
+configure runs again? You got it: completely obliterated. That's why
 HTTPi has a primitive <code>make</code> system of sorts built into the
 <code>configure</code> script suite. (Again, please recall there
 are multiple <code>configure</code> scripts; replace
 <code>configure</code> with the appropriate one for your setup.)
+By working in with the configure scripts, you can make changes to your
+heart's content <i>and</i> carry them across configuration changes and
+server updates. <i>So don't edit the HTTPi executable directly!</i>
 <p>
-To make sure that changes you
-make to the HTTPi internals stick around when you make a new build, changes
-should be made to the <code>httpi.in</code> file that came with the
-distribution (that's right, don't toast the distribution directory). When you
-re-run <code>configure</code> (making sure to answer no to the question about
-changing <code>inetd</code>, or whatever, 's files,
-unless you really want to), it will
-build a new version with your changes and configuration settings. If you
-modified the object, your changes would be obliterated, but you didn't, so
-your changes to <code>httpi.in</code> have now been incorporated into the
-new configuration settings. Neat, huh?
+There are three files in the HTTPi distribution that you need to worry about.
+These files are glommed together at configure-time. (Previous versions of
+HTTPi before 1.2 had them all in <code>httpi.in</code>. If you are,
+for some pathological reason, patching an old version, then remember that
+all changes must be made there, and that some features might not be
+available to you.) The files are:
+<p><ul>
+<li><code>httpi.in</code>, the master server code. Modules maintained
+in the standard distribution, like STATIOS, are also here.
+<li><code>modules.in</code>, the repository for user modules. All user
+modules should be put in this file. You can use this file when you're
+upgrading to keep the same modules in your next build.
+<li><code>uservar.in</code>, the user variables file. Certain configuration
+variables, like the restriction matrix, content types and IP-less
+virtual hosting, are kept here. Again, you can use this file when you're
+upgrading to keep the same settings in your next build.
+</ul>
+<p>
+We'll discuss making those changes later. How do you use
+<code>configure</code>?
 <p>
 If you have a settings transcript from a previous run
 of <code>configure</code> (usually named something like
-<code>configure.transcript.0</code>), you can use that to save typing, and
+<code>transcript.0.configure</code>), you can use that to save typing, and
 <code>configure</code> will get its answers from that.
 Just do
 <p>
@@ -49,11 +72,18 @@ Just do
 <p>
 where <code>filename</code> is the transcript file, either one automatically
 made by <code>configure</code>, or one of your own. If you leave out the
-filename, the default answer to questions will be used. Don't worry, when
+filename, the default answer to questions will be used.
+<i>That's it.</i> (If you
+are using Demonic HTTPi, you will need to kill the old process(es) and
+start the new one for changes to take effect. Don't worry; when
 run in this mode <code>configure</code> doesn't change your <code>inetd</code>
-or <code>xinetd</code> configuration files. <i>That's it.</i>
+or <code>xinetd</code> configuration files.)
 <p>
-Naturally, <code>httpi.in</code> isn't runnable Perl; it's teased and
+Otherwise, just run the appropriate configure script as usual and answer
+the necessary questions.
+<p>
+Naturally, none of the <code>*.in</code> files are
+runnable Perl; they're teased and
 twisted by <code>configure</code> into your runtime object, since
 <code>configure</code> actually contains a miniature pre-processor. Lines like
 this:
@@ -73,22 +103,47 @@ and have exactly the same semantics as they do in the standard C
 pre-processor. These are used to determine build-time code based on 
 settings you select and on system options (like whether your system
 supports <code>setruid()</code> -- AIX doesn't, Linux does).
-So, leave lines starting with a tilde alone, or else <code>configure</code>
-may choke. There are also defines in the <code>httpi.in</code> file that
+There's also a mystical <code>~insert</code> that has similar semantics
+to <code>#include</code>, except that you can't yet nest it either.
+There are also defines in the <code>httpi.in</code> file that
 you should be able to match up with questions asked during the
-<code>configure</code> process.
+<code>configure</code> process. Unless you're a white hat, don't mess
+with them or preprocessor directives.
 <p>
 In short, <code>configure</code> is your <code>make</code> processor.
 Use it, love it. You could modify the script in place, but
 <code>configure</code> is, we think, much friendlier, and you'll thank us
 for it later.
+<p>
+<table width = 100% border = 0 cellpadding = 5 cellspacing = 2><tr>
+<td bgcolor = "#e0e0ff">
+<b>Hint:</b> If you hopelessly destroy your <code>*.in</code> files, the
+<i>real</i> Unix <code>make</code> can rescue you. Assuming the
+<code>stock/</code> directory is still intact, <code>make revert</code>
+will replace all your <code>*.in</code> files with the standard
+distribution versions. Sorry, this works in 1.2 and up only.
+</td></tr></table>
+<a name = "uvar"><h3>Making User Variable Changes</h3></a>
+Several important globals reside in <code>uservar.in</code>. If you want
+to add extra headers, change the MIME types reported for a file
+extension, alter the rules for the <a href = "serve.html#secu">restriction
+matrix</a> or add IP-less
+<a href = "serve.html#htho">virtual hosts</a>, this is the file to
+change. (Before 1.2, these globals were in <code>httpi.in</code>.)
+<p>
+To make these changes, simply edit <code>uservar.in</code> and make
+the needed alterations to the globals. Only these intentionally
+user-configurable globals are kept in this file; all others will be
+in <code>httpi.in</code> and should be reserved for white hats. Then
+run <code>configure</code> again, as described
+<a href = "#cnfg">above</a>, to update your executable.
+<p>
+The list of HTTPi globals is <a href = "#glob">listed later in this
+manual</a>.
 <a name = "hand"><h3>Writing In Your Own Custom Handlers</h3></a>
-Adding internal services to HTTPi is very simple to do. Look for the line in
-<code>httpi.in</code> that looks like
-<p>
-<code>######## ADD YOUR HANDLERS OR MODULES HERE #########</code>
-<p>
-That's where they go, because at that point the HTTP request has been decoded,
+Adding internal services to HTTPi is very simple to do: simply put them
+into <code>modules.in</code> (before 1.2, into <code>httpi.in</code>). At
+that point the HTTP request has been decoded,
 you have all of the needed globals defined, and you're at the point where
 HTTPi needs to determine what the browser should get back.
 <p>
@@ -106,13 +161,18 @@ EOF
 		&log; exit;
 	}
 </pre>
-then HTTPi will internally be able to handle URLs like
+and run <code>configure</code> again as described
+<a href = "#cnfg">above</a> to make a new executable, then your
+new HTTPi will internally be able to handle URLs like
 <code>http://bletch/whoami?Cameron</code>, and respond with a cheery,
-friendly response. (All the globals and functions used above are documented
-below.)
+friendly response. (Here's information on the <a href = "#glob">global
+variables</a> and <a href = "#func">functions</a> used here.)
 <p>
 The STATIOS module in Demonic HTTPi is an example of a more functional
 patch to the HTTPi code. Check it out for examples of what you can do.
+Since it is a module included in the standard distribution, it is in
+<code>httpi.in</code>, but it could just as easily be run from
+<code>modules.in</code> as well.
 <p>
 In earlier versions,
 at this point in HTTPi's execution, no attempt had been made to find a
@@ -124,8 +184,6 @@ say, a password or an IP range restriction by putting an entry in the
 restriction matrix. In fact, this is how STATIOS
 is implemented by default. 
 <p>
-<b><code>&lt;S&gt;</code> and <code>&lt;NS&gt;</code> are HTTPi's control
-filehandles. Don't mess with them unless you know what you're doing!</b>
 <a name = "func"><h3>Functions in HTTPi</h3></a>
 <b>Networking functions</b> (ordered by appearance)
 <p>
@@ -191,14 +249,18 @@ formatted dump containing the title and explanation.
 fall through to <code>hterror</code> with their messages.
 </dl>
 <a name = "glob"><h3>Important Globals in HTTPi</h3></a>
+<table width = 100% cellpadding = 5 cellspacing = 2 border = 0>
+<tr><td bgcolor = "#ffe0e0">
+<b><code>&lt;S&gt;</code> and <code>&lt;NS&gt;</code> are HTTPi's control
+filehandles. Don't mess with them unless you know what you're doing!</b>
+</td></tr></table><p>
+<h4>Globals maintained in <a href = "#uvar"><code>uservar.in</code></a></h4>
 <dl>
-<dt><code>$logfile, $path, $TIME_OUT, %content_types, $headers</code>
-<dd>Respectively, the absolute path of the logfile, the absolute path of
-the document directory, time to send the process an ALRM while waiting for
-an HTTP/1.1 transaction to terminate (ignored if HTTP/1.1 support is not
-enabled), a hash with keys of filetypes and values of MIME types, and a
-simple scalar containing headers passed to the client by <code>htsponse</code>.
-Set on startup.
+<dt><code>$headers</code>
+<dd>A simple scalar containing additional headers to be sent to the client.
+<dt><code>%content_types</code>
+<dd>A hash with file extensions as the keys and their respective MIME-types
+for values. Additional file extensions should be added here.
 <dt><code>%restrictions</code>
 <dd>The restriction matrix, specifying security options for HTTPi resources.
 See the <a href = "serve.html#secu">manual</a> for the format of values in this
@@ -206,6 +268,12 @@ hash.
 <dt><code>%nameredir</code>
 <dd>The HTTP name redirect. See the <a href = "serve.html#htho">manual</a>
 for the format of values in this hash.
+</dl>
+<h4>Globals maintained in <code>httpi.in</code></h4>
+<dl>
+<dt><code>$logfile, $path</code>
+<dd>Respectively, the absolute path of the logfile and the absolute path of
+the document directory. Set on startup.
 <dt><code>$currentcode, $currentstring</code>
 <dd>Respectively, the numerical HTTP response code (e.g. 200, 404, etc.), and
 the provided string (e.g. "OK", "File Not Found", etc.) Set by
@@ -228,15 +296,19 @@ instantiated. Only set after restriction matrix checks are passed.
 <dd>The variables passed via the GET method to the server. Passed to an
 executable script through command line arguments and the
 <code>QUERY_STRING</code> environment variable.
-<dt><code>$keep</code>
-<dd>Set to true if the client advertises it supports Keep-Alive connections.
-Ignored if HTTP/1.1 support is not enabled.
 <dt><code>$httpref</code>
 <dd>Current HTTP referer, as specified by client (- if none given). Set after
-receipt of a valid Referer: header from the client.
+receipt of a valid <code>Referer</code> header from the client.
 <dt><code>$httpua</code>
 <dd>Current HTTP user agent/browser string, as specified by client (- if none
-given). Set after receipt of a valid User-Agent: header from the client.
+given). Set after receipt of a valid <code>User-Agent</code> header from the
+client.
+<dt><code>$httprawu, $httpuser, $httppw</code>
+<dd>Respectively, the <code>base64</code>-encoded <code>Authorization</code>
+header string, and the decoded user and temporary space for the clear-text
+password. The
+first is set on receipt of a valid <code>Authorization</code> header; the
+others only set after restriction matrix checks are passed.
 <dt><code>$mtime</code>
 <dd>Last modify date of the currently selected resource as indicated by
 <code>$address</code>; set after successfully verifying resource's existence

@@ -185,8 +185,9 @@ server.</b>
 <b>To edit the <code>%nameredir</code> hash, please see the <a href =
 "program.html">programming manual</a> about using the <code>configure</code>
 system to help you build new versions of HTTPi, and then edit the
-<code>httpi.in</code> file in the distribution according to the manual's
-instructions.</b>
+<code>uservar.in</code> (for versions before 1.2, edit <code>httpi.in</code>)
+file in the distribution according to the <a href
+= "program.html#uvar">manual's instructions.</a></b>
 <a name = "exec"><h3>Executables</h3></a>
 <table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
 <td bgcolor = "#ffe0e0">
@@ -287,10 +288,15 @@ don't have to provide any HTTP negotiation code yourself. Moreover, as a
 result of the way it is invoked, your
 executable runs within the server (it becomes <i>part</i> of the server),
 so HTTPi will do error handling for you unless you catch the
-<code>__DIE__</code> psuedosignal handler first. One big gotcha is that
-the server will gripe if you don't return a true value
-(adding a <code>1;</code> at the end will suffice, and keep it compatible
-with regular CGI-based webservers).
+<code>__DIE__</code> psuedosignal handler first.<p>
+<table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
+<td bgcolor = "#ffe0e0">
+<b>Warning!</b>
+One big gotcha is that
+the server will gripe if you don't return a true value in HTTPerl.
+Adding a <code>1;</code> at the end will suffice, and keep it compatible
+with regular CGI-based webservers.
+</td></tr></table>
 <p>
 In short, <code>exec()</code> is the default because it will handle all
 cases with no problems. However, if your Perl executables work with HTTPerl,
@@ -325,13 +331,20 @@ for a particular directory or resource to certain network addresses,
 user agents, browsers, or clients, or (as of 0.99) specified user/password
 pairs. <b>Warning: Perl knowledge required for this section.</b>
 <p>
-The restriction matrix is hard-coded into HTTPi. Here's two sample entries (in
-fact, the default ones included in HTTPi):
+The restriction matrix is hard-coded into HTTPi.
+Here's two sample entries (in fact, the default ones included in HTTPi):
 <pre>
 %restrictions =
         ("/nw" => "^10\.##^Mozilla#MSIE",
          "/status" => "####voyeur:daNrZR3TcSwD2");
 </pre>
+<b>To edit the <code>%restrictions</code> hash, please see the <a href =
+"program.html">programming manual</a> about using the <code>configure</code>
+system to help you build new versions of HTTPi, and then edit the
+<code>uservar.in</code> (for versions before 1.2, edit <code>httpi.in</code>)
+file in the distribution according to the <a href
+= "program.html#uvar">manual's instructions.</a></b>
+<p>
 The first entry indicates that for all resources starting with
 <code>/nw/</code>, only
 addresses 10.*.*.* are allowed, and of that set, only browsers that report a
