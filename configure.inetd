@@ -11,7 +11,7 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "") unless ($DEFAULT);
-Configure (inetd) for HTTPi/1.2 (C)1998, 1999 Cameron Kaiser
+Configure (inetd) for HTTPi/$ACTUAL_VERSION (C)1998-2001 Cameron Kaiser
 
 This is the configure script for inetd systems (most Unix boxen).
 
@@ -24,7 +24,8 @@ If you don't know what you have, but you're running on Unix, chances are
 this is the right script. (I'll stop you if it isn't.)
 
 In the current version, Win32 and MacPerl inetds, if any, are not supported
-directly. YOU MUST RUN configure.generic.
+directly. YOU MUST RUN configure.generic for these systems if you want your
+inetd to control HTTPi.
 
 Press ENTER to continue or BREAK/CTRL-C to bail out:
 EOF
@@ -67,7 +68,7 @@ EOF
 $DEF_UNAME = &wherecheck("Finding uname", "uname");
 if ($DEF_UNAME) {
 	chomp($DEF_ARCH = `$DEF_UNAME -s`);
-	print "Smells like $arch.\n";
+	print "Smells like $DEF_ARCH.\n";
 } else {
 	print "Hmm. This might not be a Unix box, but we'll keep trying.\n";
 }

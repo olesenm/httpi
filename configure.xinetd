@@ -9,12 +9,13 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "") unless ($DEFAULT);
-Configure (xinetd) for HTTPi/1.2 (C)1998, 1999 Cameron Kaiser
+Configure (xinetd) for HTTPi/$ACTUAL_VERSION (C)1998-2001 Cameron Kaiser
 
-This is the configure script for xinetd systems.
+This is the configure script for xinetd systems. Congratulations, you're
+one of the really groovy people. Rob Braun is doing some hot stuff with it.
 
 DO NOT RUN THIS IF:
-	* you have inetd (run configure.inetd instead, or download xinetd
+	* you don't have xinetd (run configure.inetd instead, or download it
 		from http://synack.net/xinetd/)
 	* you have NO inetd or an unsupported one (run configure.generic)
 	* you want the daemonised version (run configure.demonic)

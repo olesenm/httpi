@@ -10,9 +10,10 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "");
-Configure (Generic) for HTTPi/1.2 (C)1998, 1999 Cameron Kaiser
+Configure (Generic) for HTTPi/$ACTUAL_VERSION (C)1998-2001 Cameron Kaiser
 
-This is a generic configuration script.
+This is a generic configuration script. Do NOT run this if you can run one
+of the other configure scripts.
 
 DO NOT RUN THIS IF:
 	* you have inetd (run configure.inetd instead)
@@ -26,7 +27,7 @@ DO RUN THIS IF:
 
 Note that you will need to roll your own changes to whatever inetd equivalent
 you have (configure.generic will tell you). YOU MUST HAVE AN INETD OR SOME
-EQUIVALENT TO RUN HTTPi.
+EQUIVALENT TO RUN HTTPi IN THE GENERIC CONFIGURATION.
 
 Press ENTER to continue, or BREAK/CTRL-C to bail out now:
 EOF
@@ -67,7 +68,7 @@ Now you must do the following:
 1. Create a service or equivalent for the desired port number.
 2. Tell your inetd or equivalent to launch "perl $INSTALL_PATH" for
    access to that service or port number.
-3. Tell me (httpi\@stockholm.ptloma.edu) how you did the above and on what
+3. Tell me (httpi\@floodgap.com) how you did the above and on what
    platform, so I can attempt to add support for it in later versions.
 
 Bye!

@@ -1,9 +1,5 @@
 #!/usr/bin/perl
 
-# This is a demo of HTTPi executable format that simply dumps its arguments
-# and environment. Also useful for debugging. Put it in your documents
-# directory.
-
 print <<"EOF";
 HTTP/1.0 200 OK
 Content-type: text/plain
@@ -13,11 +9,16 @@ My gid: $(
 My euid: $>
 My egid: $)
 My arguments: @ARGV
+
+HTTPi CGI env-vars:
+
 EOF
 
 foreach (sort keys %ENV) {
-	print "$_=$ENV{$_}\n";
+	print "$_=$ENV{$_}\n"
+	if (/^QUERY_/ || /^CONTENT_/ || /^REMOTE_/ || /^REQUEST_/ ||
+		/^SCRIPT_/ || /^SERVER_/ || /^HTTP_/);
 }
 
-1;
 
+1;

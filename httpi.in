@@ -6,16 +6,73 @@ Thanks.
 ~
 ~
 #!DEF_PERL
-$VERSION = "1.2.2 (DEF_CONF_TYPE/DEF_ARCH)";
+$VERSION = "1.3.2 (DEF_CONF_TYPE/DEF_ARCH)";
 
 # HTTPi Hypertext Tiny Truncated Process Implementation
-# Copyright 1999 Cameron Kaiser # All rights reserved # Please read LICENSE
-# Do not strip this copyright message.
+# Copyright 1999-2001 Cameron Kaiser # All rights reserved
+# Please read LICENSE # Do not strip this copyright message.
+
+%system_content_types =
+	("html" => "text/html",
+	 "htm" => "text/html",
+~check MPREPARSE
+	 "shtml" => "text/html",
+	 "shtm" => "text/html",
+	 "sht" => "text/html",
+~
+~
+	 "wml" => "text/vnd.wap.wml",
+	 "wbmp" => "image/vnd.wap.wbmp",
+	 "wbm" => "image/vnd.wap.wbmp",
+	 "xbm" => "image/x-xbitmap",
+	 "pdf" => "application/pdf",
+	 "fdf" => "application/vnd.fdf",
+	 "bin" => "application/octet-stream",
+	 "class" => "application/octet-stream",
+	 "jar" => "application/octet-stream",
+	 "js" => "application/x-javascript",
+	 "lnk" => "application/x-hyperlink",
+	 "wav" => "audio/x-wav",
+	 "mp3" => "audio/x-mpeg",
+	 "tif" => "image/tiff",
+	 "tiff" => "image/tiff",
+	 "mid" => "audio/x-midi",
+	 "txt" => "text/plain",
+	 "gif" => "image/gif",
+	 "sit" => "application/x-stuffit",
+	 "zip" => "application/x-zip-compressed",
+	 "lzh" => "application/octet-stream",
+	 "lha" => "application/octet-stream",
+	 "gz"  => "application/x-gzip",
+	 "mov" => "movie/quicktime",
+	 "mpeg" => "video/mpeg",
+	 "mpg" => "video/mpeg",
+	 "jpeg" => "image/jpeg",
+	 "jpg" => "image/jpeg");
 
 $logfile = "DEF_ACCESS_LOG";
 $path = "DEF_HTDOCS_PATH";
 $sockaddr = 'S n a4 x8';
 
+~insert uservar.in
+
+%content_types = (%system_content_types, %content_types);
+undef %system_content_types;
+
+~check MVIRTFILES
+while (($file, $arrayref) = each(%virtual_files)) {
+	my ($mime, $type, $block) = (@{ $arrayref });
+	next if ($type ne 'FILE');
+	if(open(S, "$block")) {
+		$j = $/; undef $/; $virtual_files{$file}->[2] = scalar(<S>);
+		$/ = $j; close(S);
+	} else {
+		warn "while getting virtual file $file: $!\n";
+		map_delete(%virtual_files, $file);
+	}
+}
+~
+~
 ~check MDEMONIC
 if ($pid = fork()) { exit; }
 $0 = "dhttpi: binding port ...";
@@ -29,12 +86,7 @@ $0 = "dhttpi: connected and waiting DEF_IP_ADDR:DEF_TCP_PORT";
 $0 = "httpi: handling request";
 ~
 
-~check STATIOS
 $statiosuptime = time();
-~
-~
-
-~insert uservar.in
 
 ###############################################################
 # WHITE HATS ONLY BELOW THIS POINT -- SEE DOCUMENTATION FIRST #
@@ -53,7 +105,7 @@ sub sock_to_host {
 	local($AFC, $port, $thataddr, $zero) = unpack($sockaddr, $sock);
 	local($ip) = join('.', unpack("C4", $thataddr));
 ~check MHOSTNAMES
-	local($hn) = gethostbyaddr($thataddr, 2) || $ip;
+	local($hn) = gethostbyaddr($thataddr, DEF_AF_INET) || $ip;
 	return ($hn, $port, $ip);
 ~
 	return ($ip, $port, $ip);
@@ -190,7 +242,7 @@ $date = "$dt/$mon/$yr:$tm DEF_TIME_ZONE";
 
 select(STDOUT); $|=1; $address = 0; 
 ~check MCANALARM
-alarm 10;
+alarm 1;
 ~
 ~
 while (<STDIN>) {
@@ -219,6 +271,7 @@ while (<STDIN>) {
 		(/^Authorization: Basic (.+)/i) && ($httprawu = $1);
 ~
 ~
+		(/^Range: (.+)/i) && ($ENV{'CONTENT_RANGE'} = $1);
 		next unless (/^$/);
 	}
 	if ($expect) {
@@ -249,6 +302,7 @@ while (<STDIN>) {
 ~
 ~
 	($address, $variables) = split(/\?/, $address);
+	$address =~ s/%([0-9a-fA-F]{2})/pack("H2", $1)/eg;
 	$address=~ s#^/?#/#;
 	1 while $address =~ s#/\.(/|$)#\1#;
         1 while $address =~ s#/[^/]*/\.\.(/|$)#\1#;
@@ -314,6 +368,10 @@ EOF
 ~
 ~
 
+~check MCANALARM
+	alarm 0;
+~
+~
 ~insert modules.in
 
 ~check STATIOS
@@ -322,11 +380,11 @@ EOF
 		$contentlength = 0; # kludge
 		&log;
 		if(open(S, $logfile)) {
-			seek(S, -3000, 2);
+			seek(S, -5000, 2);
 			undef $/;
 			$logsnap = <S>;
 			$logsnap =~ s/^[^\n]+\n//s if
-				(length($logsnap) > 2999);
+				(length($logsnap) > 4999);
 			close(S);
 		}
 		$p = (time() - $statiosuptime);
@@ -362,7 +420,7 @@ $logsnap
 </form>
 <hr>
 <address>maintained by <a href =
-"http://httpi.ptloma.edu/">httpi/$VERSION</a></address>
+"http://httpi.floodgap.com/">httpi/$VERSION</a></address>
 </body>
 </html>
 EOF
@@ -370,7 +428,14 @@ EOF
 	}
 ~
 ~
-	$address =~ s/%([0-9a-fA-F]{2})/pack("H2", $1)/eg;
+~check MVIRTFILES
+	if (defined $virtual_files{$address}) {
+		$virt_buffer = 1;
+		$mtime = $statiosuptime; # thus always needed
+		goto SERVEIT;		# yes, it's bad but it's fast
+	}
+~
+~
 	$raddress = "$path$address"
 ~check MUSERFS
 		if ($raddress = $address, $raddress !~
@@ -385,11 +450,7 @@ EOF
 ~
 		if ($address !~ m#/$# && -d $raddress);
 	$raddress = "${raddress}index.html" if (-d $raddress);
-~check MCANALARM
-	alarm 0;
-~
-~
-	if(!open(S, $raddress)) { &hterror404; } else {
+	if(!sysopen(S, $raddress, 0)) { &hterror404; } else {
 		if (-x $raddress) {
 			$currentcode = 100;
 			&log;
@@ -450,18 +511,18 @@ EOF
 ~
 		}
 		($x,$x,$x,$x,$x,$x,$x,$length,$x,$mtime) = stat(S);
-		$mtime = scalar gmtime $mtime;
-		($dow, $mon, $dt, $tm, $yr) =
-			($mtime =~ m/(...) (...) (..) (..:..:..) (....)/);
-		$dt += 0; $yr += 0;
 		$ctype = 0;
 		foreach(keys %content_types) {
 			if ($raddress =~ /\.$_$/i) {
 				$ctype = $content_types{$_};
 			}
 		}
-		$ctype ||= 'text/plain';
+SERVEIT:	$ctype ||= 'text/plain';
 		&htsponse(200, "OK");
+		$mtime = scalar gmtime $mtime;
+		($dow, $mon, $dt, $tm, $yr) =
+			($mtime =~ m/(...) (...) (..) (..:..:..) (....)/);
+		$dt += 0; $yr += 0;
 		&hthead("Last-Modified: $dow, $dt $mon $yr $tm GMT");
 ~check MDEMONIC
 		if ($pid = fork()) { exit; }
@@ -469,6 +530,13 @@ EOF
 ~
 ~check MAUTOKILL
 		alarm DEF_AK_TIMEOUT;
+~
+~
+~check MVIRTFILES
+		if ($virt_buffer) {
+			&htcontent($virtual_files{$address}->[2],
+				$virtual_files{$address}->[0], 0);
+		} else {
 ~
 ~
 ~check MPREPARSE
@@ -491,6 +559,10 @@ EOF
 				}
 			}
 ~check MPREPARSE
+		}
+~
+~
+~check MVIRTFILES
 		}
 ~
 ~
@@ -523,7 +595,7 @@ sub hterror {
 <h1>$errstr</h1>
 $expl
 <hr>
-<address><a href = "http://httpi.ptloma.edu/">httpi/$VERSION</a>
+<address><a href = "http://httpi.floodgap.com/">httpi/$VERSION</a>
 by Cameron Kaiser</address>
 </body>
 </html>

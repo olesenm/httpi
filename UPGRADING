@@ -1,5 +1,5 @@
 ** Upgrading protocol for HTTPi
-** Copyright 1999 Cameron Kaiser
+** Copyright 1999-2001 Cameron Kaiser
 
 Since HTTPi is a patchwork hacker's webserver, upgrading from version to
 version was tricky if you made changes to the code. Hopefully this will make
@@ -14,7 +14,7 @@ Find the section appropriate to you. If you experience trouble with this,
 please send a complete bug report with error message, OS and HTTPi versions
 upgrading to and from, to
 
-	httpi@stockholm.ptloma.edu
+	httpi@floodgap.com
 
 
 

@@ -1,7 +1,4 @@
-print "\nSeeing if you have some optional utilities ...\n\n";
 $HOSTNAME = &wherecheck('Finding hostname', 'hostname');
-
-print "\nChecking some system facilities I really could use ...\n\n";
 $DEF_MCANALARM = &yncheck('Can we use alarm()?', 'alarm 0;');
 &prompt(<<"EOF", "") if (!$DEF_MCANALARM);
 Let me guess. You're not using a Unix Perl.
@@ -34,11 +31,28 @@ unless you're darn certain that they'll all be configured the same way.
 IF YOU'RE USING CONFIGURE TO BUILD MULTIPLE INSTANCES OF HTTPi ON MULTIPLE
 IP ADDRESSES (xinetd/Demonic only), THIS *MUST* BE DIFFERENT IN EACH CASE!
 
-WARNING: If you're doing a full install, including modifying inetd (or
-whatever)'s config files, THIS MUST BE AN ABSOLUTE PATH AS WELL!
+WARNING TO xinetd/inetd INSTALLERS: If you are doing a full install to update
+(x)inetd's config files simultaneously, THIS MUST BE AN ABSOLUTE PATH!
 
 Install path?
 EOF
+unless ($DEF_MDEMONIC) {
+	$DEF_AF_INET = &prompt(<<"EOF", 2, 1);
+In an effort to make non-Demonic HTTPi less Unix-oriented (you decide if this
+actually helps any), the one item in HTTPi that used to be a hardcoded
+network constant now actually makes an effort to be portable. If you know
+that your system's AF_INET macro is something other than two, enter it here.
+(I have yet to find an OS where it wasn't, but I'm sure they're out there,
+although it was 2 on AIX, SCO, HP/UX, Solaris, NetBSD and Linux.) 
+
+If you don't know what this is, accept the default -- it's probably correct.
+
+Demonic already gets this information in other ways, so its configure script
+doesn't need to ask (besides, it's pretty Unix-centric as it is anyhow).
+
+System AF_INET constant (nearly invariably 2)?
+EOF
+}
 $DEF_HTDOCS_PATH = &prompt(<<"EOF", "/usr/local/htdocs", 1);
 Where do you want the server to serve documents from? All files that HTTPi
 will make available, executables included, must be under this tree (except
@@ -102,7 +116,7 @@ the restriction matrix involved.
 
 The settings for the restriction matrix are hardcoded into uservar.in, and
 to change your settings you must edit that file and rebuild HTTPi. For help,
-please refer to the programming manual.
+please refer to the user's manual.
 
 Enable restriction matrix?
 EOF
@@ -186,7 +200,7 @@ multihoming with individual HTTPi processes as an alternative.
 
 The settings for IP-less virtual hosting are hardcoded into uservar.in, and
 to change your settings you must edit that file and rebuild HTTPi. For help,
-please refer to the programming manual.
+please refer to the user's manual.
 
 Enable host name redirects?
 EOF

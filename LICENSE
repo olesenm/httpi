@@ -1,5 +1,5 @@
 
-HTTPi is (C)1998, 1999, 2000 Cameron Kaiser. All rights reserved.
+HTTPi is (C)1998-2001 Cameron Kaiser. All rights reserved.
 
 ** While HTTPi is free, it is NOT distributed under CopyLeft or GPL. Please **
 ** read on to find out what the differences are. Licenses protect author    **
@@ -16,15 +16,15 @@ way that Richard Stallman of GNU fame might -- merely that distributions
 be without cost. "Derivatives" shall constitute distributions with code
 added or removed from the base distribution, or distributions that are
 signficantly based on the source code (though may not necessarily include
-the source code itself). This means a C port of HTTPi is still a derivative,
-or a Win32 version, or whatever. You do not have to provide source code,
-which is a deviation from GPL.
+the source code itself), in the Author's sole judgement. This means a C port
+of HTTPi is still a derivative, or a Win32 version, or whatever. You do not
+have to provide source code, which is a deviation from GPL.
 
 You MAY NOT:
 
 	* make changes and slap your copyright on the entire package. Your
-	  copyright extends only to the changes you've made. My copyright
-	  remains.
+	  copyright extends only to the changes you've made. My copyright,
+	  and any copyrights asserted by HTTPi's contributors, remain.
 
 	* supersede the license agreement here. You may not charge a fee for a
 	  HTTPi distribution, for example. Derivatives count as distributions.
@@ -32,7 +32,8 @@ You MAY NOT:
 	  distribution or derivative work.
 
 	  The exception: you MAY include HTTPi as part of an operating system
-	  distribution and sell that. Linux dists and FreeBSD dists are okay.
+	  distribution and sell that. Linux dists and FreeBSD dists are okay,
+	  for example.
 
 	  You also MAY NOT place your derivative work under GPL, because that
 	  is a different, though similar, licensing agreement, and the
@@ -46,8 +47,8 @@ You MAY NOT:
 	  state the copyright (i.e.
 
 Contains or is based on the HTTPi web server
-(C)1998, 1999, 2000 Cameron Kaiser. All rights reserved.
-http://httpi.ptloma.edu/
+(C)1998-2001 Cameron Kaiser. All rights reserved.
+http://httpi.floodgap.com/
 
 	  would be just about perfect), or make or distribute a derivative of
 	  HTTPi that does not clearly state the copyright.
@@ -89,4 +90,4 @@ States of America.
 
 Other than that, have a blast! Keep software free.
 
-Revised 02/03/2000
+Revised 12/24/2000

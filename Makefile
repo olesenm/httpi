@@ -1,6 +1,15 @@
-# Useless makefile for managing HTTPi versions (C)1999, 2000 Cameron Kaiser
+# Useless makefile for managing HTTPi versions (C)1999-2001 Cameron Kaiser
+#
 # This is really only needed for my use, but if you want, here it is, no
-# support or strings attached.
+# support or strings attached, if you want to roll your own dists. The guts
+# are in the dist target, natch.
+#
+# The only other thing an end user might use this for is "make revert" (q.v.)
+# to restore their *.in files after they've irreversibly munged them.
+#
+# Okay, nimrods who don't read directions: YOU DO NOT USE MAKE TO MAKE
+# ANY HTTPi VERSIONS, EVER! RUN configure! Sheesh, for the last time,
+# the presence of a Makefile does not necessarily mean it does anything! :-P
 
 SHELL		= /bin/sh
 RM		= /bin/rm
@@ -15,7 +24,7 @@ HEAD		= /usr/bin/head
 TAR		= /usr/bin/tar
 GZIP		= /usr/local/bin/gzip
 
-REPOSITORY	= /home/spectre/htdocs/httpi
+REPOSITORY	= /usr/local/htdocs/httpi
 
 default_target: install
 
@@ -29,7 +38,7 @@ revert:
 	${CP} -f stock/*.in .
 	
 clean:
-	${RM} -f transcript.* sockcons testtpi
+	${RM} -f transcript.* sockcons testtpi uttpi
 
 version:
 	@${CAT} VERSION
@@ -49,7 +58,8 @@ install: version
 	@echo
 	@echo "If you don't know which to use, read the INSTALL file."
 
-dist: version clean unrevert
+# DO NOT RUN THIS TARGET DIRECTLY
+_testdir: version clean unrevert
 	@echo "ABOUT TO OVERWRITE OLD INSTALL! CHECK THIS IS CORRECT!!!!!"
 	@${SLEEP} 3
 	${RM} -f configure Manifest
@@ -61,6 +71,8 @@ dist: version clean unrevert
 	echo "${LS} -lRF > /tmp/Manifest" >> /tmp/httpinst
 	echo "${MV} /tmp/Manifest ." >> /tmp/httpinst
 	echo "cd .." >> /tmp/httpinst
+
+dist: _testdir
 	echo\
 	"${TAR} cvf `${HEAD} -1 VERSION`.tar `${HEAD} -1 VERSION`/*"\
 		>> /tmp/httpinst
@@ -70,3 +82,9 @@ dist: version clean unrevert
 	${SHELL} /tmp/httpinst
 	${RM} -f /tmp/httpinst
 	${LN} -s configure.inetd configure
+
+playbox: _testdir
+	${SHELL} /tmp/httpinst
+	${RM} -f /tmp/httpinst
+	${LN} -s configure.inetd configure
+

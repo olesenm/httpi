@@ -11,28 +11,20 @@ Manual for a clue.
 ~
 
 %content_types =
+~check MFALSE
+
+Be sure to read the manual on this, but in a nutshell:
+
+In 1.2.x and previous, this was the entire list of content types.
+
+In 1.3 and higher, the system default list is now in httpi.in and is
+maintained in the standard distribution, and this hash is now for
+adding/overriding MIME types. However, old uservar.in files will still work;
+they'll just override all the types they'll define with the same MIME type.
+~
+~
 	("html" => "text/html",
-~check MPREPARSE
-	 "shtml" => "text/html",
-	 "shtm" => "text/html",
-	 "sht" => "text/html",
-~
-~
-	 "xbm" => "image/x-xbitmap",
-	 "pdf" => "application/pdf",
-	 "fdf" => "application/vnd.fdf",
-	 "htm" => "text/html",
-	 "bin" => "application/octet-stream",
-	 "class" => "application/octet-stream",
-	 "wav" => "audio/x-wav",
-	 "txt" => "text/plain",
-	 "gif" => "image/gif",
-	 "zip" => "application/x-zip-compressed",
-	 "lzh" => "application/octet-stream",
-	 "lha" => "application/octet-stream",
-	 "gz"  => "application/x-gzip",
-	 "jpeg" => "image/jpeg",
-	 "jpg" => "image/jpeg");
+	 "htm" => "text/html");
 ~check MFALSE
 
 *** The restrictions matrix is documented in the manual. The keys are the
@@ -45,6 +37,8 @@ Manual for a clue.
     USING THE RESTRICTIONS MATRIX AND/OR HOST REDIRECTION, THEY WILL BE
     AUTOMAGICALLY IGNORED. ###
 
+*** Add any HTTP/1.1 compliant headers you like to the headers string.
+
 ~
 ~
 ~check MRESTRICTIONS
@@ -56,9 +50,11 @@ Manual for a clue.
 ~
 ~check NAMEREDIR
 %nameredir =
-	("stockholm" => "http://stockholm.ptloma.edu",
-	 "terapede.ptloma.edu" => "http://terapede.ptloma.edu:81",
-	 "httpi.ptloma.edu" => "http://stockholm.ptloma.edu/httpi");
+	("stockholm" => "http://stockholm.ptloma.edu:8080",
+	 "stockholm.ptloma.edu" => "http://stockholm.ptloma.edu:8080",
+	 "stockholm.floodgap.com" => "http://www.floodgap.com",
+	 "httpi.ptloma.edu" => "http://stockholm.ptloma.edu:8080/httpi",
+	 "httpi.floodgap.com" => "http://www.floodgap.com/httpi");
 ~
 ~
 
@@ -67,3 +63,24 @@ Server: HTTPi/$VERSION
 MIME-Version: 1.0
 EOF
 
+~check MFALSE
+
+*** Virtual files are specified below with keys being the referenced filename
+    and values being three-element array references; the first element is
+    the MIME type, and the second is either FILE followed by an absolute
+    filespec, or DATA with the data inlined next. Read the manual first --
+    there's some gotchas with this.
+
+Demonic feature only; xinetd/inetd/juniper need not apply.
+
+~
+~
+~check MVIRTFILES
+%virtual_files =
+	("/httpi/pix/httpismall.gif" => [ "image/gif", "FILE",
+		"/usr/local/htdocs/httpi/pix/httpismall.gif" ] ,
+	 "/httpi/virtualfile.html" => [ "text/html", "DATA",
+		"<html><body>Look, Ma, I'm virtual!</body></html>" ] ,
+	);
+~
+~

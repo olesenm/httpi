@@ -1,9 +1,12 @@
 You're using HTTPi, the coolest little webserver out there! Thanks!
 
-** HTTPi has changed its architecture somewhat since 1.0. If you did
-   modifications to HTTPi, PLEASE read the new Programming Manual at
+** Important difference between 1.2.x and all previous versions, and 1.3:
+   most system content types are now in httpi.in -- only user overrides and
+   user-defined types should go in uservar.in. However, 1.2.x-style
+   uservar.in files should still work -- but they will make an unnecessarily
+   large executable! **
 
-	http://httpi.ptloma.edu/program.html
+** We've MOVED! Look for us at http://httpi.floodgap.com/! **
 
 Be sure you read the LICENSE file and the INSTALL file! The LICENSE
 file, especially, because HTTPi is NOT GPL. It's free, but it's NOT GPL.
@@ -13,7 +16,7 @@ on the official HTTPi webpage will probably be all the help you'll ever need.
 HTTPi's current web home, as well as all the documentation your little heart
 or other internal organs could desire, is located at:
 
-	http://httpi.ptloma.edu/
+	http://httpi.floodgap.com/
 
 Running vanilla HTTPi, of course, with no extra Perl modules. Just the
 executable, a bottle of wine, and thou. The manuals and documentation for
@@ -26,7 +29,7 @@ of the box, most likely.
 
 Suggestions, patches, questions, bug reports?
 
-	httpi@stockholm.ptloma.edu
+	httpi@floodgap.com
 
 I would really love feedback, so please, send me an E-mail and let me know
 what you think.

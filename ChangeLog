@@ -1,3 +1,42 @@
+Changes since 1.3.1:
+
+	* possible security exploit allowing HTTPi to escape its mount
+	  point defeated. thanks to Denis Fortin.
+	* improved? performance logic with weird proxy activity
+
+Changes since 1.3:
+
+	* possible security exploit with malformed URLs containing shell
+	  metacharacters. changed URL-dependent open() statements to sysopen()
+	  to defeat this
+	* additional content types mp3 lnk mpg mpeg
+
+Changes since 1.2.2:
+
+	**** WE'VE MOVED! Look for us at http://httpi.floodgap.com/ ****
+
+	* virtual files allow overriding/non-interactive content caching
+		(Demonic only) based on uservar.in::%virtual_files hash
+	* major MIME types now maintained in httpi.in -- only overrides
+		and additional types go in the uservar.in::%content_types
+		hash. still compatible with 1.2.x-style uservar.in files
+		tho'.
+	* added wml wbmp wbm js mov jar MIME types to httpi.in
+	* bug with HTTP/0.9 undefined methods closed (more for completeness
+		than any practical reason)
+	* sock_to_host() should reference DEF_AF_INET, not hardcoded 2 ...
+	* ... and because of this, configure.* must now ask for this constant
+		(except Demonic, which grabs it anyway) -- fortunately, I
+		think it's 2 on just about every architecture
+	* compiler is now the primary source for socket constants in
+		configure.demonic -- problems with Socket.pm on some
+		[misconfigured??] architectures (SunOS 5.5.1?)
+	* configure.inetd reports wrong architecture but builds okay (fixed)
+	* fix to sockcons.c for better compilation (SunOS for one)
+	* Range: header support added (thanks Henry Ptasinski)
+	* tweaks to the makefile which no one uses
+	* last remnants of old /1.1 kludge stripped from configure.demonic
+
 Changes since 1.2.1:
 
 	* fixed possible exploit that might allow HTTPi to inadvertently
@@ -6,8 +45,8 @@ Changes since 1.2.1:
 
 Changes since 1.2:
 
-	* fixed bug with bad port redirects (where port wasn't 80) --
-		thanks Aaron Spangler
+	* fixed bug with bad port redirects where port wasn't 80
+		(thanks Aaron Spangler)
 	* fixed bug with null Host: header when virtual hosting was
 		disabled (thanks Glauber Ribeiro)
 
@@ -62,11 +101,13 @@ Changes since 0.7:
 	* user file system allows http://foo/~bar/, getpwnam() check added
 	* don't be running no root-owned executables now ;-) it didn't run
 		them before either but the error was very cryptic
+		(thanks Bill Benedetto)
 	* HTTP authentication through restriction matrix
 	* better HTTP/0.9 support, especially for 301 responses
 	* IP-less virtual hosting (new global %nameredir)
 	* configure.xinetd no longer depends on /etc/services
 	* configure.inetd patched for really anal inetd systems (like HP/UX)
+		(thanks Bill Benedetto)
 	* 404 and 301 responses now handled by dedicated subroutines
 	* authentication check now precedes file existence check for allowing
 		modules to be protected
@@ -86,7 +127,7 @@ Changes since 0.4:
 		for all obey CERN spec
 	* new daemonized version (configure.demonic)
 	* subtle bug where sock_to_host returns nil could corrupt logs. fixed.
-	* configure.inetd now NIS aware
+	* configure.inetd now NIS aware (thanks Bill Benedetto)
 	* tons (too many) new environment variables for executables a la CGI
 		1.1 specification
 	* now aware of its host name, always a good thing :-)

@@ -1,5 +1,5 @@
 ** Installation procedure for HTTPi
-** Copyright 1998, 1999, 2000 Cameron Kaiser
+** Copyright 1998-2001 Cameron Kaiser
 
 1. Check that all files are present. Make sure you have Perl 5 installed.
    You only need the executable, not the standard distribution in full.
@@ -15,7 +15,10 @@
 
 5. Determine which configure file you should be running on your platform.
 It is *highly* recommended that your Perl include support for alarm(), though
-grudgingly no longer required.
+grudgingly no longer required. (For all these installations, you might need
+to know your AF_INET socket constant, although HTTPi probably knows it
+already. On Linux, AIX, SCO, HP/UX and Solaris, and probably every other
+Unixy thing, it's invariably 2. Demonic will try to autodetect it.)
 
 Demonic installation:
 
@@ -30,7 +33,7 @@ Some sort of inetd installation:
 configure.inetd		Most Unix boxen. Use this if you use the vanilla
 			inetd. Will autoconfigure your files for you if root.
 
-configure.xinetd	For users of the xinetd clone http://synack.net/xinetd/
+configure.xinetd	For users of the inetd clone http://synack.net/xinetd/
 			Will autoconfigure your files for you. Tres cool.
 
 Others:
@@ -41,7 +44,7 @@ configure.generic	Don't know what inetd you have, or one I don't support
 
 demonic is the fastest and easiest to set up (you don't need to be root), but
 requires some special care and feeding. See the documentation. Most people
-like it.
+prefer it. So will you.
 
 xinetd is vewwy vewwy fast. If you have the means, I highly recommend it. (To
 quote Ferris Bueller.) You'll realise about a 25% speed increase with it,
@@ -60,6 +63,9 @@ $ perl configure.inetd	 # most unices that want inetd installation
 $ perl configure.xinetd	 # smart unices/sysadmins that want inetd installation
 $ perl configure.generic # others
 
+Do *not* use the Makefile. The Makefile is not intended for installation;
+it's used for rolling your own distributions.
+
 NOTE TO (x)inetd INSTALLERS:
 If you're on a Unix box, you must run as root for full install options.
 Any user can build an object, but only root can modify your (x)inetd's
@@ -70,7 +76,7 @@ configuration files.
 
 8. If configure bombs, feel free to contact me with the error message at
 
-	httpi@stockholm.ptloma.edu
+	httpi@floodgap.com
 
 9. DO NOT TOAST THE INSTALL DIRECTORY. If you make config changes, etc.,
    you will need these files again. Don't lose them.

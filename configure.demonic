@@ -9,19 +9,23 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "") unless ($DEFAULT);
-Configure (demonic) for HTTPi/1.2 (C)1998, 1999 Cameron Kaiser
+Configure (demonic) for HTTPi/$ACTUAL_VERSION (C)1998-2001 Cameron Kaiser
 
 This is the configure script for Demonic HTTPi, the daemonized HTTPi version.
 
 DO NOT RUN THIS IF:
-	* your Perl doesn't support fork() (currently that's Win32 and a
-		few others)
+	* your Perl doesn't support fork() (currently that's mostly the
+		weird non-Unix ports)
 	* you don't have a good idea of how your system implements sockets
-	* you would prefer to have HTTPi run in inetd
+	* you would prefer to have HTTPi run in inetd or xinetd (run
+		configure.inetd or configure.xinetd, respectively, instead)
 
-You don't need Socket.pm, though it helps. If you don't have Socket.pm, I'll
-need a C compiler to determine what your socket constants are. (Or I could
-ask you, but do you really keep SOMAXCONN in your head?)
+You don't need Socket.pm, though it helps. You *will* need socket constants. I
+will first ask your C compiler what they are. If you don't have one, or it's
+dain bramaged, I'll ask Socket.pm, and if *that* doesn't work, then you'll
+need to bail me out by supplying them manually. (Hope you keep SOMAXCONN and
+friends handy if this becomes needed!) Fortunately, I'm really smart, so I'll
+probably get them on the first try.
 
 Press ENTER to continue or BREAK/CTRL-C to bail out:
 EOF
@@ -59,6 +63,23 @@ questions suite for all of the configure scripts. Please make sure it's in
 the current directory.
 
 EOF
+
+$DEF_MVIRTFILES = &prompt(<<"EOF", "n", 1);
+Virtual files, only available for Demonic, allows you to preload files or even
+create files out of thin air, embed them in the server, and have them fully
+served out of memory. Think of it as a stupid, fast, non-dynamic disk cache.
+If you have trouble with slow disk access, this could speed your server
+considerably if you have memory to burn. This doesn't add much code bloat to
+HTTPi, but if you get happy with preloads, the data overhead could hurt. Don't
+go overboard.
+
+The settings for the virtual filesystem are hardcoded into uservar.in, and
+to change your settings you must edit that file and rebuild HTTPi. For help,
+please refer to the user's manual.
+
+Enable virtual filesystem?
+EOF
+$DEF_MVIRTFILES = (($DEF_MVIRTFILES eq 'y') ? 1 : 0);
 
 $DEF_STATIOS = &prompt(<<"EOF", "n", 1);
 HTTPi statistics, only available for Demonic, allows you to keep running
@@ -111,60 +132,67 @@ EOF
 
 
 print <<"EOF";
-Now the tricky part. Let's see if your Perl knows your socket constants.
-Usually they're given in Socket.pm somewhere.
+Now the tricky part: getting socket constants.
 
-Trying to run $DEF_PERL ./sockcons.pl ...
-
-EOF
-undef $cons;
-if (open(S, "$DEF_PERL ./sockcons.pl|")) {
-	while(<S>) {
-		chomp;
-		($cons, $DEF_AF_INET, $DEF_PF_INET, $DEF_SOCK_STREAM,
-			$DEF_SOL_SOCKET, $DEF_SO_REUSEADDR, $DEF_SOMAXCONN,
-			$DEF_IPPROTO_TCP) =
-				split(/ /, $_);
-	}
-	close(S);
-}
-
-if ($cons ne 'cons') {
-	print <<"EOF";
-
-Drat. Let's see if you have a C compiler.
+Let's see if you have a C compiler, because experience has told me it
+is generally most accurate for these kind of things.
 
 EOF
-	$CC = &wherecheck("Finding gcc", "gcc");
-	$CC = &wherecheck("Darn. Let's try cc", "cc") unless ($CC);
-	if (!$CC) {
-		$CC = &prompt(<<"EOF", "none", 1);
+$CC = &wherecheck("Finding gcc", "gcc");
+$CC = &wherecheck("Darn. Let's try cc", "cc") unless ($CC);
+if (!$CC) {
+	$CC = &prompt(<<"EOF", "none", 1);
 
 Okay, where the heck *is* your C compiler? If you don't have one, and want
-to try entering them in by hand, enter none (the default). If you *do* have
-one that I'm just unable to find, enter the absolute path below.
+to try using Socket.pm or entering them by hand, enter none (the default). If
+you *do* have one that I'm just unable to find, enter the absolute path below.
 
 Path to C compiler?
 EOF
-	}
-	if ($CC ne 'none') {
-		print <<"EOF";
+}
+if ($CC ne 'none') {
+	print <<"EOF";
 
 Trying $CC ./sockcons.c -o sockcons ...
 
 EOF
-		unlink("./sockcons"); # just to be sure it really compiles
-		system("$CC ./sockcons.c -o ./sockcons");
-		if (open(S, "./sockcons|")) {
-			while(<S>) {
-				chomp;
-		($cons, $DEF_AF_INET, $DEF_PF_INET, $DEF_SOCK_STREAM,
-			$DEF_SOL_SOCKET, $DEF_SO_REUSEADDR, $DEF_SOMAXCONN,
-			$DEF_IPPROTO_TCP) =
+	unlink("./sockcons"); # just to be sure it really compiles
+	system("$CC ./sockcons.c -o ./sockcons");
+	if (open(S, "./sockcons|")) {
+		while(<S>) {
+			chomp;
+			($cons, $DEF_AF_INET, $DEF_PF_INET, $DEF_SOCK_STREAM,
+				$DEF_SOL_SOCKET, $DEF_SO_REUSEADDR,
+				$DEF_SOMAXCONN, $DEF_IPPROTO_TCP) =
 				split(/ /, $_);
-			}
-			close(S);
 		}
+		close(S);
+	}
+	if ($cons ne 'cons') {
+		print <<"EOF";
+Nuts! Either the compiler doesn't like ANSI C, or you're header-file (or
+compiler-executable? :-) deficient.
+
+EOF
+	}
+}
+	
+if ($cons ne 'cons') {
+	print <<"EOF";
+Let's see if Perl knows what they are (99% reliable).
+Trying to run $DEF_PERL ./sockcons.pl ...
+
+EOF
+	undef $cons;
+	if (open(S, "$DEF_PERL ./sockcons.pl|")) {
+		while(<S>) {
+			chomp;
+			($cons, $DEF_AF_INET, $DEF_PF_INET, $DEF_SOCK_STREAM,
+				$DEF_SOL_SOCKET, $DEF_SO_REUSEADDR,
+				$DEF_SOMAXCONN, $DEF_IPPROTO_TCP) =
+				split(/ /, $_);
+		}
+		close(S);
 	}
 	print "Still doesn't work! Darn, darn and double darn!\n"
 		if ($cons ne 'cons');
@@ -227,8 +255,6 @@ overwrite any file currently at $INSTALL_PATH.
 If you want to continue, just press ENTER.
 If you don't, press CTRL-C NOW!
 EOF
-
-$DEF_MDEMNOHTTP11 = ($DEF_HTTP11WAIT) ? 0 : 1;
 
 print "Writing out the configured httpi to $INSTALL_PATH ... ";
 (open(S, "httpi.in") && open(T, ">$INSTALL_PATH")) || die(<<"EOF");

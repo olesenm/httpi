@@ -1,10 +1,14 @@
 #include <stdio.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-/* (C)1999 Cameron Kaiser. A very quick hack: if you don't have Socket.pm,
-   configure.demonic can get your socket constants from this program (somewhat
-   less reliably/portably, but we all ought to run gcc :-). */
+/* sockcons (C)1999, 2000 Cameron Kaiser -- for HTTPi 1.3
+ *
+ * A hack to dump major socket constants (somewhat more trustworthy than
+ * Socket.pm on some [misconfigured?] systems). Known to compile with cc
+ * and gcc on HP/UX, and gcc on SunOS, Linux, AIX and NetBSD.
+ */
 
 void main(argv, argc) {
 	printf("cons %i %i %i %i %i %i %i\n", AF_INET, PF_INET, SOCK_STREAM,
