@@ -9,7 +9,7 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "") unless ($DEFAULT);
-Configure (xinetd) for HTTPi/0.7 (C)1998, 1999 Cameron Kaiser
+Configure (xinetd) for HTTPi/0.99 (C)1998, 1999 Cameron Kaiser
 
 This is the configure script for xinetd systems.
 
@@ -17,6 +17,7 @@ DO NOT RUN THIS IF:
 	* you have inetd (run configure.inetd instead, or download xinetd
 		from http://synack.net/xinetd/)
 	* you have NO inetd or an unsupported one (run configure.generic)
+	* you want the daemonised version (run configure.demonic)
 
 PLEASE NOTE: YOUR CONFIGURATION FILE IS ASSUMED TO BE /etc/xinetd.conf!
 
@@ -42,8 +43,8 @@ the object file and patch your xinetd's configuration files. If you say "n"
 to this question, we'll just write out the object file.
 
 If you are just patching an already existing and running HTTPi installation
-(i.e. the changes are already in /etc/services and /etc/xinetd.conf, and it's
-going to go to the same install path), you should answer "n".
+(i.e. the changes are already in /etc/xinetd.conf, and it's going to go to
+the same install path), you should probably answer "n".
 
 If you are starting from scratch -- nothing installed -- answer "y" unless
 you really don't want xinetd to know about HTTPi yet.
@@ -71,12 +72,7 @@ Good grief, you've managed to run this with Perl not in your path. Where
 the heck is it, anyway? Put Perl in your path and rerun.
 
 EOF
-$DEF_SERV = &wherecheck("Verifying /etc/services", "/etc/services", <<"EOF");
 
-Without /etc/services, your xinetd won't know what port to run HTTPi on. You
-*do* have xinetd, don't you?
-
-EOF
 $DEF_INCONF = &wherecheck("Verifying /etc/xinetd.conf", "/etc/xinetd.conf", 
 	<<"EOF");
 
@@ -132,9 +128,13 @@ $WAIT_MODE += 0;
 unless (!$DO_INSTALL) {
 $IP_ADDR = &prompt(<<"EOF", "default");
 xinetd HTTPi can do IP-based virtual hosting like Demonic HTTPi can, allowing
-you to bind different instances of HTTPi to different IP addresses. If you just
-say "default", it will bind to INADDR_ANY, the default interface on your
-machine.
+you to bind different instances of HTTPi to different IP addresses if you
+prefer not to use the IP-less Host:-based redirect feature.
+
+If you just say "default", it will bind to INADDR_ANY, the default interface
+on your machine. YOU MUST HAVE A SEPARATE HTTPi EXECUTABLE AND PROCESS PER IP
+ADDRESS BOUND -- IP address information is *hardcoded* into HTTPi, and you'll
+need individual executable builds for each IP address.
 
 Which IP address to bind to?
 EOF
@@ -171,7 +171,7 @@ ack! I found one!:
 $j
 
 YOU WILL NEED TO EDIT /etc/xinetd.conf AFTERWARDS, BEFORE YOU START THE
-WEBSERVER UP! Otherwise, inetd will be very confused. Make sure you select
+WEBSERVER UP! Otherwise, xinetd will be very confused. Make sure you select
 ONLY ONE -- either HTTPi's service block or this one. You may need to re-run
 configure and select a new port (configure will build the service for you).
 
@@ -244,7 +244,7 @@ print "done.\n\n";
 print <<"EOF";
 Successfully configured!
 
-Now, you must send a HUP signal to your xinetd process to enable the webserver.
+Now, you must restart your xinetd process to enable the webserver.
 
 Remember to read the documentation for last minute information! Bye now.
 EOF

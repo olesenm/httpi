@@ -1,8 +1,11 @@
-** Installation procedure for HTTPi/0.7
+** Installation procedure for HTTPi/0.99
 ** Copyright 1998, 1999 Cameron Kaiser
 
 1. Check that all files are present. Make sure you have Perl 5 installed.
    You only need the executable, not the standard distribution in full.
+   If you aren't sure if you have all the files, look in the Manifest file
+   (it's an ls -lR of the development directory, minus, of course, the
+   Manifest file itself) and compare it with an ls -lR of your directory.
 
 2. Read the LICENSE file.
 
@@ -11,7 +14,17 @@
 4. Read the ... have you read it yet?
 
 5. Determine which configure file you should be running on your platform.
-YOUR PERL MUST HAVE alarm() TO INSTALL *AT ALL*!
+It is *highly* recommended that your Perl include support for alarm(), though
+grudgingly no longer required.
+
+Demonic installation:
+
+configure.demonic	For Demonic HTTPi, the daemonised version. You'll
+			either need Socket.pm, a C compiler, or a list of
+			your system's socket constants. Your Perl must also
+			support fork().
+
+Some sort of inetd installation:
 
 configure.inetd		Most Unix boxen. Use this if you use the vanilla
 			inetd. Will autoconfigure your files for you if root.
@@ -19,10 +32,7 @@ configure.inetd		Most Unix boxen. Use this if you use the vanilla
 configure.xinetd	For users of the xinetd clone http://synack.net/xinetd/
 			Will autoconfigure your files for you. Tres cool.
 
-configure.demonic	For Demonic HTTPi, the daemonised version. You'll
-			either need Socket.pm, a C compiler, or a list of
-			your system's socket constants. Your Perl must also
-			support fork().
+Others:
 
 configure.generic	Don't know what inetd you have, or one I don't support
 			yet. You'll have to connect HTTPi to your inetd
@@ -59,6 +69,11 @@ configuration files.
 8. If configure bombs, feel free to contact me with the error message at
 
 	httpi@stockholm.ptloma.edu
+
+9. DO NOT TOAST THE INSTALL DIRECTORY. If you make config changes, etc.,
+   you will need these files again. Don't lose them.
+
+10. Enjoy your new, small and extremely sexy web server.
 
 --
 Cameron Kaiser

@@ -6,7 +6,7 @@ Thanks.
 ~
 ~
 #!DEF_PERL
-$VERSION = "0.7 (DEF_CONF_TYPE/DEF_ARCH)";
+$VERSION = "0.99 (DEF_CONF_TYPE/DEF_ARCH)";
 
 # HTTPi Hypertext Tiny Truncated Process Implementation
 # Copyright 1999 Cameron Kaiser # All rights reserved # Please read LICENSE
@@ -29,6 +29,10 @@ $0 = "dhttpi: connected and waiting DEF_IP_ADDR:DEF_TCP_PORT";
 $0 = "httpi: handling request";
 ~
 
+~check STATIOS
+$statiosuptime = time();
+~
+~
 
 ~check MFALSE
 
@@ -39,7 +43,9 @@ $0 = "httpi: handling request";
 ~
 %content_types =
 	("html" => "text/html",
+	 "bin" => "application/octet-stream",
 	 "class" => "application/octet-stream",
+	 "wav" => "audio/x-wav",
 	 "htm" => "text/html",
 	 "txt" => "text/plain",
 	 "gif" => "image/gif",
@@ -52,12 +58,21 @@ $0 = "httpi: handling request";
 *** The restrictions matrix is documented in the manual. The keys are the
     filepaths and the values are the matrices themselves.
 
+*** The host redirect matrix is also documented, the keys being the simulated
+    host names and the values being the redirect prefix.
 ~
 ~
 ~check MRESTRICTIONS
 %restrictions =
-	("/nw" => "^10\.##^Mozilla#MSIE");
+	("/nw" => "^10\.##^Mozilla#MSIE",
+	 "/status" => "####voyeur:daNrZR3TcSwD2");
 		# See documentation for interpreting this string.
+~
+~
+~check NAMEREDIR
+%nameredir =
+	("stockholm" => "http://stockholm.ptloma.edu",
+	 "httpi.ptloma.edu" => "http://stockholm.ptloma.edu/httpi");
 ~
 ~
 
@@ -82,8 +97,12 @@ sub sock_to_host {
 	return (undef, undef, undef) if (!$sock);
 	local($AFC, $port, $thataddr, $zero) = unpack($sockaddr, $sock);
 	local($ip) = join('.', unpack("C4", $thataddr));
+~check MHOSTNAMES
 	local($hn) = gethostbyaddr($thataddr, 2) || $ip;
 	return ($hn, $port, $ip);
+~
+	return ($ip, $port, $ip);
+~
 }
 
 sub htsponse {
@@ -152,19 +171,20 @@ sub log {
 		$contentlength = 0 if ($method eq 'HEAD');
 		local ($hostname, $port) = &sock_to_host();
 		$hn = $hn || "-";
+		$httpuser = $httpuser || "-";
 ~check ORIG_LOG
 		print J <<"EOF";
-$hostname - - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "$httpref" ""
+$hostname $httpuser - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "$httpref" ""
 ~
 ~
 ~check GROSS_LOG
 		print J <<"EOF";
-$hostname - - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "$httpref" "$httpua"
+$hostname $httpuser - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "$httpref" "$httpua"
 ~
 ~
 ~check TERSE_LOG
 		print J <<"EOF";
-$hostname - - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "" ""
+$hostname $httpuser - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "" ""
 ~
 ~
 EOF
@@ -220,7 +240,11 @@ $dt += 0;
 $dt = substr("0$dt", length("0$dt") - 2, 2);
 $date = "$dt/$mon/$yr:$tm DEF_TIME_ZONE"; 
 
-select(STDOUT); $|=1; $address = 0; alarm 10;
+select(STDOUT); $|=1; $address = 0; 
+~check MCANALARM
+alarm 10;
+~
+~
 while (<STDIN>) {
 	if(/^(GET|HEAD|POST)\s+([^\s]+)\s+([^\s\r\l\n]*)/) {
 		$method = $1;
@@ -236,13 +260,22 @@ while (<STDIN>) {
 		$keep = 1 if (/^Connection: Keep-Alive/i);
 ~
 ~
-		s/[\r\l\n]+$//;
+		s/[\r\l\n\s]+$//;
+~check NAMEREDIR
+		(/^Host: (.+)/i) && ($httphost = $1) && ($httphost =~
+			s/:\d+$//);
+~
+~
 		(/^Referer: (.+)/i) && ($httpref = $1);
 		(/^User-agent: (.+)/i) && ($httpua = $1);
 		(/^Content-length: (\d+)/i) && ($ENV{'CONTENT_LENGTH'} =
 			$httpcl = $1);
 		(/^Content-type: (.+)/i) && ($ENV{'CONTENT_TYPE'} =
 			$httpct = $1);
+~check MRESTRICTIONS
+		(/^Authorization: Basic (.+)/i) && ($httprawu = $1);
+~
+~
 		next unless (/^$/);
 	}
 	if (!$address) {
@@ -251,68 +284,154 @@ while (<STDIN>) {
 			"The server cannot understand your request.");
 		&log; exit;
 	}
+~check NAMEREDIR
+	if ($httphost && $httphost ne 'DEF_SERVER_HOST') {
+		if ($nameredir{$httphost}) {
+			&hterror301("$nameredir{$httphost}$address");
+		}
+		&hterror404; &log; exit;
+	}
+~
+~
 	($address, $variables) = split(/\?/, $address);
 	1 while $address =~ s#/\./#/#;
-	1 while $address =~ s#^/\.\./#/#;
+	1 while $address =~ s#^/?\.\./#/#;
 	1 while $address =~ s#/[^/]+/\.\./#/#;
-	if ($address !~ m#/$# && -d "$path$address") {
-		&htsponse(301, "Moved Permanently");
-		&hthead("Location: http://DEF_SERVER_HOST$address/", 1);
-		$keep = 0; &log; exit;
+~check MRESTRICTIONS
+	$fail = 0;
+	J: foreach(sort { length $a <=> length $b }
+			keys %restrictions) {
+		next if ($address !~ /^$_/);
+		($allowip, $denyip, $allowua, $denyua, $auser) =
+			split(/#/, $restrictions{$_});
+		if ($allowip || $denyip) {
+			($hn, $port, $ip) = &sock_to_host();
+			($allowip && $ip !~ /$allowip/) && ($fail = 1,
+				last J);
+			($denyip && $ip =~ /$denyip/) && ($fail = 1,
+				last J);
+		}
+		($allowua && $httpua !~ /$allowua/) &&
+			($fail = 2, last J);
+		($denyua && $httpua =~ /$denyua/) &&
+			($fail = 2, last J);
 	}
-	$address = "${address}index.html" if (-d "$path$address");
+	if ($fail) {
+		&htsponse(403, "Forbidden");
+		if ($fail == 1) {
+			&hterror("Forbidden (Client Disallowed)", <<"EOF");
+Your network address (<i>$ip</i>) is not allowed to access this resource.
+EOF
+			&log; exit;
+		} else {
+			&hterror("Forbidden (Browser Disallowed)", <<"EOF");
+The browser you are using (<i>$httpua</i>) is not capable of or
+is not allowed access to this resource.
+EOF
+			&log; exit;
+		}
+	}
+	if ($auser) {
+		$httprawu =~ tr#A-Za-z0-9+/##cd;
+		$httprawu =~ tr#A-Za-z0-9+/# -_#;
+		$httprawu = unpack("u", pack("c", 32+0.75*length($httprawu))
+			. $httprawu);
+		($httpuser, $httppw) = split(/:/, $httprawu);
+		$fail = 1;
+		foreach $user (split(/,/, $auser)) {
+			($user, $pw) = split(/:/, $user);
+			($fail = 0, last) if ($user eq $httpuser &&
+				crypt($httppw, substr($pw, 0, 2)) eq $pw);
+		}
+		if ($fail) {
+			$httpuser = '';
+			&htsponse(401, "Authorization Required");
+			&hthead("WWW-Authenticate: Basic realm=\"$address\"");
+			&hterror("Authorization Required", <<"EOF");
+You must provide a username and password to use this resource. Either you
+entered this information incorrectly, or your browser does not know how to
+present the credentials required.
+EOF
+			&log; exit;
+		}
+	}
+~
+~
 
 ######## ADD YOUR HANDLERS OR MODULES HERE #########
 
-	if(!open(S, "$path$address"))  {
-		&htsponse(404, "File Not Found");
-		&hterror("File Not Found",
-			"The resource $address was not found on this system.");
-	} else {
-~check MRESTRICTIONS
-		$fail = 0;
-		J: foreach(sort { length $a <=> length $b }
-				keys %restrictions) {
-			next if ($address !~ /^$_/);
-			($allowip, $denyip, $allowua, $denyua) =
-				split(/#/, $restrictions{$_});
-			if ($allowip || $denyip) {
-				($hn, $port, $ip) = &sock_to_host();
-				($allowip && $ip !~ /$allowip/) && ($fail = 1,
-					last J);
-				($denyip && $ip =~ /$denyip/) && ($fail = 1,
-					last J);
-			}
-			($allowua && $httpua !~ /$allowua/) &&
-				($fail = 2, last J);
-			($denyua && $httpua =~ /$denyua/) &&
-				($fail = 2, last J);
+~check STATIOS
+	if ($address eq '/status') {
+		&htsponse(200, "OK");
+		$contentlength = 0; # kludge
+		&log;
+		if(open(S, $logfile)) {
+			seek(S, -3000, 2);
+			undef $/;
+			$logsnap = <S>;
+			$logsnap =~ s/^[^\n]+\n//s if
+				(length($logsnap) > 2999);
+			close(S);
 		}
-		if ($fail) {
-			&htsponse(403, "Forbidden");
-			if ($fail == 1) {
-				&hterror("Forbidden (Client Disallowed)",
-					<<"EOF");
-Your network address is not allowed to access this resource. Please contact
-the server administrator if this message is in error.
+		$p = (time() - $statiosuptime);
+		$rps = $p/$statiosreq;
+		$d = int($p / 86400); $p -= $d * 86400;
+		$h = int($p / 3600); $p -= $h * 3600;
+		$m = int($p / 60); $s = $p - ($m * 60);
+		("0$s" =~ /(\d{2})$/) && ($s = $1);
+		("0$m" =~ /(\d{2})$/) && ($m = $1);
+		$h +=0; $d += 0;
+		$suptime = scalar localtime $statiosuptime;
+		&htcontent(<<"EOF", "text/html");
+<html>
+<head>
+<title>
+HTTPi Status for Server DEF_SERVER_HOST
+</title>
+</head>
+<body bgcolor = "#ffffff" text = "#000000" vlink = "#0000ff" link = "#0000ff">
+<h1>HTTPi Server Status (<code>$VERSION</code>)</h1>
+<h3><code>DEF_SERVER_HOST</code> on DEF_IP_ADDR:DEF_TCP_PORT</h3>
+<b>Started at:</b> $suptime<br>
+<b>Uptime:</b> $d days, $h:$m:$s<br>
+<b>Last request time:</b> $statiosltr<p>
+<b>Requests received:</b> $statiosreq<br>
+<b>Average time between requests:</b> ${rps}s
+<p>
+<b>Most recent requests:</b>
+<form action = "/status" method = "post">
+<textarea name = "bletch" rows = "8" cols = "70">
+$logsnap
+</textarea>
+</form>
+<hr>
+<address>maintained by <a href =
+"http://httpi.ptloma.edu/">httpi/$VERSION</a></address>
+</body>
+</html>
 EOF
-				&log; exit;
-			} else {
-				&hterror("Forbidden (Browser Disallowed)",
-					<<"EOF");
-The browser you are using (<i>$httpua</i></code>) is not capable of or
-is not allowed access to this resource.
-EOF
-				&log; exit;
-			}
-		}
+		exit;
+	}
 ~
 ~
-		if (-x "$path$address") {
+	$raddress = "$path$address"
+~check MUSERFS
+		if ($raddress = $address, $raddress !~
+			s#/~([^/]+)#(getpwnam($1))[7]."/public_html"#e);
+~
+	;
+~
+	&hterror301("http://DEF_SERVER_HOST$address/")
+		if ($address !~ m#/$# && -d $raddress);
+	$raddress = "${raddress}index.html" if (-d $raddress);
+	if(!open(S, $raddress)) { &hterror404; } else {
+		if (-x $raddress) {
 			$currentcode = 100;
 			&log;
 			if (!$<) {
 				($x,$x,$x,$x,$uid,$gid) = stat(S);
+				(!$uid || !$gid) &&
+					die "executable is root-owned";
 ~check CANDOSETRUID
 				$< = $uid || die "can't set uid";
 				$( = $gid || die "can't set gid";
@@ -334,7 +453,7 @@ EOF
 				getsockname(STDIN));
 			$ENV{'SERVER_URL'} = "http://DEF_SERVER_HOST:$ENV{'SERVER_PORT'}/";
 ~
-			$ENV{'SCRIPT_FILENAME'} = $path . $address;
+			$ENV{'SCRIPT_FILENAME'} = $raddress;
 			$ENV{'SCRIPT_NAME'} = $address;
 			$ENV{'REMOTE_HOST'} = $hostname;
 			$ENV{'REMOTE_ADDR'} = $ip;
@@ -347,16 +466,17 @@ EOF
 ~
 ~
 ~check MHTTPERL
-				require "$path$address";
+				require $raddress;
 				exit;
 ~
 				if ($method eq 'POST') { # needs stdin
-					open(W, "|$path$address") || die;
+					open(W, "|$raddress") || die
+						"can't POST to $raddress";
 					read(STDIN, $buf, $httpcl);
 					print W $buf;
 					exit;
 				}
-				exec "$path$address", "$variables";
+				exec "$raddress", "$variables";
 				die "exec() returned -1";
 ~
 ~check MDEMONIC
@@ -371,7 +491,7 @@ EOF
 		$dt += 0; $yr += 0;
 		$ctype = 0;
 		foreach(keys %content_types) {
-			if ($address =~ /\.$_$/) {
+			if ($raddress =~ /\.$_$/) {
 				$ctype = $content_types{$_};
 			}
 		}
@@ -404,12 +524,26 @@ sub hterror {
 <h1>$errstr</h1>
 $expl
 <hr>
-<address><a href = "http://stockholm.ptloma.edu/httpi/">httpi/$VERSION</a>
+<address><a href = "http://httpi.ptloma.edu/">httpi/$VERSION</a>
 by Cameron Kaiser</address>
 </body>
 </html>
 EOF
 	}
+
+sub hterror404 {
+	&htsponse(404, "File Not Found");
+	&hterror("File Not Found",
+		"The resource $address was not found on this system.");
+}
+
+sub hterror301 {
+	&htsponse(301, "Moved Permanently");
+	&hthead("Location: @_");
+	&hterror("Resource Moved Permanently",
+		"This resource has moved <a href = \"@_\">here</a>.");
+	$keep = 0; &log; exit;
+}
 
 ~check MFALSE
 
@@ -421,6 +555,8 @@ EOF
 ~check MDEMONIC
 for (;;) {
 	$addr=accept(NS,S);
+	$statiosltr = scalar localtime;
+	$statiosreq++;
 	if ($pid = fork()) {
 		$0 = "dhttpi: waiting for child process";
 		waitpid($pid, 0);

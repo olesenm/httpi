@@ -1,15 +1,20 @@
 print "\nSeeing if you have some optional utilities ...\n\n";
 $HOSTNAME = &wherecheck('Finding hostname', 'hostname');
 
-print "\nChecking some very vital system facilities I require.\n\n";
-$q = &yncheck('Can we use alarm()?', 'alarm 0;', <<"EOF");
+print "\nChecking some system facilities I really could use ...\n\n";
+$DEF_MCANALARM = &yncheck('Can we use alarm()?', 'alarm 0;');
+&prompt(<<"EOF", "") if (!$DEF_MCANALARM);
+Let me guess. You're not using a Unix Perl.
 
-Sorry, I need to be able to send ALARM signals to the HTTPi process, or
-HTTPi won't time out. This could be the crux of a very nasty DoS attack
-otherwise. HTTP/1.1 features also depend on this. Please rerun this on a
-more suitable OS. :-)
+alarm() is no longer required for install, but you should be warned that
+you cannot use HTTP/1.1 Keep-Alive connections without it. Also, alarm()
+allows better process control, which reduces the chance of system overload.
+You can still install HTTPi, but consider running this on a system that
+supports alarm() in its Perl port.
 
+Press ENTER to continue.
 EOF
+
 $INSTALL_PATH = &prompt(<<"EOF", "/usr/local/bin/httpi", 1);
 
 Cool, we made it that far.
@@ -21,16 +26,19 @@ ENTER with nothing entered, the default (in [ ]) will be selected.
 Where do you want the resultant script placed? If you're using configure to
 build multiple instances of HTTPi on different ports, make sure this changes
 unless you're darn certain that they'll all be configured the same way.
+IF YOU'RE USING CONFIGURE TO BUILD MULTIPLE INSTANCES OF HTTPi ON MULTIPLE
+IP ADDRESSES (xinetd/Demonic only), THIS *MUST* BE DIFFERENT IN EACH CASE!
 
 WARNING: If you're doing a full install, including modifying inetd (or
-whatever)'s config files, THIS MUST BE AN ABSOLUTE PATH.
+whatever)'s config files, THIS MUST BE AN ABSOLUTE PATH AS WELL!
 
 Install path?
 EOF
 $DEF_HTDOCS_PATH = &prompt(<<"EOF", "/usr/local/htdocs", 1);
 Where do you want the server to serve documents from? All files that HTTPi
-will make available, executables included, must be under this tree (i.e.
-no ~ or user filesystem). This is the webserver's mount directory.
+will make available, executables included, must be under this tree (except
+for the user filesystem option if enabled, coming up shortly). This is the
+webserver's mount directory.
 
 EOF
 print <<"EOF" if (!-d $DEF_HTDOCS_PATH);
@@ -74,7 +82,10 @@ five-character timezone here (e.g., if you're on Pacific time, like I am,
 enter -0800 for 8 hours behind Greenwich mean).
 EOF
 
-$DEF_HTTP11WAIT = &prompt(<<"EOF", "n", 1);
+print "You can't use alarm(), so no HTTP/1.1 for you.\n\n"
+	unless ($DEF_MCANALARM);
+
+$DEF_HTTP11WAIT = &prompt(<<"EOF", "n", 1) unless (!$DEF_MCANALARM);
 HTTPi supports HTTP/1.1 persistent connections, but very few clients do right
 now. It's nice to have though, for those that do, and it means that it will
 spawn fewer processes sum total if the client is nice enough to do all its
@@ -107,19 +118,21 @@ EOF
 $DEF_TIME_OUT += 0;
 
 $DEF_MRESTRICTIONS = &prompt(<<"EOF", "y", 1);
-HTTPi has an optional restriction matrix, allowing you to restrict resources
-to particular IP addresses or browsers. The restriction matrix allows very
-sophisticated security and management, but at the cost of slightly degrading
-runtime speed. If you aren't running any services that require strong security,
-browser restrictions, or network restrictions, you'll gain a speed increase
-by turning the restriction matrix off. (You can always enable it later.)
+HTTPi's answer to .htaccess and access control is the restriction matrix, 
+allowing access control based on IP address, agent/browser type, and, in
+0.99 and up, a user list you can specify. For example, the restriction
+matrix can restrict access to a certain page only to user fred from the
+local LAN, and *then* only if he's using Netscape. This code is slightly
+complex, however, so it will add bulk and execution time to your build.
 
-Please read the manual section about the restriction matrix for more info.
+Note that if you plan to only do IP address-based restriction, solutions
+like TCP wrappers are probably faster. xinetd also has IP address-based
+restriction built in. In those cases, you would probably do better without
+the restriction matrix involved.
 
-Note that xinetd, and possibly others, implement similar IP restriction
-services and do so much quickly than HTTPi. TCP wrappers might also be useful.
-In such cases, the restriction matrix may not be necessary, though it may
-be more flexible. See your (x)inetd's manual, or your OS's.
+The settings for the restriction matrix are hardcoded into httpi.in. If you
+choose to enable this option, you must edit httpi.in to change your settings.
+Please refer to the programming manual.
 
 Enable restriction matrix?
 EOF
@@ -157,28 +170,84 @@ $bleh += 0;
 ($bleh == 3) && ($DEF_TERSE_LOG = 1);
 
 $DEF_MHTTPERL = &prompt(<<"EOF", "n", 1);
-New in version 0.7 is HTTPi's answer to mod_perl, HTTPerl. mod_perl works its
+Want faster CGIs? Meet HTTPi's answer to mod_perl, HTTPerl. mod_perl works its
 magic by implementing a Perl interpreter in Apache; HTTPerl takes the obvious
 step of reusing the interpreter already running HTTPi to run your executables.
 
-The advantages:
+The major advantages:
 	* Can be faster (see below for when it won't be), especially if
 Perl keeps getting paged out.
 	* Your executables have access to all the HTTPi internal globals and
 subroutines, including HTTP negotiation and logging subroutines.
 	* Works better with POST (lets you manipulate the socket directly).
 
-The disadvantages:
+The major disadvantages:
 	* EVERY EXECUTABLE HTTPi RUNS HAS TO BE IN PERL. NO EXCEPTIONS! If you
 must run a precompiled binary, write a Perl wrapper, and have HTTPi run that.
-	* If your system is likely to have Perl cached or paged in, this will
-save you very little system overhead. 
 	* Still experimental.
 
 This is a new, experimental hack, so be wary, test thoroughly, and report bugs.
+Please read the docs, there's important information in there about this!
 Enable HTTPerl?
 EOF
 
 $DEF_MHTTPERL = (($DEF_MHTTPERL eq 'y') ? 1 : 0);
 
+$q = &prompt(<<"EOF", "y", 1);
+If you don't really care if a hostname or an IP address appears in your
+access logs, you can save (in some cases substantial) time by instructing
+HTTPi not to bother doing name lookups when logging. Most of you will
+probably want the names resolved, but for a really sleek server you might not,
+so it's now a configurable option.
+
+Resolve IP addresses to hostnames?
+EOF
+
+$DEF_MHOSTNAMES = (($q eq 'y') ? 1 : 0);
+
+$q = &prompt(<<"EOF", "n", 1);
+HTTPi 0.99 and up can do IP-less virtual hosting by redirecting host
+aliases to addresses. For example, you might define (as I do) the alias
+httpi.ptloma.edu to point to http://stockholm.ptloma.edu/httpi.
+
+This is useful for large hosting sites and aliases, but probably not for
+HTTPi's prototypical usage of a little server on a little system, so it's
+not enabled by default. If your HTTPi supports it (both xinetd and Demonic
+do), you may wish to consider IP-based virtual hosting where you can do
+multihoming with individual HTTPi processes as an alternative.
+
+The settings for IP-less virtual hosting are hardcoded into httpi.in. If you
+choose to enable this option, you must edit httpi.in to change your settings.
+Please refer to the programming manual.
+
+Enable host name redirects?
+EOF
+
+$DEF_NAMEREDIR = (($q eq 'y') ? 1 : 0);
+
+if (!&yncheck("Can we use getpwnam()?",
+	"print scalar(getpwnam('root')), ' ... '")) {
+		print
+	"The user filesystem option isn't available without getpwnam().\n\n";
+	$DEF_MUSERFS = 0;
+} else {
+	$q = &prompt(<<"EOF", "n", 1);
+Used to be that HTTPi was a tiny webserver for one person to run on his
+machine, but the busy beavers in the HTTPi laboratories have been working
+on ways of supporting a user filesystem while keeping HTTPi the slim beast
+it is.
+
+If you enable this option, users can now serve files from their own home
+directories under ~/public_html. Note, however, that HTTPi draws no difference
+between the root server documents and users', so users may also run executables
+(and if HTTPi can't change its uid to the executable's owner, this could be
+a rather large security hole). For this reason, this option defaults to no.
+
+Enable user filesystem?
+EOF
+	$DEF_MUSERFS = ($q eq 'y') ? 1 : 0;
+}
+
+# leave alone
 1;
+

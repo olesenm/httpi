@@ -1,5 +1,29 @@
+Changes since 0.7:
+
+	* logging ... didn't change. phew, for once :-)
+	* user file system allows http://foo/~bar/, getpwnam() check added
+	* don't be running no root-owned executables now ;-) it didn't run
+		them before either but the error was very cryptic
+	* HTTP authentication through restriction matrix
+	* better HTTP/0.9 support, especially for 301 responses
+	* IP-less virtual hosting (new global %nameredir)
+	* configure.xinetd no longer depends on /etc/services
+	* configure.inetd patched for really anal inetd systems (like HP/UX)
+	* 404 and 301 responses now handled by dedicated subroutines
+	* authentication check now precedes file existence check for allowing
+		modules to be protected
+	* new global $raddress now contains resolved filesystem address
+	* alarm() no longer required but really really really recommended
+		(this to help porting HTTPi to non-Unixy things)
+	* statios statistics module (demonic only)
+	* hostname lookups may be turned off for speed (sheesh, 150% boost
+		in Demonic mode)
+	* some extra MIME types
+	* new utilities: crapword, browsed (see instructions)
+
 Changes since 0.4:
 
+	* IP-based virtual hosting (xinetd and demonic only)
 	* argh!!!! I *still* can't get logging right!!! fixed to once and
 		for all obey CERN spec
 	* new daemonized version (configure.demonic)
@@ -13,7 +37,6 @@ Changes since 0.4:
 	* error conditions in conquests.pl would sometimes give spurious
 		"conquests.pl not found" errors. fixed.
 	* HTTPerl allows same interpreter instance to be reused for speed
-	* HTTPerl-compatible noodle
 	* version string now reflects OS type and configure type
 	* HEAD now correctly logs actual data transferred
 	* HTTP/1.1 requests in non-1.1 mode come back as HTTP/1.0 (RFC

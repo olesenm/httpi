@@ -1,12 +1,16 @@
-Be sure you read the LICENSE file and the INSTALL file!!! The LICENSE
+** THIS IS THE FINAL HTTPi BETA. ALL SUBSEQUENT VERSIONS WILL BE 1.0+. **
+
+You're using HTTPi, the coolest little webserver out there! Thanks!
+
+Be sure you read the LICENSE file and the INSTALL file! The LICENSE
 file, especially, because HTTPi is NOT GPL. It's free, but it's NOT GPL.
 
---
-
+To install, see the INSTALL file in this directory, but the documentation
+on the official HTTPi webpage will probably be all the help you'll ever need.
 HTTPi's current web home, as well as all the documentation your little heart
-or other internal organs could desire, is at
+or other internal organs could desire, is located at:
 
-	http://stockholm.ptloma.edu/httpi/
+	http://httpi.ptloma.edu/
 
 Running vanilla HTTPi, of course, with no extra Perl modules. Just the
 executable, a bottle of wine, and thou. The manuals and documentation for

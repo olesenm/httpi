@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+
+print <<"EOF";
+
+This utility runs crypt() on words so you don't need to put plaintext in your
+restriction matrix.
+
+For example, to encrypt qwerty:asdfj, enter
+
+asdfj
+
+and you get back (just an example) QQQQ -- in the restriction matrix, for 
+the username/password pair, enter
+
+qwerty:QQQQ
+
+EOF
+
+sub prompt { print "Enter password to crypt (CTRL-D stops): "; }
+if (($_) = (@ARGV)) {
+	&cryptnsalt; exit; }
+&prompt;
+
+while(<STDIN>) { chomp; &cryptnsalt; &prompt; }
+print "\n"; exit;
+
+sub cryptnsalt {
+	print "$_ => ", crypt($_,
+		((sprintf("%x", time | $$)) =~ /(..)$/, $1)), "\n";
+}

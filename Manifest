@@ -1,25 +1,28 @@
-Ignore modification dates, files may be slightly newer.
+total 143
+-rw-r--r--   1 spectre  staff       2670 Jun 17 15:42 ChangeLog
+-rw-r--r--   1 spectre  staff       2911 Jun 17 15:42 INSTALL
+-rw-r--r--   1 spectre  staff       4285 Jun 17 15:42 LICENSE
+-rw-r--r--   1 spectre  staff       1676 Jun 17 15:42 Makefile
+-rw-r--r--   1 spectre  staff       1141 Jun 17 15:42 README
+-rw-r--r--   1 spectre  staff         41 Jun 17 15:42 VERSION
+lrwxrwxrwx   1 spectre  staff         15 Jun 17 15:42 configure@ -> configure.inetd
+-rw-r--r--   1 spectre  staff       7611 Jun 17 15:42 configure.demonic
+-rw-r--r--   1 spectre  staff       2130 Jun 17 15:42 configure.generic
+-rw-r--r--   1 spectre  staff      10228 Jun 17 15:42 configure.inetd
+-rw-r--r--   1 spectre  staff       8766 Jun 17 15:42 configure.xinetd
+-rw-r--r--   1 spectre  staff      10239 Jun 17 15:42 conquests.pl
+-rw-r--r--   1 spectre  staff       2540 Jun 17 15:42 consubs.pl
+-rw-r--r--   1 spectre  staff      13505 Jun 17 15:42 httpi.in
+-rw-r--r--   1 spectre  staff        446 Jun 17 15:42 sockcons.c
+-rw-r--r--   1 spectre  staff        134 Jun 17 15:42 sockcons.pl
+drwxr-xr-x   2 spectre  staff        512 Jun 17 15:42 tools/
+drwxr-xr-x   2 spectre  staff        512 Jun 17 15:42 toys/
+./tools:
+total 6
+-rwxr-xr-x   1 spectre  staff       1091 Jun 17 15:42 browsed*
+-rwxr-xr-x   1 spectre  staff        598 Jun 17 15:42 crapword*
+-rwxr-xr-x   1 spectre  staff        364 Jun 17 15:42 noodle*
 
-total 84
--rw-r--r--   1 spectre  staff        631 Jan 05 14:45 ChangeLog
--rw-r--r--   1 spectre  staff       1757 Jan 05 14:45 INSTALL
--rw-r--r--   1 spectre  staff       2312 Jan 05 14:45 LICENSE
--rw-r--r--   1 spectre  staff       1229 Jan 05 14:47 Manifest
--rw-r--r--   1 spectre  staff        758 Jan 05 14:45 README
-lrwxrwxrwx   1 spectre  staff         15 Jan 05 14:46 configure@ -> configure.in
--rw-r--r--   1 spectre  staff       2061 Jan 05 14:45 configure.generic
--rw-r--r--   1 spectre  staff       8711 Jan 05 14:45 configure.inetd
--rw-r--r--   1 spectre  staff       8183 Jan 05 14:45 configure.xinetd
--rw-r--r--   1 spectre  staff       5565 Jan 05 14:45 conquests.pl
--rw-r--r--   1 spectre  staff       2451 Jan 05 14:45 consubs.pl
--rw-r--r--   1 spectre  staff       7009 Jan 05 14:45 httpi.in
-drwxr-xr-x   2 spectre  staff        512 Jan 05 14:45 tools/
-drwxr-xr-x   2 spectre  staff        512 Jan 05 14:45 toys/
-
-./tools: useful utilities.
-total 1
--rwxr-xr-x   1 spectre  staff        249 Jan 05 14:45 noodle*
-
-./toys: fun things. Use this .gif to proudly show you run HTTPi.
+./toys:
 total 3
--rw-r-----   1 spectre  staff       1310 Jan 05 14:45 httpismall.gif
+-rw-r-----   1 spectre  staff       1310 Jun 17 15:42 httpismall.gif

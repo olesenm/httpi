@@ -11,7 +11,7 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "") unless ($DEFAULT);
-Configure (inetd) for HTTPi/0.7 (C)1998, 1999 Cameron Kaiser
+Configure (inetd) for HTTPi/0.99 (C)1998, 1999 Cameron Kaiser
 
 This is the configure script for inetd systems (most Unix boxen).
 
@@ -48,7 +48,7 @@ to this question, we'll just write out the object file.
 
 If you are just patching an already existing and running HTTPi installation
 (i.e. the changes are already in /etc/services and /etc/inetd.conf, and it's
-going to go to the same install path), you should answer "n".
+going to go to the same install path), you should probably answer "n".
 
 If you are starting from scratch -- nothing installed -- answer "y" unless
 you really don't want inetd to know about HTTPi yet.
@@ -284,11 +284,13 @@ EOF
 print "\n\nWriting changes to /etc/inetd.conf ... ";
 open(S, ">>/etc/inetd.conf") || die(
 	"\n\nAre you really root? I can't write to this file.\n");
+(@x) = split(/\//, $INSTALL_PATH);
+$j = pop(@x);
 $wmode = ($WAIT_MODE eq 'n') ? 'nowait' : 'wait';
 print S <<"EOF";
 
 # added by HTTPi install
-$SERV_NAME	stream	tcp	$wmode	$USER_ID	$INSTALL_PATH
+$SERV_NAME	stream	tcp	$wmode	$USER_ID	$INSTALL_PATH	$j
 
 EOF
 close(S);

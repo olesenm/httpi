@@ -11,23 +11,25 @@ I or an authorised maintainer will be the only ones checking code back into
 HTTPi's code base for authorised patches and new versions).
 
 HTTPi must be free, and any and all distributions and derivatives must
-themselves be free. "Derivatives" shall constitute distributions with code
+themselves be free. By free software I do not necessarily mean free in the
+way that Richard Stallman of GNU fame might -- merely that distributions
+be without cost. "Derivatives" shall constitute distributions with code
 added or removed from the base distribution, or distributions that are
 signficantly based on the source code (though may not necessarily include
 the source code itself). This means a C port of HTTPi is still a derivative,
 or a Win32 version, or whatever. You do not have to provide source code,
 which is a deviation from GPL.
 
-You may NOT:
+You MAY NOT:
 
 	* make changes and slap your copyright on the entire package. Your
 	  copyright extends only to the changes you've made. My copyright
 	  remains.
 
-	* supersede the license agreement here. You may not charge for a
+	* supersede the license agreement here. You may not charge a fee for a
 	  HTTPi distribution, for example (though you may include it as part
-	  of a larger distribution as long as it is not being purchased as an
-	  item). Derivatives count as distributions. This license agreement,
+	  of a larger for-sale package as long as it is not being purchased as
+	  an item). Derivatives count as distributions. This license agreement,
 	  therefore, applies IN FULL to any distribution or derivative work.
 
 	  You also MAY NOT place your derivative work under GPL, because that
@@ -41,7 +43,7 @@ You may NOT:
 	* make or distribute a distribution of HTTPi that does not clearly
 	  state the copyright (i.e.
 
-Contains [or is based on] the HTTPi web server
+Contains or is based on the HTTPi web server
 (C)1998, 1999 Cameron Kaiser. All rights reserved.
 http://stockholm.ptloma.edu/httpi/
 
@@ -50,15 +52,39 @@ http://stockholm.ptloma.edu/httpi/
 
 You MUST:
 
-	* copyright your derivative works. You may not make them
-	  public domain.
+	* copyright your derivative works. You may not make them public domain.
 
-Exceptions to these restrictions must be obtained from me, the copyright
-holder, IN WRITING.
+	* include this LICENSE agreement in any and all derivative
+	  works you create, as either a separate file or part of your
+	  non-mutually exclusive license (that is, does not conflict
+	  with these terms).
+
+	* absolve the programmers of HTTPi (including yours truly :-) and
+	  any contributors) of any liability, real or imagined, and certify
+	  that you are using this program AT YOUR OWN RISK. While the
+	  programmers shall endeavour to make HTTPi as bug-free as possible,
+	  entomological phenomena can and do occur. Such is life.
+
+	  If you make a derivative work of HTTPi, you MAY decide that you
+	  wish to offer warranty support. You may do so, but your doing so
+	  does in no way make me, the programmers of HTTPi, or anyone else
+	  liable for the fulfillment of your warranty, and you and the users
+	  of your derivative work must agree to hold us legally blameless
+	  under ALL circumstances. (Remember, no mutually exclusive license
+	  terms in your derivative works, right?)
+
+Your usage of this program constitutes your binding acceptance of these
+terms. Don't even think about starting HTTPi up on your system if you don't
+agree to follow the terms detailed in this license IN THEIR ENTIRETY. Don't
+even think about modifying it, patching it or distributing it if you don't,
+either. Exceptions to these restrictions must be obtained from me, the
+copyright holder, IN WRITING.
 
 I reserve the right to interpret this document, and I also reserve the right
-to make license changes without notice effective on issue date.
+to make license changes without notice effective on issue date. All legal
+issues shall be dealt with in accordance with the State of California, United
+States of America.
 
 Other than that, have a blast! Keep software free.
 
-Revised 03/18/1999
+Revised 04/21/1999

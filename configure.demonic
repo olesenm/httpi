@@ -9,19 +9,15 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "") unless ($DEFAULT);
-Configure (demonic) for HTTPi/0.7 (C)1998, 1999 Cameron Kaiser
+Configure (demonic) for HTTPi/0.99 (C)1998, 1999 Cameron Kaiser
 
 This is the configure script for Demonic HTTPi, the daemonized HTTPi version.
 
-THIS VERSION IS EXPERIMENTAL! It does work, and works well -- but it *is*
-a radical departure from the old (x)inetd-based version.
-
 DO NOT RUN THIS IF:
-	* you have a low tolerance for beta products
 	* your Perl doesn't support fork() (currently that's Win32 and a
 		few others)
 	* you don't have a good idea of how your system implements sockets
-	* did I mention this was experimental?
+	* you would prefer to have HTTPi run in inetd
 
 You don't need Socket.pm, though it helps. If you don't have Socket.pm, I'll
 need a C compiler to determine what your socket constants are. (Or I could
@@ -64,11 +60,30 @@ the current directory.
 
 EOF
 
+$DEF_STATIOS = &prompt(<<"EOF", "n", 1);
+HTTPi statistics, only available for Demonic, allows you to keep running
+track of your server. You'll need to enable the restriction matrix in order
+to keep the statistics URL secure, if you decide to do so.
+
+Access statistics on your server with
+
+http://$DEF_SERVER_HOST/status
+
+for most recent server accesses, running tallies on bytes transferred and
+requests handled, and uptime. This module is still in progress, but it works.
+
+Enable HTTPi statistics?
+EOF
+
+$DEF_STATIOS = (($DEF_STATIOS eq 'y') ? 1 : 0);
+
 $DEF_IP_ADDR = &prompt(<<"EOF", "0.0.0.0", 1);
 What numerical IP address do you want the webserver to bind to? You can run
-multiple HTTPis bound to multiple addresses this way for virtual servers
-(currently the IP-less Host:-selected virtual server option is not supported
-by HTTPi).
+multiple HTTPis bound to multiple addresses this way for virtual servers,
+if you don't want to use the IP-less Host:-based redirect feature. YOU MUST
+HAVE A SEPARATE DEMONIC HTTPi EXECUTABLE AND PROCESS PER IP ADDRESS BOUND --
+IP address information is *hardcoded* into your build, so different IP
+addresses must be enabled separately into different executable builds.
 
 0.0.0.0, the default, will bind to whatever address it can find. This is
 usually fine for most systems, and should only be changed if you are in fact
@@ -217,7 +232,7 @@ print "Writing out the configured httpi to $INSTALL_PATH ... ";
 &preproc("httpi.in", "$INSTALL_PATH", <<"EOF");
 
 Couldn't write out the new httpi. Check permissions on httpi.in in the
-current directory (you *are* root, right?) and the destination path.
+current directory and the destination path.
 
 EOF
 print "done.\n\n";
@@ -234,9 +249,7 @@ Invoke your new HTTPi with a simple
 $INSTALL_PATH
 
 No & required. Remember: if it's binding to a port < 1024, you'll need to
-be root, and that may not be a good thing with this relatively untested.
-If you want a root-reliable HTTPi, you're better off with the inetd versions
-for right now (though to be fair I run Demonic HTTPi, of course).
+be root.
 
 Remember to read the documentation file for last minute information. Bye!
 

@@ -1,5 +1,9 @@
 #!/usr/bin/perl
 
+# This is a demo of HTTPi executable format that simply dumps its arguments
+# and environment. Also useful for debugging. Put it in your documents
+# directory.
+
 print <<"EOF";
 HTTP/1.0 200 OK
 Content-type: text/plain
