@@ -1,3 +1,6 @@
+$DEF_MDEMONIC = 0;
+$DEF_CONF_TYPE = "xinetd";
+
 eval 'require "consubs.pl";'; die(<<"EOF") if ($@);
 
 Could not load consubs.pl, which is required for running the configure script.
@@ -6,7 +9,7 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "") unless ($DEFAULT);
-Configure (xinetd) for HTTPi/0.4 (C)1998 Cameron Kaiser
+Configure (xinetd) for HTTPi/0.7 (C)1998, 1999 Cameron Kaiser
 
 This is the configure script for xinetd systems.
 
@@ -57,8 +60,8 @@ EOF
 	}
 $DEF_UNAME = &wherecheck("Finding uname", "uname");
 if ($DEF_UNAME) {
-	chomp($arch = `$DEF_UNAME -s`);
-	print "Smells like $arch.\n";
+	chomp($DEF_ARCH = `$DEF_UNAME -s`);
+	print "Smells like $DEF_ARCH.\n";
 } else {
 	print "Hmm. This might not be a Unix box, but we'll keep trying.\n";
 }
@@ -104,7 +107,8 @@ security hole (to run *any* webserver as root, not just HTTPi).
 
 What user do you want the script to run as?
 EOF
-$DEF_CANDOSETRUID = &yncheck("Can we use setruid()?", '$< = 65534;');
+$DEF_CANDOSETRUID = &yncheck("Can we use setruid()?",
+	'$q = $<;$< = 65534;$< = $q;');
 
 $WAIT_MODE = &prompt(<<"EOF", "0") unless (!$DO_INSTALL);
 A further bonus to slow systems is, because HTTPi runs out of xinetd, the
@@ -126,6 +130,15 @@ EOF
 $WAIT_MODE += 0;
 
 unless (!$DO_INSTALL) {
+$IP_ADDR = &prompt(<<"EOF", "default");
+xinetd HTTPi can do IP-based virtual hosting like Demonic HTTPi can, allowing
+you to bind different instances of HTTPi to different IP addresses. If you just
+say "default", it will bind to INADDR_ANY, the default interface on your
+machine.
+
+Which IP address to bind to?
+EOF
+
 $PORT_NO = &prompt(<<"EOF", "80");
 What numerical TCP port do you want the webserver to run on? 80 is the default
 but if you're using configure to build multiple HTTPis on multiple ports,
@@ -202,6 +215,9 @@ open(S, ">>/etc/xinetd.conf") || die(
 	"\n\nAre you really root? I can't write to this file.\n");
 $wmode = ($WAIT_MODE == 1) ? 'yes' : 'no';
 $mproc = ($WAIT_MODE == 0) ? 'UNLIMITED' : "$WAIT_MODE";
+$pbind = ($IP_ADDR eq 'default') ? '' : <<"EOF";
+	bind			= $IP_ADDR
+EOF
 print S <<"EOF";
 
 # added by HTTPi install
@@ -216,6 +232,7 @@ service $SERV_NAME
 	instances		= $mproc
         user                    = $USER_ID
         server                  = $INSTALL_PATH
+$pbind
 }
 
 EOF

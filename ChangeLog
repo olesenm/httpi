@@ -1,3 +1,24 @@
+Changes since 0.4:
+
+	* argh!!!! I *still* can't get logging right!!! fixed to once and
+		for all obey CERN spec
+	* new daemonized version (configure.demonic)
+	* subtle bug where sock_to_host returns nil could corrupt logs. fixed.
+	* configure.inetd now NIS aware
+	* tons (too many) new environment variables for executables a la CGI
+		1.1 specification
+	* now aware of its host name, always a good thing :-)
+	* checks for alarm() and fork() availability in your Perl
+	* incomplete configures left null transcripts. fixed.
+	* error conditions in conquests.pl would sometimes give spurious
+		"conquests.pl not found" errors. fixed.
+	* HTTPerl allows same interpreter instance to be reused for speed
+	* HTTPerl-compatible noodle
+	* version string now reflects OS type and configure type
+	* HEAD now correctly logs actual data transferred
+	* HTTP/1.1 requests in non-1.1 mode come back as HTTP/1.0 (RFC
+		compliancy issue)
+
 Changes since 0.1:
 
 	* new environment variables: HTTP_REFERER, HTTP_USER_AGENT

@@ -1,12 +1,17 @@
+$DEF_MDEMONIC = 0;
+$DEF_CONF_TYPE = "inetd";
+
 eval 'require "consubs.pl";'; die(<<"EOF") if ($@);
 
 Could not load consubs.pl, which is required for running the configure script.
 Please make sure it's in the current directory.
 
+($@)
+
 EOF
 
 &prompt(<<"EOF", "") unless ($DEFAULT);
-Configure (inetd) for HTTPi/0.4 (C)1998 Cameron Kaiser
+Configure (inetd) for HTTPi/0.7 (C)1998, 1999 Cameron Kaiser
 
 This is the configure script for inetd systems (most Unix boxen).
 
@@ -60,7 +65,7 @@ EOF
 	}
 $DEF_UNAME = &wherecheck("Finding uname", "uname");
 if ($DEF_UNAME) {
-	chomp($arch = `$DEF_UNAME -s`);
+	chomp($DEF_ARCH = `$DEF_UNAME -s`);
 	print "Smells like $arch.\n";
 } else {
 	print "Hmm. This might not be a Unix box, but we'll keep trying.\n";
@@ -91,20 +96,70 @@ Could not load conquests.pl, which is required as part of the standard
 questions suite for all of the configure scripts. Please make sure it's in
 the current directory.
 
+($@)
+
 EOF
+
+if ($DO_INSTALL) {
+print <<"EOF";
+
+Now we're up to the inetd-relevant section. First, let's check to see if
+you have NIS or YP here, because that can cause some trouble.
+
+EOF
+$j = &wherecheck("Finding domainname", "domainname");
+if ($j) {
+	print "Phooey. Does it return anything? ...";
+	$q = '';
+	if(open(S, "$j|")) {
+		while(<S>) { chomp; $q .= $_ if ($_ ne '(none)'); }
+	}
+	if ($q ne '') {
+		$q = &prompt(<<"EOF", "");
+ yup ($q).
+Blast and botheration.
+
+Since I, a mere Perl programmer, am not versed in the mystical ways of NIS,
+you're going to have to make sure that your NIS services file, if your
+/etc/services file is kept in NIS, is properly updated with whatever service
+name and port you choose to run this under. If /etc/inetd.conf is also kept
+this way (!!!!!), then make analogous changes. Sorry.
+
+Press ENTER to continue:
+EOF
+	} else {
+		print <<"EOF";
+ nope. Well, that's a relief.
+
+Still, there exists the possibility that I didn't detect things right. If you
+are running NIS here, you may need to make changes to /etc/services and
+/etc/inetd.conf, depending on your configuration, yourself.
+
+EOF
+	}
+} else {
+	print <<"EOF";
+Just make sure you're not running NIS anyway, because any automated changes
+I might make to your /etc/inetd.conf and /etc/services files if requested
+might not stick otherwise. But if domainname isn't in your path, you probably
+aren't.
+
+EOF
+}
+}
 
 $USER_ID = &prompt(<<"EOF", "nobody") unless (!$DO_INSTALL);
 What user do you want the server to run as? If you select someone other than
 'root', the server will not be able to change (e)uid to an executable's owner,
-and you'll need to make sure the access log (getting to that) is writeable
-to them.
+and you'll need to make sure the access log is writeable by them.
 
 On the other hand, if you select 'root', be forewarned this is a potential
 security hole (to run *any* webserver as root, not just HTTPi).
 
 What user do you want the script to run as?
 EOF
-$DEF_CANDOSETRUID = &yncheck("Can we use setruid()?", '$< = 65534;');
+$DEF_CANDOSETRUID = &yncheck("Can we use setruid()?",
+	'$q = $<;$< = 65534;$< = $q;');
 
 $WAIT_MODE = &prompt(<<"EOF", "n") unless (!$DO_INSTALL);
 A further bonus to slow systems is, because HTTPi runs out of inetd, the
@@ -269,3 +324,4 @@ Remember to read the documentation file for last minute information. Bye!
 
 EOF
 }
+

@@ -6,23 +6,54 @@ Thanks.
 ~
 ~
 #!DEF_PERL
-$VERSION = "0.4";
+$VERSION = "0.7 (DEF_CONF_TYPE/DEF_ARCH)";
 
 # HTTPi Hypertext Tiny Truncated Process Implementation
-# Copyright 1998 Cameron Kaiser # All rights reserved # Please read LICENSE
+# Copyright 1999 Cameron Kaiser # All rights reserved # Please read LICENSE
 # Do not strip this copyright message.
 
 $logfile = "DEF_ACCESS_LOG";
 $path = "DEF_HTDOCS_PATH";
-$TIME_OUT = DEF_TIME_OUT;
+$sockaddr = 'S n a4 x8';
+
+~check MDEMONIC
+if ($pid = fork()) { exit; }
+$0 = "dhttpi: binding port ...";
+$bindthis = pack($sockaddr, DEF_AF_INET, DEF_TCP_PORT, DEF_INADDR_ANY);
+socket(S, DEF_PF_INET, DEF_SOCK_STREAM, DEF_IPPROTO_TCP);
+setsockopt(S, DEF_SOL_SOCKET, DEF_SO_REUSEADDR, 1);
+bind(S, $bindthis) || die("$0: while binding port DEF_TCP_PORT:\n\"$!\"\n");
+listen(S, DEF_SOMAXCONN);
+$0 = "dhttpi: connected and waiting DEF_IP_ADDR:DEF_TCP_PORT";
+~
+$0 = "httpi: handling request";
+~
+
+
+~check MFALSE
+
+*** The content types hash is a simple associative array with extensions for
+    keys and MIME types for values.
+
+~
+~
 %content_types =
 	("html" => "text/html",
+	 "class" => "application/octet-stream",
 	 "htm" => "text/html",
 	 "txt" => "text/plain",
 	 "gif" => "image/gif",
 	 "zip" => "application/x-zip-compressed",
 	 "gz"  => "application/x-gzip",
+	 "jpeg" => "image/jpeg",
 	 "jpg" => "image/jpeg");
+~check MFALSE
+
+*** The restrictions matrix is documented in the manual. The keys are the
+    filepaths and the values are the matrices themselves.
+
+~
+~
 ~check MRESTRICTIONS
 %restrictions =
 	("/nw" => "^10\.##^Mozilla#MSIE");
@@ -40,7 +71,15 @@ EOF
 ###############################################################
 
 sub sock_to_host {
-	local($sockaddr) = 'S n a4 x8';
+~check MFALSE
+
+*** Turn STDIN's socket address into an IP and, if we're lucky, a host name.
+
+~
+~
+	local($sock) = getpeername(STDIN);
+
+	return (undef, undef, undef) if (!$sock);
 	local($AFC, $port, $thataddr, $zero) = unpack($sockaddr, $sock);
 	local($ip) = join('.', unpack("C4", $thataddr));
 	local($hn) = gethostbyaddr($thataddr, 2) || $ip;
@@ -48,10 +87,21 @@ sub sock_to_host {
 }
 
 sub htsponse {
+~check MFALSE
+
+*** Return an HTTP status code and explanation, along with any collected
+    headers.
+
+~
+~
 	($currentcode, $currentstring) = (@_);
 	return if (0+$httpver < 1);
 	local($what) = <<"EOF";
+~check HTTP11WAIT
 HTTP/$httpver $currentcode $currentstring
+~
+HTTP/1.0 $currentcode $currentstring
+~
 ${headers}Date: $rfcdate
 EOF
 	$what =~ s/\n/\r\n/g;
@@ -63,12 +113,24 @@ EOF
 }
 
 sub hthead {
+~check MFALSE
+
+*** Add headers to the HTTP output, and/or terminate the header block.
+
+~
+~
 	local($header, $term) = (@_);
 	return if (0+$httpver < 1);
 	print stdout "$header\r\n" , ($term) ? "\r\n" : "";
 }
 
 sub htcontent {
+~check MFALSE
+
+*** Spew content, with the proper content type header and length header.
+
+~
+~
 	local($what, $ctype) = (@_);
 	($contentlength) = length($what);
 	&hthead("Content-Length: $contentlength");
@@ -78,30 +140,43 @@ sub htcontent {
 }
 
 sub log {
+~check MFALSE
+
+*** Log the request.
+
+~
+~
  	if (open(J, ">>$logfile")) {
 		local $q = $address . (($variables) ? "?$variables" : "");
 		$contentlength += 0;
+		$contentlength = 0 if ($method eq 'HEAD');
 		local ($hostname, $port) = &sock_to_host();
+		$hn = $hn || "-";
 ~check ORIG_LOG
 		print J <<"EOF";
-$hostname $httpref - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength
+$hostname - - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "$httpref" ""
 ~
 ~
 ~check GROSS_LOG
-		local ($escua) = $httpua;
-		$escua =~ s/\s/%20/g;
 		print J <<"EOF";
-$hostname $httpref $escua [$date] "$method $q HTTP/$httpver" $currentcode $contentlength
+$hostname - - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "$httpref" "$httpua"
 ~
 ~
 ~check TERSE_LOG
 		print J <<"EOF";
-$hostname - - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength
+$hostname - - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "" ""
 ~
 ~
 EOF
 		close(J); }
 	}
+
+~check MFALSE
+
+*** Various signal handlers (bye for SIGALRM and dead for __DIE__).
+
+~
+~
 
 sub bye { exit; }
 
@@ -121,8 +196,18 @@ EOF
 $SIG{'__DIE__'} = \&dead;
 $SIG{'ALRM'} = \&bye;
 
-select(STDOUT); $|=1;
-$sock = getpeername(STDIN);
+~check MFALSE
+
+*** Main loop.
+
+~
+~
+~check MDEMONIC
+sub master {
+	$0 = "dhttpi: handling request";
+~
+~
+# $sock = getpeername(STDIN);
 $rfcdate = scalar gmtime;
 ($dow, $mon, $dt, $tm, $yr) = ($rfcdate =~
 	m/(...) (...) (..) (..:..:..) (....)/);
@@ -135,15 +220,14 @@ $dt += 0;
 $dt = substr("0$dt", length("0$dt") - 2, 2);
 $date = "$dt/$mon/$yr:$tm DEF_TIME_ZONE"; 
 
-$address = 0;
-	alarm 10;
-while (<>) {
-	if(/^(GET|HEAD)\s+([^\s]+)\s+([^\s\r\l\n]*)/) {
+select(STDOUT); $|=1; $address = 0; alarm 10;
+while (<STDIN>) {
+	if(/^(GET|HEAD|POST)\s+([^\s]+)\s+([^\s\r\l\n]*)/) {
 		$method = $1;
 		$address = $2; 
 		$httpver = $3;
-		$httpref = '-';
-		$httpua = '-';
+		$httpref = '';
+		$httpua = '';
 		$httpver = ($httpver =~ m#HTTP/([0-9]\.[0-9]+)#) ?
 			($1) : (0.9);
 		next unless ($httpver < 1);
@@ -155,6 +239,10 @@ while (<>) {
 		s/[\r\l\n]+$//;
 		(/^Referer: (.+)/i) && ($httpref = $1);
 		(/^User-agent: (.+)/i) && ($httpua = $1);
+		(/^Content-length: (\d+)/i) && ($ENV{'CONTENT_LENGTH'} =
+			$httpcl = $1);
+		(/^Content-type: (.+)/i) && ($ENV{'CONTENT_TYPE'} =
+			$httpct = $1);
 		next unless (/^$/);
 	}
 	if (!$address) {
@@ -169,7 +257,7 @@ while (<>) {
 	1 while $address =~ s#/[^/]+/\.\./#/#;
 	if ($address !~ m#/$# && -d "$path$address") {
 		&htsponse(301, "Moved Permanently");
-		&hthead("Location: $address/", 1);
+		&hthead("Location: http://DEF_SERVER_HOST$address/", 1);
 		$keep = 0; &log; exit;
 	}
 	$address = "${address}index.html" if (-d "$path$address");
@@ -234,19 +322,52 @@ EOF
 				$) = $gid || die "can't set effgid";
 			}
 			($hostname, $port, $ip) = &sock_to_host();
+			$ENV{'REQUEST_METHOD'} = $method;
+			$ENV{'SERVER_NAME'} = "DEF_SERVER_HOST";
+			$ENV{'SERVER_PROTOCOL'} = "HTTP/$httpver";
+			$ENV{'SERVER_SOFTWARE'} = "HTTPi/$VERSION";
+~check MDEMONIC
+			$ENV{'SERVER_PORT'} = "DEF_TCP_PORT";
+			$ENV{'SERVER_URL'} = "http://DEF_SERVER_HOST:DEF_TCP_PORT/";
+~
+			($x, $ENV{'SERVER_PORT'}, $x, $x) = unpack($sockaddr,
+				getsockname(STDIN));
+			$ENV{'SERVER_URL'} = "http://DEF_SERVER_HOST:$ENV{'SERVER_PORT'}/";
+~
+			$ENV{'SCRIPT_FILENAME'} = $path . $address;
+			$ENV{'SCRIPT_NAME'} = $address;
 			$ENV{'REMOTE_HOST'} = $hostname;
 			$ENV{'REMOTE_ADDR'} = $ip;
 			$ENV{'REMOTE_PORT'} = $port;
 			$ENV{'QUERY_STRING'} = $variables;
 			$ENV{'HTTP_USER_AGENT'} = $httpua;
 			$ENV{'HTTP_REFERER'} = $httpref;
-			exec "$path$address", "$variables";
-			die "exec() returned -1";
+~check MDEMONIC
+			if ($pid = fork()) { exit; } else {
+~
+~
+~check MHTTPERL
+				require "$path$address";
+				exit;
+~
+				if ($method eq 'POST') { # needs stdin
+					open(W, "|$path$address") || die;
+					read(STDIN, $buf, $httpcl);
+					print W $buf;
+					exit;
+				}
+				exec "$path$address", "$variables";
+				die "exec() returned -1";
+~
+~check MDEMONIC
+			}
+~
+~
 		}
 		($x,$x,$x,$x,$x,$x,$x,$x,$x,$mtime) = stat(S);
 		$mtime = scalar gmtime $mtime;
-		($dow, $mon, $dt, $tm, $yr) = ($mtime =~
-			m/(...) (...) (..) (..:..:..) (....)/);
+		($dow, $mon, $dt, $tm, $yr) =
+			($mtime =~ m/(...) (...) (..) (..:..:..) (....)/);
 		$dt += 0; $yr += 0;
 		$ctype = 0;
 		foreach(keys %content_types) {
@@ -263,13 +384,17 @@ EOF
 	&log;
 ~check HTTP11WAIT
 	exit if (!$keep);
-	alarm $TIME_OUT;
+	alarm DEF_TIME_OUT;
 ~
 	exit;
 ~
 }
 
 exit;
+~check MDEMONIC
+}
+~
+~
 
 sub hterror {
 	local($errstr, $expl) = (@_);
@@ -286,3 +411,28 @@ by Cameron Kaiser</address>
 EOF
 	}
 
+~check MFALSE
+
+*** accept() loop that spawns the single child for accepting connections
+    in Demonic HTTPi.
+
+~
+~
+~check MDEMONIC
+for (;;) {
+	$addr=accept(NS,S);
+	if ($pid = fork()) {
+		$0 = "dhttpi: waiting for child process";
+		waitpid($pid, 0);
+		$0 = "dhttpi: on DEF_IP_ADDR:DEF_TCP_PORT, last request " .
+			scalar localtime;
+	} else {
+		$0 = "dhttpi: child switching to socket";
+		open(STDIN, "<&NS");
+		open(STDOUT, ">&NS");
+		&master;
+		exit;
+	}
+}
+~
+~

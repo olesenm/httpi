@@ -1,3 +1,7 @@
+$DEF_ARCH = "???";
+$DEF_CONF_TYPE = "Generic";
+$DEF_MDEMONIC = 0;
+
 eval 'require "consubs.pl";'; die(<<"EOF") if ($@);
 
 Could not load consubs.pl, which is required for running the configure script.
@@ -6,20 +10,19 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "");
-Configure (GENERIC) for HTTPi/0.4 (C)1998 Cameron Kaiser
+Configure (Generic) for HTTPi/0.7 (C)1998, 1999 Cameron Kaiser
 
 This is a generic configuration script.
 
 DO NOT RUN THIS IF:
 	* you have inetd (run configure.inetd instead)
 	* you have xinetd (run configure.xinetd instead)
+	* you want the demonised version (run configure.demonic instead)
 
 DO RUN THIS IF:
 	* you don't have an inetd but want to build an executable
 	* you don't have an inetd that HTTPi supports, but want an executable
-
-Win32 and MacPerl, thus, should be running this script. Virtually all modern
-Unices, Linux, etc. SHOULD NOT!
+	* you don't want to use Demonic HTTPi
 
 Note that you will need to roll your own changes to whatever inetd equivalent
 you have (configure.generic will tell you). YOU MUST HAVE AN INETD OR SOME

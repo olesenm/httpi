@@ -1,3 +1,15 @@
+print "\nSeeing if you have some optional utilities ...\n\n";
+$HOSTNAME = &wherecheck('Finding hostname', 'hostname');
+
+print "\nChecking some very vital system facilities I require.\n\n";
+$q = &yncheck('Can we use alarm()?', 'alarm 0;', <<"EOF");
+
+Sorry, I need to be able to send ALARM signals to the HTTPi process, or
+HTTPi won't time out. This could be the crux of a very nasty DoS attack
+otherwise. HTTP/1.1 features also depend on this. Please rerun this on a
+more suitable OS. :-)
+
+EOF
 $INSTALL_PATH = &prompt(<<"EOF", "/usr/local/bin/httpi", 1);
 
 Cool, we made it that far.
@@ -8,10 +20,10 @@ ENTER with nothing entered, the default (in [ ]) will be selected.
 
 Where do you want the resultant script placed? If you're using configure to
 build multiple instances of HTTPi on different ports, make sure this changes
-unless the timeout, mount directory and log file path are identical.
+unless you're darn certain that they'll all be configured the same way.
 
-WARNING: If you're doing a full install, including modifying inetd's config
-files, THIS MUST BE AN ABSOLUTE PATH.
+WARNING: If you're doing a full install, including modifying inetd (or
+whatever)'s config files, THIS MUST BE AN ABSOLUTE PATH.
 
 Install path?
 EOF
@@ -35,6 +47,14 @@ print <<"EOF";
 WARNING: Make sure the access log is writeable, or there won't be much in it.
 Check the file's permissions, just to be safe.
 
+EOF
+
+chomp($j = `$HOSTNAME`) if ($HOSTNAME);
+$DEF_SERVER_HOST = &prompt(<<"EOF", $j, 1);
+What will the server's name be? This should be a Fully Qualified Domain Name,
+like limburgher.cheese.com.
+
+Server host name?
 EOF
 
 $q = 0; $j = '';
@@ -87,7 +107,7 @@ EOF
 $DEF_TIME_OUT += 0;
 
 $DEF_MRESTRICTIONS = &prompt(<<"EOF", "y", 1);
-New in HTTPi/0.4 is the restriction matrix, allowing you to restrict resources
+HTTPi has an optional restriction matrix, allowing you to restrict resources
 to particular IP addresses or browsers. The restriction matrix allows very
 sophisticated security and management, but at the cost of slightly degrading
 runtime speed. If you aren't running any services that require strong security,
@@ -109,21 +129,24 @@ $bleh = &prompt(<<"EOF", "2", 1);
 Webserver logs are a pain in the butt, if you'll pardon the pun and the
 expression, particularly when they get lengthy.
 
-Earlier versions of HTTPi only supported logging type 1:
+Logging format 1 (here a more CERN compliant variant) was what was supported
+in earlier version of HTTPi:
 
-host referer - [CERNdate] "METHOD address HTTP/V.v" returncode contentlength
+host - - [CERNdate] "METHOD address HTTP/V.v" returncode contentlength\\
+	 "referer" ""
 (example: stockholm.ptloma.edu - - [31/Jan/1969:00:00:00] "GET / HTTP/1.0"
-200 1000)
+200 1000 "http://somewhere.com/" "")
 
 This is a compatible and valid CERN-style log entry, but it doesn't keep or
-know about user agents, and it could be smaller. So 0.4 supports two other
-formats:
+know about user agents, and it could be smaller. So HTTPi also supports two
+other formats:
 
 Type 2 for more "complete" logging, in the Apache/NCSA style:
-host referer useragent [CERNdate] "METHOD address HTTP/V.v" returncode length
+host - - [CERNdate] "METHOD address HTTP/V.v" returncode length "referer"\\
+	"useragent"
 
 ... and type 3 for ultra-terse logging:
-host - - [CERNdate] "METHOD address HTTP/V.v" returncode length
+host - - [CERNdate] "METHOD address HTTP/V.v" returncode length "" ""
 
 Which type of logging should be used, 1, 2 or 3?
 EOF
@@ -132,3 +155,30 @@ $bleh += 0;
 ($bleh == 1) && ($DEF_ORIG_LOG = 1);
 ($bleh == 2) && ($DEF_GROSS_LOG = 1);
 ($bleh == 3) && ($DEF_TERSE_LOG = 1);
+
+$DEF_MHTTPERL = &prompt(<<"EOF", "n", 1);
+New in version 0.7 is HTTPi's answer to mod_perl, HTTPerl. mod_perl works its
+magic by implementing a Perl interpreter in Apache; HTTPerl takes the obvious
+step of reusing the interpreter already running HTTPi to run your executables.
+
+The advantages:
+	* Can be faster (see below for when it won't be), especially if
+Perl keeps getting paged out.
+	* Your executables have access to all the HTTPi internal globals and
+subroutines, including HTTP negotiation and logging subroutines.
+	* Works better with POST (lets you manipulate the socket directly).
+
+The disadvantages:
+	* EVERY EXECUTABLE HTTPi RUNS HAS TO BE IN PERL. NO EXCEPTIONS! If you
+must run a precompiled binary, write a Perl wrapper, and have HTTPi run that.
+	* If your system is likely to have Perl cached or paged in, this will
+save you very little system overhead. 
+	* Still experimental.
+
+This is a new, experimental hack, so be wary, test thoroughly, and report bugs.
+Enable HTTPerl?
+EOF
+
+$DEF_MHTTPERL = (($DEF_MHTTPERL eq 'y') ? 1 : 0);
+
+1;

@@ -9,7 +9,7 @@ sub yncheck {
 	} else {
 		chomp($q = $@);
 		print "no ($q)\n"; $setv = 0;
-		die($fatal) if ($fatal);
+		(print($fatal), exit) if ($fatal);
 	}
 	return $setv;
 }
@@ -32,7 +32,7 @@ sub wherecheck {
 	}
 	if (!$setv) {
 		print "not found.\n";
-		die($fatal) if ($fatal);
+		(print($fatal),exit) if ($fatal);
 	}
 	return $setv;
 }
@@ -40,8 +40,8 @@ sub wherecheck {
 sub preproc {
 	local($infile, $outfile, $fatal) = (@_);
 	local $ifl, $def, $j;
-	open(S, "$infile") || die($fatal);
-	open(T, ">$outfile") || die($fatal);
+	open(S, "$infile") || (print($fatal), exit);
+	open(T, ">$outfile") || (print($fatal), exit);
 
 	$ifl = 0;
 	while(<S>) {
@@ -90,7 +90,7 @@ sub prompt {
 $entry selected.
 
 EOF
-	print L "$entry\n" if ($dontcare && !$DEFAULT);
+	printf(L "%s\n", $entry) if ($dontcare && !$DEFAULT);
 	return $entry;
 }			
 
@@ -116,13 +116,14 @@ EOF
 }
 
 unless ($DEFAULT) {
-	$p=0; while(-e "$0.transcript.$p") { $p++; }
-	open(L, ">$0.transcript.$p") || die(<<"EOF");
+	$p=0; while(-e "transcript.$p.$0") { $p++; }
+	open(L, ">transcript.$p.$0") || (print(<<"EOF"), exit);
 
-Can't open transcript file $0.transcript.$p for write.
+Can't open transcript file transcript.$p.$0 for write.
 Check your permissions on that file or directory.
 
 EOF
+	select(L); $|++; select(stdout);
 }
 
 1;

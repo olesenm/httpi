@@ -1,8 +1,8 @@
-** Installation procedure for HTTPi/0.4
-** Copyright 1998 Cameron Kaiser
+** Installation procedure for HTTPi/0.7
+** Copyright 1998, 1999 Cameron Kaiser
 
-1. Check that all files are present and proper size (see Manifest). Make sure
-   you have Perl 5 installed. You only need the executable.
+1. Check that all files are present. Make sure you have Perl 5 installed.
+   You only need the executable, not the standard distribution in full.
 
 2. Read the LICENSE file.
 
@@ -11,7 +11,7 @@
 4. Read the ... have you read it yet?
 
 5. Determine which configure file you should be running on your platform.
-YOU NEED AN INETD OR MORAL EQUIVALENT. NO EXCEPTIONS!
+YOUR PERL MUST HAVE alarm() TO INSTALL *AT ALL*!
 
 configure.inetd		Most Unix boxen. Use this if you use the vanilla
 			inetd. Will autoconfigure your files for you if root.
@@ -19,29 +19,46 @@ configure.inetd		Most Unix boxen. Use this if you use the vanilla
 configure.xinetd	For users of the xinetd clone http://synack.net/xinetd/
 			Will autoconfigure your files for you. Tres cool.
 
+configure.demonic	For Demonic HTTPi, the daemonised version. You'll
+			either need Socket.pm, a C compiler, or a list of
+			your system's socket constants. Your Perl must also
+			support fork().
+
 configure.generic	Don't know what inetd you have, or one I don't support
-			yet. Win32, Mac users should run this right now. Tells
-			you what configuration changes you need to make.
+			yet. You'll have to connect HTTPi to your inetd
+			yourself.
+
+demonic is the fastest and easiest to set up (you don't need to be root), but
+requires some special care and feeding. See the documentation.
 
 xinetd is vewwy vewwy fast. If you have the means, I highly recommend it. (To
 quote Ferris Bueller.) You'll realise about a 25% speed increase with it,
 at least according to my numbers. It assumes, however, that your .conf file
 is /etc/xinetd.conf, which is xinetd's default.
 
-Most of you will be running configure.inetd, so for backwards compatibility
+Many of you will be running configure.inetd, so for backwards compatibility
 it's still named configure (just a symlink to configure.inetd).
 
 Make sure that consubs.pl and conquests.pl are in the current directory.
 
 6. Run that config file.
 
-$ perl configure.inetd	# most unices
-$ perl configure.xinetd	# smart unices/sysadmins
-C:\>perl.exe configure.generic		# Win32, Mac, others
+$ perl configure.inetd	# most unices that want inetd installation
+$ perl configure.xinetd	# smart unices/sysadmins that want inetd installation
+$ perl configure.demonic # most unices that don't want inetd installation
+$ perl configure.generic # others
 
-If you're on a Unix box, run as root for full install options,
-or any other user just to build an object.
+NOTE TO (x)inetd INSTALLERS:
+If you're on a Unix box, you must run as root for full install options.
+Any user can build an object, but only root can modify your (x)inetd's
+configuration files.
 
 7. Follow the handy and verbose prompts. The configure program may have
    additional directions to follow. Follow them.
 
+8. If configure bombs, feel free to contact me with the error message at
+
+	httpi@stockholm.ptloma.edu
+
+--
+Cameron Kaiser

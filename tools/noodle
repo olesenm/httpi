@@ -15,4 +15,5 @@ foreach (sort keys %ENV) {
 	print "$_=$ENV{$_}\n";
 }
 
-open(S, ">/usr/local/htdocs/tester") && close(S);
+1;
+
