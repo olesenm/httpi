@@ -1,3 +1,28 @@
+Changes since first 1.0:
+
+	* fixed configure-time bug that caused syntax errors if preparsing
+		not turned on. duh. thanks Fergus Gallagher.
+	* better socket handling for Demonic
+	
+Changes since 0.99:
+
+	* logging. one final change: user, since it's not through identd,
+		should be in the second -. so, fixed. that's it! that's all the
+		changes I'm going to make to that! finito!
+	* fixed: bug in HTTPerl and POST executables where a runtime over
+		10sec causes premature termination. no real damage but
+		inexplicable behaviour was quite annoying (very subtle bug)
+	* first preparsing support for inline Perl. ewwww icky gross inline
+		perl ptui spit. you specify the extensions, you cover the
+		damage your users do with the server's UID (and don't say you
+		weren't warned). also adds &output and &flush methods, and
+		.shtm?l? MIME types
+	* fixed: perl ./configure didn't work. oops
+	* added lzh lha pdf fdf MIME types
+	* mild methods tweak to how hostname/IP info is stored. now cached
+		if the restriction matrix already looked that info up
+	* transcript files are now version tagged to stop upgrade snarls
+
 Changes since 0.7:
 
 	* logging ... didn't change. phew, for once :-)

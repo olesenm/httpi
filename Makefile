@@ -29,6 +29,12 @@ version:
 	@${CAT} VERSION
 	@${SLEEP} 2
 
+configure: install
+configure.inetd: install
+configure.demonic: install
+configure.xinetd: install
+configure.generic: install
+
 install: version
 	@echo "Do one of: 'perl configure.inetd'"
 	@echo "           'perl configure.demonic'"

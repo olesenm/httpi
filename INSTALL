@@ -1,4 +1,4 @@
-** Installation procedure for HTTPi/0.99
+** Installation procedure for HTTPi/1.0
 ** Copyright 1998, 1999 Cameron Kaiser
 
 1. Check that all files are present. Make sure you have Perl 5 installed.

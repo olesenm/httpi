@@ -184,9 +184,7 @@ subroutines, including HTTP negotiation and logging subroutines.
 The major disadvantages:
 	* EVERY EXECUTABLE HTTPi RUNS HAS TO BE IN PERL. NO EXCEPTIONS! If you
 must run a precompiled binary, write a Perl wrapper, and have HTTPi run that.
-	* Still experimental.
 
-This is a new, experimental hack, so be wary, test thoroughly, and report bugs.
 Please read the docs, there's important information in there about this!
 Enable HTTPerl?
 EOF
@@ -246,6 +244,46 @@ a rather large security hole). For this reason, this option defaults to no.
 Enable user filesystem?
 EOF
 	$DEF_MUSERFS = ($q eq 'y') ? 1 : 0;
+}
+
+$q = &prompt(<<"EOF", "n", 1);
+HTTPi now enables preparsing of selected content types. With the new preparse
+module loaded, you can:
+
+	* insert inline Perl with the <perl></perl> tags and access server
+	  internals
+
+Preparsing is done only on files with extensions .sht, .shtm and .shtml, 
+unless you say otherwise.
+
+Because this runs as the UID of the webserver, this can be a VERY BIG security
+hole if enabled with the user filesystem. Enable only if you really trust
+your users, or if you will be the sole person creating content for HTTPi (or
+if you're running HTTPi as some unprivileged user that can't do anything
+antisocial). Enable only under severe, serious advisement!
+
+For information on how to program with inline Perl, see the programming manual.
+
+Enable preparsing?
+EOF
+$DEF_MPREPARSE = ($q eq 'y') ? 1 : 0;
+unless ($DEF_MPREPARSE) {
+	print <<"EOF";
+You said no preparsing, so I won't ask you any more questions about that.
+Neener, neener; et la neener. That's French for phooey on you.
+
+EOF
+} else {
+	$q = &prompt(<<"EOF", "n", 1);
+You may have all HTML files, or just ones with the .sht, .shtm or .shtml
+extensions preparsed for inline Perl. Preparsing is not that big of a
+performance hit, but you may not want it occurring everywhere just the same,
+so the default only parses .sht, .shtm and .shtml.
+
+Parse all HTML files?
+EOF
+	$DEF_PREGEXPA = ($q eq 'y') ? '?' : '';
+#	$DEF_PREGEXPB = ($q eq 'y') ? '' : '?';
 }
 
 # leave alone

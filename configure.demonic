@@ -228,6 +228,8 @@ If you want to continue, just press ENTER.
 If you don't, press CTRL-C NOW!
 EOF
 
+$DEF_MDEMNOHTTP11 = ($DEF_HTTP11WAIT) ? 0 : 1;
+
 print "Writing out the configured httpi to $INSTALL_PATH ... ";
 &preproc("httpi.in", "$INSTALL_PATH", <<"EOF");
 

@@ -6,7 +6,7 @@ Thanks.
 ~
 ~
 #!DEF_PERL
-$VERSION = "0.99 (DEF_CONF_TYPE/DEF_ARCH)";
+$VERSION = "1.0 (DEF_CONF_TYPE/DEF_ARCH)";
 
 # HTTPi Hypertext Tiny Truncated Process Implementation
 # Copyright 1999 Cameron Kaiser # All rights reserved # Please read LICENSE
@@ -43,13 +43,23 @@ $statiosuptime = time();
 ~
 %content_types =
 	("html" => "text/html",
+~check MPREPARSE
+	 "shtml" => "text/html",
+	 "shtm" => "text/html",
+	 "sht" => "text/html",
+~
+~
+	 "pdf" => "application/pdf",
+	 "fdf" => "application/vnd.fdf",
+	 "htm" => "text/html",
 	 "bin" => "application/octet-stream",
 	 "class" => "application/octet-stream",
 	 "wav" => "audio/x-wav",
-	 "htm" => "text/html",
 	 "txt" => "text/plain",
 	 "gif" => "image/gif",
 	 "zip" => "application/x-zip-compressed",
+	 "lzh" => "application/octet-stream",
+	 "lha" => "application/octet-stream",
 	 "gz"  => "application/x-gzip",
 	 "jpeg" => "image/jpeg",
 	 "jpg" => "image/jpeg");
@@ -72,6 +82,7 @@ $statiosuptime = time();
 ~check NAMEREDIR
 %nameredir =
 	("stockholm" => "http://stockholm.ptloma.edu",
+	 "terapede.ptloma.edu" => "http://terapede.ptloma.edu:81",
 	 "httpi.ptloma.edu" => "http://stockholm.ptloma.edu/httpi");
 ~
 ~
@@ -169,22 +180,22 @@ sub log {
 		local $q = $address . (($variables) ? "?$variables" : "");
 		$contentlength += 0;
 		$contentlength = 0 if ($method eq 'HEAD');
-		local ($hostname, $port) = &sock_to_host();
-		$hn = $hn || "-";
+		local ($hostname, $port, $ip) = &sock_to_host();
+		$hostname = $hostname || "-";
 		$httpuser = $httpuser || "-";
 ~check ORIG_LOG
 		print J <<"EOF";
-$hostname $httpuser - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "$httpref" ""
+$hostname - $httpuser [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "$httpref" ""
 ~
 ~
 ~check GROSS_LOG
 		print J <<"EOF";
-$hostname $httpuser - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "$httpref" "$httpua"
+$hostname - $httpuser [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "$httpref" "$httpua"
 ~
 ~
 ~check TERSE_LOG
 		print J <<"EOF";
-$hostname $httpuser - [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "" ""
+$hostname - $httpuser [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "" ""
 ~
 ~
 EOF
@@ -305,7 +316,7 @@ while (<STDIN>) {
 		($allowip, $denyip, $allowua, $denyua, $auser) =
 			split(/#/, $restrictions{$_});
 		if ($allowip || $denyip) {
-			($hn, $port, $ip) = &sock_to_host();
+			($hostname, $port, $ip) = &sock_to_host();
 			($allowip && $ip !~ /$allowip/) && ($fail = 1,
 				last J);
 			($denyip && $ip =~ /$denyip/) && ($fail = 1,
@@ -440,7 +451,7 @@ EOF
 				$> = $uid || die "can't set effuid";
 				$) = $gid || die "can't set effgid";
 			}
-			($hostname, $port, $ip) = &sock_to_host();
+			($hostname, $port, $ip) = &sock_to_host() if (!$port);
 			$ENV{'REQUEST_METHOD'} = $method;
 			$ENV{'SERVER_NAME'} = "DEF_SERVER_HOST";
 			$ENV{'SERVER_PROTOCOL'} = "HTTP/$httpver";
@@ -463,6 +474,10 @@ EOF
 			$ENV{'HTTP_REFERER'} = $httpref;
 ~check MDEMONIC
 			if ($pid = fork()) { exit; } else {
+~
+~
+~check MCANALARM
+				alarm 0;
 ~
 ~
 ~check MHTTPERL
@@ -491,14 +506,32 @@ EOF
 		$dt += 0; $yr += 0;
 		$ctype = 0;
 		foreach(keys %content_types) {
-			if ($raddress =~ /\.$_$/) {
+			if ($raddress =~ /\.$_$/i) {
 				$ctype = $content_types{$_};
 			}
 		}
-		$ctype ||= "text/plain";
+		$ctype ||= 'text/plain';
 		&htsponse(200, "OK");
 		&hthead("Last-Modified: $dow, $dt $mon $yr $tm GMT");
 		$j = $/; undef $/; $q = <S>; $/ = $j; close(S);
+~check MDEMNOHTTP11
+		if ($pid = fork()) { exit; } 
+~
+~
+~check MPREPARSE
+		if ($raddress =~ /\.sDEF_PREGEXPAhtm?l?/i) {
+~
+~
+~check MPREPARSE
+				1 while ($fbuf = '',
+			$q =~ s#<perl>(.+?)</perl>#eval"$1"#es);
+		}
+~
+~
+~check MCANALARM
+		alarm 0;
+~
+~
 		&htcontent($q, $ctype);
 	}
 	&log;
@@ -513,6 +546,12 @@ EOF
 exit;
 ~check MDEMONIC
 }
+~
+~
+
+~check MPREPARSE
+sub output { $fbuf .= "@_"; }
+sub flush { $fbuf1 = $fbuf; $fbuf = ''; return $fbuf1; }
 ~
 ~
 
