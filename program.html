@@ -183,6 +183,55 @@ restriction matrix checks now come first, so you may protect a module with,
 say, a password or an IP range restriction by putting an entry in the
 restriction matrix. In fact, this is how STATIOS
 is implemented by default. 
+<h4>External handler support (1.4 and up)</h4>
+Starting in 1.4 are the beginnings of designing your own external handlers to
+help reduce the need to depend on items "compiled" into HTTPi at
+configure-time. Only a constant stub appended to <code>modules.in</code>
+need be used; it can point to a handler that can vary freely. One example is
+the PHProxy, a handler that allows you to
+execute PHP scripts directly within HTTPi, and is included in the standard
+distribution with instructions in <code>tools/phproxy/</code> . Here is
+how its <code>modules.in</code> dispatch looks.
+<pre>
+	if ($address =~ /\.php$/i) {
+		$raddress = "/usr/local/bin/phproxy";
+		goto IRED;
+	}
+</pre>
+Assuming the condition is met (in this case, any request for a file ending
+in <code>.php</code>), the <code>$raddress</code> global is set to the
+location of the external handler (in this case 
+<code>/usr/local/bin/phproxy</code>). After this, the magic incantation
+<code>goto IRED;</code> short-circuits the logic used to handle standard
+files and executables, and goes directly to the section that serves
+a document. If <code>$raddress</code> references an executable (as expected,
+although it could also be a server-parsed document with inline Perl, or
+less frequently useful, a regular document), it will start execution.
+<p>
+Because this short-circuits a lot of logic (for several reasons: first and
+foremost simple installation and management; second, to allow custom
+behaviour; and third, for speed), your external handler is expected to be
+robust and do many of the services HTTPi would do for a regular file
+or executable access. This includes rejecting unsuitable requests (such
+as file not found, access denied, wrong format, etc.),
+handling security constraints, and delivering data back to the client.
+<p>
+The easiest way to give all this functionality to your handler is to
+write it in Perl, and enable HTTPerl at configure-time. While you could
+write your handler as a regular HTTPi executable or "quasi-NPH-CGI"
+and use <a href = "serve.html#exec">the subset of CGI environment
+variables HTTPi provides you</a> to obtain the relevant context and arguments,
+by enabling HTTPerl instead you will then
+have access to the entire library of HTTPi functions and globals to
+correctly handle a request in an expected manner. While a <a href =
+"#func">list of
+official globals and functions</a> is given below, in short, you will still
+have your original request in <code>$address</code>, the mountpoint of
+the web server in <code>$path</code> (to allow you to generate a true
+absolute path to a file), and you will still be able to call the various
+error subroutines to raise complaints to the client, as well as the
+New Security Model to appropriately handle UID/GID security. In fact,
+PHProxy requires HTTPerl be enabled to operate correctly.
 <p>
 <a name = "func"><h3>Functions in HTTPi</h3></a>
 <b>Networking functions</b> (ordered by appearance)
@@ -196,7 +245,9 @@ executable support. Normally handled by similarly named functions in
 support built-in. Unlike 0.1, the current version is hardcoded to use the
 <code>STDIN</code> filehandle. A list of (<code>hostname, port, IP</code>) is
 returned; if hostname lookups are off, IP addresses
-are returned in both the hostname and IP address sections.
+are returned in both the hostname and IP address sections. In 1.4 and up,
+<code>sock_to_host</code> attempts to cache the results for future calls
+using the <code>$cache_ip $cache_hn $cache_port</code> globals.
 </dl><p>
 <b>HTTP response functions</b> (ordered by appearance)
 <dl>
@@ -235,8 +286,8 @@ logging option specified during the <code>configure</code> process.
 <code>SIGALRM</code>. Currently, it just silently terminates HTTPi.
 <dt><code>sub dead</code>
 <dd>This function is called by default when HTTPi receives signals that
-would cause Perl to terminate (through the <code>__DIE__</code> psuedo
-handler). It logs a 500 error through <code>htsponse</code> and prints an
+would cause Perl to terminate (through the <code>__DIE__</code> pseudohandler).
+It logs a 500 error through <code>htsponse</code> and prints an
 error message with <code>hterror</code>.
 <dt><code>sub hterror</code>
 <dd>This function is used to display the default formatted HTTPi error
@@ -247,6 +298,17 @@ formatted dump containing the title and explanation.
 <dt><code>sub hterror401, hterror302</code>
 <dd>These are internal error subroutines that simply set error codes and
 fall through to <code>hterror</code> with their messages.
+<dt><code>sub nsecmodel</code>
+<dd>1.4 and up. This function manages security and juggles appropriate UID
+and GIDs for the owner of filehandle S. If the New Security Model is
+enabled, it enforces its constraints and, if possible, switches UID and
+GID to the owner of the file referenced by filehandle S. If the New
+Security Model is not enabled, it will only be invoked for executables,
+and only restrict to files not owned by UID or GID 0, although it will
+attempt to change UID and GID if it can. This function exists even if the
+New Security Model is not enabled. Globals <code>$gid</code> and
+<code>$uid</code> are set with the GID and UID, respectively, of the
+referenced document.
 </dl>
 <a name = "glob"><h3>Important Globals in HTTPi</h3></a>
 <table width = 100% cellpadding = 5 cellspacing = 2 border = 0>
@@ -320,6 +382,12 @@ header string, and the decoded user and temporary space for the clear-text
 password. The
 first is set on receipt of a valid <code>Authorization</code> header; the
 others only set after restriction matrix checks are passed.
+<dt><code>$uid, $gid</code>
+<dd>Set by <code>nsecmodel</code> after analysis of the currently requested
+resource to the owner and GID of the requested resource.
+<dt><code>$cache_ip, $cache_hn, $cache_port</code>
+<dd>Set by <code>sock_to_host</code> in 1.4 and up after execution to
+cache DNS reverse lookups.
 <dt><code>$mtime</code>
 <dd>Last modify date of the currently selected resource as indicated by
 <code>$address</code>; set after successfully verifying resource's existence
@@ -346,10 +414,20 @@ be advised of several important issues:
 <ul>
 <li>You have a tremendous security hole if you enable the user filesystem.
 Any user can do just about any Perl operation with the webserver's UID.
+While the New Security Model can help contain documents containing inline
+Perl blocks owned by a user to
+run with only their privileges, not the webserver's, this only happens if the
+webserver is running as root, and the New Security Model is still considered
+experimental as of 1.4.
 <li>You can do <i>almost</i> anything in the Perl tags that you can do in
 regular Perl.
 <li>You have a tremendous security hole if you enable the user filesystem.
 Any user can do just about any Perl operation with the webserver's UID.
+While the New Security Model can help contain documents containing inline
+Perl blocks owned by a user to
+run with only their privileges, not the webserver's, this only happens if the
+webserver is running as root, and the New Security Model is still considered
+experimental as of 1.4.
 <li>You have complete access to the server internals within the Perl tag.
 While you cannot affect the server itself or crash it, since you're in a
 child process and not the Demonic server or <code>(x)inetd</code>, you can
@@ -385,6 +463,30 @@ yourself). When you're done, just <code>return &amp;flush();</code>, which
 returns and flushes the buffer. You can see this in <code>imf.shtml</code>, so
 look at it if you haven't already.
 <p>
+In 1.4, file manipulation "primitives" have been included allowing you to
+sling entire files around and build a library of pieces which can be all
+tied together at service time. The <code>&amp;include</code> function, also
+only present if preparsing is enabled, accepts a <i>fully-qualified (not
+relative)</i> path to a file, and directly inserts into the buffer, just
+as if you had used <code>&amp;output</code> to display its contents, but
+<code>&amp;include</code> takes care of all the opening and slurping of its
+data for you. As always, just <code>return &amp;flush();</code> to return
+and flush the buffer. If you just want to insert a single file and nothing
+else, <code>&amp;finclude()</code> does all this for you. Check out
+<a href = "sfperl.shtml">this example</a>.
+<p>
+If <code>&amp;include</code> cannot include the file, it will quietly
+insert a comment in HTML <code>&lt;!-- --&gt;</code> tags containing the
+error message.
+<p>
+You can also include a file containing additional inline Perl blocks, and
+this file will be interpreted as if it were part of the original file. This
+lets you build an entire library of routines you can include at a whim,
+with a central point for easy system-wide changes. For
+purposes of the New Security Model, any files you include are operated with
+the UID of the original file's owner if the New Security Model is enabled,
+so be sure you trust the source of files that you include into yours.
+<p>
 Errors get caught by HTTPi's <code>__DIE__</code> handler. Of course, if
 this bugs you, you could alter this right in your inline Perl by introducing
 an anonymous subroutine reference. However, a much better way would be to
@@ -399,8 +501,11 @@ a literal <code>&lt;/perl&gt;</code> or <code>&lt;perl&gt;</code> in your
 code, since the preparser is
 not too bright; you'll need to cleverly escape it or break it up, which
 shouldn't be too hard.
-(It is fully possible to have an inline Perl block create another inline
-Perl block, which will be executed as if it were there in the first place.
+(Just like you can use the file-manipulation functions to include and
+execute another file with inline Perl blocks,
+it is fully possible to have an inline Perl block create another inline
+Perl block, which will be executed as if it were there in the first place,
+too.
 The possibilities for recursion are entertaining and somewhat disturbing,
 so this exercise is left to the reader.)
 <p>

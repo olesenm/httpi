@@ -121,7 +121,76 @@ web server's uid if you're not careful. <i>There is no current way to
 selectively allow only some users or no users at all to have executables.</i>
 Read the section on <a href = "#exec">executable support</a> carefully before
 you enable the user filesystem.
+<p>
+Security constraints may be made stronger by using the New Security Model
+(see below).
 </td></tr></table><p>
+<h4>The New Security Model</h4>
+In 1.4, a new method which HTTPi uses to assign its (effective and/or real)
+UID and GID for operations became available. This is a configure-time option
+which can be enabled at your leisure. These examples assume the server is
+running as root (otherwise the server does not/cannot change its UID/GID and
+all operations are done with the server's UID/GID).
+<p>
+In the former system, the server only changed its UID/GID on executables. No
+attempt was made to enforce which UIDs were legal until the most recent
+versions, although as a side
+effect, no root-owned executables were allowed to execute and this was
+assimilated as a "feature" in the latest versions before the introduction
+of the NSM. Documents and server-parsed documents, including inline Perl
+blocks, ran with the webserver's UID/GID.
+<p>
+In the New Security Model, the server changes UID/GID for all documents to the
+owner of the document. This includes server-parsed documents, including
+those using inline Perl, and all executables, meaning the serving and
+execution of all content is restricted to the privileges of the user who
+owns the file being served. In fact, this includes even completely static
+documents and files. Moreover, a minimum UID can be specified to
+indicate which UIDs may serve documents. This has the following effects:
+<p>
+<ul>
+<li>UID 0 (root) is explicitly disabled in the NSM, whereas it was only
+"implicitly" disabled before. GID 0 is also explicitly disabled. Documents
+owned by either UID 0 or GID 0, as well as any executable file owned
+by them, are categorically proscribed and cannot be accessed, no
+matter what. (In this
+version of HTTPi, even if the New Security Model is disabled, an explicit
+constraint to restrict UID/GID 0-owned files from being served is in place.)
+<p>
+<li>All files owned by a UID lower than the minimum UID are proscribed and
+cannot be accessed. (However, specifying a minimum UID of zero won't allow
+superuser-owned files to be served, as UID 0 and GID 0 are
+never allowed to serve documents; see above.) So, even if a malignant or
+clueless user put a symlink to a private or secured system directory (like
+<code>/etc</code> or <code>/var/adm</code> or other sensitive locations)
+somewhere visible to the webserver, as long as the files within it
+are owned by a proscribed UID, they can't be accessed.
+<p>
+<li>As the process has changed UID, the child process serving the document
+or executable is now owned by the owner of the document or executable and
+the document owner can now send the child server process signals, including
+termination signals if desired. (This may or may not be advantageous.)
+The master server continues to run with the original UID.
+<p>
+<li>Logging is done before the UID switch. If asychronous logging is
+enabled, the logging process continues to run with the original UID.
+<p>
+<li>Files in the virtual filesystem do not have "owners" per se and are
+served with the server's original UID.
+<p>
+<li><code>stat()</code> is used to evaluate the permissions of the file,
+meaning that symlinks will not disguise a file's true UID/GID. For example,
+a symlink to <code>/etc/passwd</code> would still evaluate as owned by
+root, and cannot be served.
+<p></ul>
+Even if the web server is unable to mutate its UID/GID to the document owner
+and must do operations as "itself" (when it's not running as root), it
+will still enforce the minimum UID constraint, and will still enforce the
+restrictions on files owned by either UID or GID 0.
+<p>
+As of 1.4, the New Security Model is still considered an experimental
+feature.
+<p>
 <a name = "htho"><h3>Virtual Hosting with HTTPi</h3></a>
 <h4>IP-Based Virtual Hosting</h4>
 <table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
@@ -154,33 +223,33 @@ The IP-less virtual hosting feature uses a hash, with your virtual servers as
 the keys mapping to locations in the real file system on the actual server
 (the actual server is based on whatever you entered as the fully-qualified
 domain name of the server during the <code>configure</code> process, so this
-last is very important). Here's the entry from this server's:
+last is very important). Here's an example, from this server itself:
 <pre>
-%nameredir =
-        ("stockholm" => "http://stockholm.ptloma.edu:8080",
-         "stockholm.ptloma.edu" => "http://stockholm.ptloma.edu:8080",
-         "stockholm.floodgap.com" => "http://www.floodgap.com",
-         "httpi.ptloma.edu" => "http://stockholm.ptloma.edu:8080/httpi",
-         "httpi.floodgap.com" => "http://www.floodgap.com/httpi");
+%nameredir = (
+	 "stockholm.floodgap.com" => "http://www.floodgap.com",
+	 "httpi.floodgap.com" => "http://www.floodgap.com/httpi",
+	 "www.retrobits.com" => "http://www.floodgap.com/retrobits",
+	 "retrobits.com" => "http://www.floodgap.com/retrobits",
+	);
 </pre>
-For example, a request for <code>http://httpi.floodgap.com/serve.html</code>
+Based on the above, a request for
+<code>http://httpi.floodgap.com/serve.html</code>
 becomes mapped to <code>http://www.floodgap.com/httpi/serve.html</code>.
-In the same way, a request for <code>http://stockholm.ptloma.edu/</code>
-becomes mapped to <code>http://stockholm.ptloma.edu:8080/</code>, which is
-actually a separate HTTPi server process listening on port 8080 instead of 80.
+In the same way, a request for <code>http://www.retrobits.com/ckb/</code>
+becomes mapped to <code>http://www.floodgap.com/retrobits/ckb/</code>.
 Since HTTPi has been told the real name of the server is
 <code>www.floodgap.com</code>, HTTPi then relies on this hash to
 handle requests for the other virtual servers this machine runs.
 <p>
-Note the presence of <code>stockholm</code> as an alias for
-<code>stockholm.ptloma.edu</code>. If IP-less virtual hosting is turned on,
+Note the presence of <code>retrobits.com</code> as an alias for
+<code>www.retrobits.com</code>. If IP-less virtual hosting is turned on,
 then if the request is not for the real name of the server or for any of
-the aliases in <code>%nameredir</code>, the client gets a 404. To allow lazy
-me to continue to leave off <code>.ptloma.edu</code> for local accesses,
-I added that line, also, so that it will fully qualify the name for me.
+the aliases in <code>%nameredir</code>, the client gets a 404. As many
+old URLs had the 'www' missing in their links,
+I added that line, also, so that it will fully qualify the name for them.
 Note that, using the redirection hash above as written, a request for
-<code>http://httpi/</code> will fail with a 404: it must be
-<code>http://httpi.floodgap.com/</code>.
+<code>http://floodgap.com/</code> will fail with a 404: it must be
+<code>http://www.floodgap.com/</code>.
 <p>
 Also note that, unlike IP-based virtual hosting, this all occurs within one
 server process. <b>You do not need individual processes per IP-less virtual
@@ -217,9 +286,11 @@ directory save the document one (i.e. there is no explicit
 <p>
 <table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
 <td bgcolor = "#e0e0ff">
-Executables owned by root, unless the web server is not running as the
-superuser and therefore cannot change uid to the owner of the executable,
-are never run. This would be a fantastic security hole otherwise.
+As of 1.4, regardless of whether the webserver is itself running as root,
+no root-owned or GID 0-owned executable may be executed.
+<p>
+Executables may also be subject to conditions of the New Security Model
+if you enable it.
 </td></tr></table><p>
 The file <code>noodle</code>, included with the distribution in the
 <code>tools/</code> directory, allows you to
@@ -239,7 +310,8 @@ provided the <code>REMOTE_HOST</code>, <code>REMOTE_ADDR</code>,
 <code>SERVER_URL</code>, <code>CONTENT_TYPE</code> (for POST requests),
 <code>CONTENT_LENGTH</code> (for POST requests),
 <code>HTTP_USER_AGENT</code> and <code>HTTP_REFERER</code> environment
-variables.
+variables. In addition, as of 1.4, you are also provided the
+<code>HTTP_COOKIE</code> header with any cookies sent by the client.
 <p>
 Here's the good news:
 most NPH CGIs will probably need no modification at all, and most other CGIs
@@ -292,7 +364,7 @@ don't have to provide any HTTP negotiation code yourself. Moreover, as a
 result of the way it is invoked, your
 executable runs within the server (it becomes <i>part</i> of the server),
 so HTTPi will do error handling for you unless you catch the
-<code>__DIE__</code> psuedosignal handler first.<p>
+<code>__DIE__</code> pseudosignal handler first.<p>
 <table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
 <td bgcolor = "#ffe0e0">
 <b>Warning!</b>
@@ -315,7 +387,10 @@ your executable with <code>configure</code>.</b><p>
 HTTPi 1.0 and up offer the ability to embed Perl in server-parsed HTML files.
 This feature is very useful and also very <i>dangerous</i> (particularly if
 you have the user filesystem enabled, as it allows anyone to execute arbitrary
-Perl with the webserver's UID).
+Perl with the webserver's UID). Although the New Security Model (see
+above), introduced in 1.4, improves
+this feature's security, it still has tremendous power for problem as well
+as promise.
 <p>
 As this feature requires some knowledge of the internals of HTTPi, it is
 given its own section in the <a href = "program.html#inpl"><b>Programmer's
@@ -461,7 +536,11 @@ you alter the file, you must reboot Demonic HTTPi for the change to take
 effect.
 <li>You cannot preload an entire filesystem (it would probably require
 prohibitive memory overhead anyway), but must do files individually.
-<li>You need to know your file's MIME type.<p>
+<li>You need to know your file's MIME type.
+<li>If a preloaded file is an executable, or a file with embedded Perl
+blocks, the file itself will be sent, without having been executed, directly
+to the user with no parsing.
+<p>
 </ul>
 The entries that make up the virtual filesystem are in the
 <code>%virtual_files</code> hash in <code>uservar.in</code>. Each hash key
@@ -514,12 +593,53 @@ modification date per se, as well.
 If an entry in the hash is the same as a file that really does exist, the
 virtual filesystem entry always takes precedence.
 <p>
+The New Security Model has no effect on how virtual filesystem entries are
+served.
+<p>
 <b>To edit the <code>%virtual_files</code> hash, please see the <a href =
 "program.html">programming manual</a> about using the <code>configure</code>
 system to help you build new versions of HTTPi, and then edit the
 <code>uservar.in</code>
 file in the distribution according to the <a href
 = "program.html#uvar">manual's instructions.</a></b>
+<a name = "thrs"><h3>Throttling Support</h3></a>
+As of 1.4, an exceptionally primitive and dumb, but effective, bandwidth
+throttling option is available, allowing you to limit how fast requests
+are served to users.
+<p>
+In an attempt to use as portable and uncomplicated a method as
+possible, the
+bandwidth throttling method is implemented overly simplistically.
+At configure time, you
+specify how big a "gulp" to take and spew over the network, and then how
+long should elapse between said gulps. For example, specifying 16K (this
+should be given to the configure script in bytes, so, 16384 bytes) and
+one second intervals means an effective average limit of 16K/sec on
+outgoing transfers.
+Most people will want to use a one-second interval to obtain as direct a
+bytes/second
+limit as possible, but you may have valid uses for increasing this interval
+(see below).
+<p>
+<table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
+<td bgcolor = "#ffe0e0">
+The interval pause is implemented in terms of the <code>sleep</code>
+function, which may inherit the limitations of your local
+implementation and operating system, including failing to sleep for
+the exact time specified.
+</td></tr></table><p>
+Virtual files, executables and server-parsed documents (including inline
+Perl blocks) are <i>not</i> subject to throttling.
+<p>
+Throttling occurs on a per-process basis, not per server or
+installation. If you have a very
+busy site and absolutely must maintain as low a bandwidth impact as possible,
+one possible way to lower the impact is to turn up the interval. This will
+spread out data pulses to clients and allow more server instances a greater
+chance to transmit their data. However, there is currently no way in this
+version of HTTPi
+to enforce an aggregate transmission limit over all processes that the
+master HTTPi instance has spawned.
 <h3>Questions and Bug Reports</h3>
 Send all outstanding issues to <b><a href =
 "mailto:httpi@floodgap.com">httpi@floodgap.com</a></b>.

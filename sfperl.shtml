@@ -1,0 +1,26 @@
+<html>
+<head><title>HTTPi Programming Manual</title></head>
+<body bgcolor = "#ffffff" vlink = "#0000ff" link = "#0000ff" text = "#000000">
+<a href ="program.html"><img src = "pix/httpismall.gif" alt = "[&lt;&lt;]"
+height = 32 width = 91 border = 0></a><i>Back to the programming manual</i>
+<hr>
+<img src = "pix/httpibig.gif" align = right alt = " ">
+<h1>Programming Manual: Inline Perl Sample 2</h1>
+In version 1.4, "primitives" were included to allow inline Perl documents
+to include entire files easily. For example, this block:
+<p>
+<code>&lt;perl&gt;&amp;finclude("/usr/local/htdocs/httpi/license.txt")&lt;/perl&gt;</code>
+<p>
+inserts that file into this document, like so (obviously the table
+tags aren't part of it). If you have this sample inline Perl
+file installed locally, the
+directive will probably fail (but check the source for the error message, or
+you'll miss it).<p>
+<table border = "0" cellpadding = "5" cellspacing = "3"><tr><td bgcolor =
+"#ffe0e0" align = "center">
+<perl>&finclude("/usr/local/htdocs/httpi/license.txt")</perl>
+</td></tr></table>
+<hr>
+<address>Cameron Kaiser</address>
+</body>
+</html>
