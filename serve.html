@@ -38,17 +38,34 @@ that your server comes up on reboot.
 <p>
 Demonic HTTPi
 is invoked by simply calling it from the command line. You must be
-<code>root</code> to bind TCP port numbers lower than 1024. If you look at the
-system's process list, Demonic HTTPi (which calls itself <code>dhttpi</code>)
-will display its current bound IP address, bound TCP port and the time of
+<code>root</code> to bind TCP port numbers lower than 1024.
+<p>
+Prior to HTTPi 1.5, Demonic HTTPi tried to run within a single process and
+open up additional forks only when requests arrive. This worked up until
+Perl 5.8, which made significant internal changes (especially, but not
+merely, with signals) rendering HTTPi incompatible.
+<p>
+To counter these architectural differences, in Demonic HTTPi 1.5 and up, two
+processes are seen at any one time. The first is the parent process and is
+generally idle, only serving to spawn a single child which is the one
+actually listening on the port and doing the work. If you look at the
+system's process list, you will see two entries for "<code>dhttpi</code>"
+(which is what Demonic HTTPi calls itself): the first, the parent,
+will display the current bound IP address, bound TCP port and the time of
 last request,
 allowing you to monitor the server remotely without sending fake requests to
 check response.
-To stop the server, or a particular instance, simply <code>kill(1)</code> it.
+The second, the child, will indicate which PID is monitoring it and its
+status. Fortunately, you don't need to worry about the child process;
+to stop the server, or a particular configured master instance,
+simply <code>kill(1)</code>
+the parent with a <code>TERM</code> signal and the parent will take down
+the child for you. You will see additional processes for requests which
+will automatically die when they are no longer needed.
 <p>
-Demonic HTTPi autothrottles to as few processes as possible, typically one
-process per client request. Otherwise, when idle, only one instance
-will be running.
+You can also kill child processes off if they misbehave, which will
+appropriately be respawned if needed. The owner of these processes may be
+affected by the New Security Model (see below).
 <p>
 <table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
 <td bgcolor = "#e0e0ff">
@@ -62,8 +79,8 @@ HTTPi follows a simple rule. If the requested file is readable and exists, it
 loads it and displays it. If the requested file is executable by the current
 uid, it runs it instead. Everything else gets a 404 error.
 Therefore, all you need to do to serve documents is make sure that HTTPi can
-read it. If HTTPi is running as root, no worries; if it is running as nobody,
-make sure you
+read it. If HTTPi is running as <code>root</code>, no worries; if it is
+running as a non-privileged user, make sure you
 <pre>
 % chmod ugo+r {filename}
 </pre>
@@ -73,13 +90,19 @@ so that it can see it, and
 </pre>
 on directories. Naturally, all documents must be in the documents directory
 HTTPi is looking in, to ensure that naughtyness like
-<a href = "/../../../etc/passwd">/../../../etc/passwd</a> doesn't work.
-Good thing, too.
+<a href = "/../../../etc/passwd"><code>/../../../etc/passwd</code></a>
+doesn't work. Good thing, too.
 <p>
 Unlike just about every other webserver, if you don't have an
 <code>index.html</code> file in a directory, you'll get an error, not a
 directory tree. This is to save program code and server size, and also
 offers a modicum of security so that people can't just riffle your files.
+<p>
+If your Perl supports the <code>alarm()</code> system call, which any
+port worth its salt does,
+requests have to be received within one second of startup or the
+socket is closed. This is a paranoia feature to help cut down on clients
+maliciously holding sockets open.
 <p>
 <table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
 <td bgcolor = "#e0e0ff">
@@ -95,13 +118,6 @@ Then access the directory like a regular resource (try <a href =
 "old-dists/"><code>http://httpi.floodgap.com/old-dists/</code></a> for an
 example).
 </td></tr></table><p>
-<p>
-If your Perl supports the <code>alarm()</code> system call, which any
-port worth its salt does,
-requests have to be received within ten seconds of startup or the
-socket is closed. This prevents
-people from opening up socket after socket to try DoS attacks on you.
-Ten seconds is probably more than any client needs, of course.
 <h4>User Filesystems</h4>
 As of 0.99, you can now allow your users to serve documents from the
 <code>public_html/</code> subdirectory in their home directories with a
@@ -129,13 +145,15 @@ Security constraints may be made stronger by using the New Security Model
 In 1.4, a new method which HTTPi uses to assign its (effective and/or real)
 UID and GID for operations became available. This is a configure-time option
 which can be enabled at your leisure. These examples assume the server is
-running as root (otherwise the server does not/cannot change its UID/GID and
+running as <code>root</code>
+(otherwise the server does not/cannot change its UID/GID and
 all operations are done with the server's UID/GID).
 <p>
 In the former system, the server only changed its UID/GID on executables. No
 attempt was made to enforce which UIDs were legal until the most recent
 versions, although as a side
-effect, no root-owned executables were allowed to execute and this was
+effect, no <code>root</code>-owned
+executables were allowed to execute and this was
 assimilated as a "feature" in the latest versions before the introduction
 of the NSM. Documents and server-parsed documents, including inline Perl
 blocks, ran with the webserver's UID/GID.
@@ -149,7 +167,8 @@ documents and files. Moreover, a minimum UID can be specified to
 indicate which UIDs may serve documents. This has the following effects:
 <p>
 <ul>
-<li>UID 0 (root) is explicitly disabled in the NSM, whereas it was only
+<li>UID 0 (<code>root</code>)
+is explicitly disabled in the NSM, whereas it was only
 "implicitly" disabled before. GID 0 is also explicitly disabled. Documents
 owned by either UID 0 or GID 0, as well as any executable file owned
 by them, are categorically proscribed and cannot be accessed, no
@@ -172,8 +191,10 @@ the document owner can now send the child server process signals, including
 termination signals if desired. (This may or may not be advantageous.)
 The master server continues to run with the original UID.
 <p>
-<li>Logging is done before the UID switch. If asychronous logging is
-enabled, the logging process continues to run with the original UID.
+<li>Logging is done before the UID switch.
+<p>
+<li>Depending on your operating system, accessing files owned by
+<code>nobody</code> may have strange interactions.
 <p>
 <li>Files in the virtual filesystem do not have "owners" per se and are
 served with the server's original UID.
@@ -181,15 +202,16 @@ served with the server's original UID.
 <li><code>stat()</code> is used to evaluate the permissions of the file,
 meaning that symlinks will not disguise a file's true UID/GID. For example,
 a symlink to <code>/etc/passwd</code> would still evaluate as owned by
-root, and cannot be served.
+<code>root</code>, and cannot be served.
 <p></ul>
 Even if the web server is unable to mutate its UID/GID to the document owner
-and must do operations as "itself" (when it's not running as root), it
+and must do operations as "itself" (when it's not running as
+<code>root</code>), it
 will still enforce the minimum UID constraint, and will still enforce the
 restrictions on files owned by either UID or GID 0.
 <p>
-As of 1.4, the New Security Model is still considered an experimental
-feature.
+The New Security Model is well tested and strongly recommended; for this
+reason, it is the default in 1.5 and above.
 <p>
 <a name = "htho"><h3>Virtual Hosting with HTTPi</h3></a>
 <h4>IP-Based Virtual Hosting</h4>
@@ -228,25 +250,21 @@ last is very important). Here's an example, from this server itself:
 %nameredir = (
 	 "stockholm.floodgap.com" => "http://www.floodgap.com",
 	 "httpi.floodgap.com" => "http://www.floodgap.com/httpi",
-	 "www.retrobits.com" => "http://www.floodgap.com/retrobits",
-	 "retrobits.com" => "http://www.floodgap.com/retrobits",
 	);
 </pre>
 Based on the above, a request for
 <code>http://httpi.floodgap.com/serve.html</code>
 becomes mapped to <code>http://www.floodgap.com/httpi/serve.html</code>.
-In the same way, a request for <code>http://www.retrobits.com/ckb/</code>
-becomes mapped to <code>http://www.floodgap.com/retrobits/ckb/</code>.
+In the same way, a request for <code>http://stockholm.floodgap.com/httpi/</code>
+becomes mapped to <code>http://www.floodgap.com/httpi/</code>.
 Since HTTPi has been told the real name of the server is
 <code>www.floodgap.com</code>, HTTPi then relies on this hash to
 handle requests for the other virtual servers this machine runs.
 <p>
-Note the presence of <code>retrobits.com</code> as an alias for
-<code>www.retrobits.com</code>. If IP-less virtual hosting is turned on,
-then if the request is not for the real name of the server or for any of
-the aliases in <code>%nameredir</code>, the client gets a 404. As many
-old URLs had the 'www' missing in their links,
-I added that line, also, so that it will fully qualify the name for them.
+You <i>must</i> specify an entry for <i>every</i> possible name your server
+should respond to if IP-less virtual hosting is turned on;
+if the request is not for the real name of the server or for any of
+the aliases in <code>%nameredir</code>, the client gets a 404.
 Note that, using the redirection hash above as written, a request for
 <code>http://floodgap.com/</code> will fail with a 404: it must be
 <code>http://www.floodgap.com/</code>.
@@ -274,7 +292,8 @@ When a file being requested is executable by HTTPi's uid, it sets a few
 environment variables and transforms itself (via <code>exec()</code> or
 another method, explained later) into the executable instead,
 unlike other webservers which may fork a process. If HTTPi is running as
-root, it and therefore the executable will assume the egid and euid of the
+<code>root</code>,
+it and therefore the executable will assume the egid and euid of the
 executable's owner. <i>It does not act like
 CGI: you must explicitly set an HTTP response code and you do not
 have all the CGI environment variables at your disposal.</i> Think of it as
@@ -286,8 +305,9 @@ directory save the document one (i.e. there is no explicit
 <p>
 <table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
 <td bgcolor = "#e0e0ff">
-As of 1.4, regardless of whether the webserver is itself running as root,
-no root-owned or GID 0-owned executable may be executed.
+As of 1.4, regardless of whether the webserver is itself running as
+<code>root</code>,
+no <code>root</code>-owned or GID 0-owned executable may be executed.
 <p>
 Executables may also be subject to conditions of the New Security Model
 if you enable it.
@@ -330,6 +350,11 @@ Because HTTPi has already ceased to exist by the time the executable starts,
 there is no way it can know if the executable succeeded or failed. 
 Executables appear in the log file with a status code of 100 instead of 200,
 302 or 500, the normal codes seen associated with executables.
+<p>
+Note that the <code>REMOTE_HOST</code> variable may be affected if you
+enable DNS anti-spoofing at configure time in 1.5 and up. If your
+executables are expecting a directly-resolvable string to be present,
+you should modify the executable or disable anti-spoofing.
 <h4>HTTPerl vs. <code>exec()</code></h4>
 As of 0.7, HTTPi gives you two ways of running your executables.
 When configuring HTTPi, you can either choose to use the HTTPerl hack, or do a
@@ -378,7 +403,8 @@ In short, <code>exec()</code> is the default because it will handle all
 cases with no problems. However, if your Perl executables work with HTTPerl,
 you will find it a much faster solution. <i>Just test thoroughly first!</i>
 <p>
-(Note that speed gains will be negligible if your Perl doesn't get paged
+(Note that speed gains may be reduced if your filesystem cache is fat and
+therefore its copy of the Perl executable doesn't have to be flushed
 out often. This may be the case on systems with lots of memory; in those cases,
 HTTPerl's quirks may not be worth the slight speed edge. Try it and see.)
 <a name = "inpl"><h3>Inline Perl and the <code>&lt;perl&gt;</code> Tag</h3></a>
@@ -507,7 +533,7 @@ When a client is disallowed due to a disallowed IP address or client, it is
 sent the standard HTTP error code 403
 along with an explanation. With the first rule above in place,
 <a href = "/nw/">this resource</a>
-can only be accessed from <code>ptloma.edu</code> local hosts on the internal
+can only be accessed from hosts on the internal
 network, and then only by Netscape clients.
 <p>
 When a client is disallowed due to an incorrect user name or password, it is
