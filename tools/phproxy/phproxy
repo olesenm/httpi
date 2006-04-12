@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-## PHPROXY/0.1 ##################################################
+## PHPROXY/0.2 ##################################################
 #
 # This script provides just enough of the CGI specification and
 # some additional kludge hack logic to allow HTTPi/1.4 and up to
 # directly execute PHP scripts. You must have the CGI-environment
 # PHP (usually in sapi/cgi/) installed. See the documentation.
 #
-# (C)2003 Cameron Kaiser. Provided under the terms of the HTTPi
+# (C)2003-6 Cameron Kaiser. Provided under the terms of the HTTPi
 # license. All rights reserved. Suggestions welcome to
 # httpi@floodgap.com.
 #
@@ -41,14 +41,14 @@ $ENV{'SCRIPT_FILENAME'} = $ENV{'PATH_TRANSLATED'} = "$path$address";
 $ENV{'REDIRECT_QUERY_STRING'} = $ENV{'QUERY_STRING'} = $variables;
 
 # throw away phony requests immediately
-open(S, "$path$address") || &hterror404;
+sysopen(S, "$path$address") || &hterror404;
 
 # set our uid if requested
 &nsecmodel;
 
 # need to handle POST data?
 if ($ENV{'REQUEST_METHOD'} eq 'POST') {
-	read(stdin, $buf, ($cl = 0+$ENV{'CONTENT_LENGTH'}));
+	read(STDIN, $buf, ($cl = 0+$ENV{'CONTENT_LENGTH'}));
 }
 
 if ($doing_debugging) {
@@ -75,17 +75,17 @@ if(open(K, "-|")) { # parent
 			if (/^$/) {
 				$heads = 1;
 				if ($rc) {
-					print stdout "$rc\r\n";
+					print STDOUT "$rc\r\n";
 				} else {
 					if (defined($http_h{'Location'})) {
-						print stdout
+						print STDOUT
 "HTTP/1.0 302 Temporary Redirect\r\n";
 					} else {
-						print stdout
+						print STDOUT
 "HTTP/1.0 200 OK\r\n";
 					}
 				}
-				print stdout
+				print STDOUT
 "Server: $ENV{'SERVER_SOFTWARE'}\r\n";
 				foreach $e (keys %http_h) {
 					print "$e: $http_h{$e}\r\n";
@@ -103,7 +103,7 @@ if(open(K, "-|")) { # parent
 				}
 			}
 		} else {
-			print stdout $_;
+			print STDOUT $_;
 		}
 	}
 } else { # child

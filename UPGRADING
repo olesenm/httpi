@@ -1,92 +1,14 @@
 ** Upgrading protocol for HTTPi
-** Copyright 1999-2003 Cameron Kaiser
+** Copyright 1999-2006 Cameron Kaiser
 
-Since HTTPi is a patchwork hacker's webserver, upgrading from version to
-version was tricky if you made changes to the code. Hopefully this will make
-upgrading to future versions much more streamlined. If you made no changes
-at all, it'll be even easier!
+To make HTTPi as easy as possible to migrate between versions, I have created
+specific upgrading instructions to facilitate the process.
 
-There are two sections:
-	* From 1.2 and higher to whatever this version is
-	* From 1.0b2 and previous to whatever this version is
+Due to the issue of maintaining two versions of this file, I have changed
+this one to simply point out that this document is available as part of the
+downloadable documentation, or can be read here:
 
-Find the section appropriate to you. If you experience trouble with this,
-please send a complete bug report with error message, OS and HTTPi versions
-upgrading to and from, to
+	http://httpi.floodgap.com/upgrade.html
 
-	httpi@floodgap.com
-
-*** From 1.2 and higher to current version ***
-
-	This may be really easy for you if you don't have a pathological
-	install :-) (that should be all of three people ...)
-
-	IF YOU MADE NO CHANGES TO HTTPi (in any of the .in files, httpi.in,
-	modules.in or uservar.in): Grab your old transcript file and try to
-	use it to reconfigure the new version:
-
-		perl configure-script -d transcript-file
-
-	(e.g. perl configure.demonic -d transcript.0.configure.demonic)
-
-	If you get a version incompatibility error, sorry: you'll need to
-	reconfigure manually. There must be a new option you'll be missing
-	out on if you don't. To do so:
-
-		perl configure-script
-
-	like usual.
-
-	IF YOU MODIFIED ANY OF THE *.in FILES: You may need to follow one or
-	several of the steps below. Then grab your old transcript file and try
-	to reconfigure as per above. If you get a defective executable, try
-	"make revert" and reconfigure to see if you can get a proper
-	executable with the stock *.in files (this replaces *.in files with
-	the backups in stock/). If that works, check your changes to the *.in
-	files for incompatibilities. (If it doesn't, please report it :-)
-
-	IF YOU MODIFIED modules.in OR uservar.in: Copy your modules.in and/or
-	uservar.in files into the distribution directory (DON'T copy
-	httpi.in unless you changed that also). 
-
-	IF YOU MODIFIED httpi.in: Merge your changes with the current httpi.in
-	version. DON'T do this for modules or any variables kept in uservar.in.
-	
-	If you're using Demonic HTTPi, don't forget to kill your old process
-	before you run the new one.
-
-*** From 1.0b2 and previous to current version ***
-
-	This isn't as elegant, but it should still help some.
-
-	IF YOU MADE NO CHANGES AT ALL TO httpi.in: Run the appropriate
-	configure script, re-select your options and reinstall. Keep the
-	transcript file.
-
-	IF YOU DID MAKE CHANGES: You may need to do one or several of these
-	steps below. Then reconfigure and reinstall, and hold on to the
-	transcript file. If you mess up, do a "make revert": as long as you
-	haven't toasted the stock/ directory, the original distributed *.in
-	files will be restored. If you get a defective executable, check
-	your changes for incompatibilities, or do a "make revert" and
-	reconfigure to see if you can get a proper executable at all. (If
-	not, please report it :-)
-
-	IF YOU CHANGED THE %content_types, %nameredir, %restrictions
-	OR $headers VARIABLES: Make the same changes to the uservar.in file
-	instead. They are no longer in httpi.in.
-
-	IF YOU ADDED YOUR OWN MODULES: Make the same changes to the
-	modules.in file instead. Modules, except for STATIOS, are no longer
-	kept in httpi.in.
-
-	IF YOU MADE OTHER CHANGES TO httpi.in: Merge your changes with the
-	new httpi.in. DON'T do this for adding modules or changing the
-	above-mentioned variables.
-
-	If you're using Demonic HTTPi, don't forget to kill your old process
-	before you run the new one.
-
---
-Cameron Kaiser
-
+Please send any questions or concerns about the recommended process to
+httpi@floodgap.com .

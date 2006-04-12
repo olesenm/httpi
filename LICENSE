@@ -1,5 +1,5 @@
 
-HTTPi is (C)1998-2003 Cameron Kaiser. All rights reserved.
+HTTPi is (C)1998-2005 Cameron Kaiser. All rights reserved.
 
 ** While HTTPi is free, it is NOT distributed under CopyLeft or GPL. Please **
 ** read on to find out what the differences are. Licenses protect author    **
@@ -10,15 +10,25 @@ pay me for using it, and you don't need my permission to make changes (though
 I or an authorised maintainer will be the only ones checking code back into
 HTTPi's code base for authorised patches and new versions).
 
-HTTPi must be free, and any and all distributions and derivatives must
+Really, there's only one overriding principle that I insist on for HTTPi --
+it must be free, and any and all distributions and derivatives of it must
 themselves be free. By free software I do not necessarily mean free in the
-way that Richard Stallman of GNU fame might -- merely that distributions
-be without cost. "Derivatives" shall constitute distributions with code
+way that Richard Stallman of GNU fame might -- merely that such works be
+without cost. Your sources may be open or closed at your desire, and may
+even be proprietary, but you must not ask any fee for it. However, certain
+allowances are made for special for-profit distribution circumstances below.
+
+In the below conditions, "derivative works" constitute distributions with code
 added or removed from the base distribution, or distributions that are
-signficantly based on the source code (though may not necessarily include
+significantly based on the source code (though may not necessarily include
 the source code itself), in the Author's sole judgement. This means a C port
-of HTTPi is still a derivative, or a Win32 version, or whatever. You do not
-have to provide source code, which is a deviation from GPL.
+of HTTPi is still a derivative, or a Win32 version, or whatever.
+
+On the other hand, if you do NOT include HTTPi or code derived from HTTPi in
+your work, then it is NOT a derivative work or distribution (even if your
+application requires HTTPi to function), and these license terms do not apply
+to your work as long as HTTPi or HTTPi-derived code is not included. You may
+place such works under any license you like. Otherwise, please read on.
 
 You MAY NOT:
 
@@ -26,10 +36,32 @@ You MAY NOT:
 	  copyright extends only to the changes you've made. My copyright,
 	  and any copyrights asserted by HTTPi's contributors, remain.
 
-	* supersede the license agreement here. You may not charge a fee for a
-	  HTTPi distribution, for example. Derivatives count as distributions.
-	  This license agreement, therefore, applies IN FULL to any
-	  distribution or derivative work.
+	* supersede the license agreement here with your own terms or
+	  requirements. As these license terms apply to any HTTPi-derived
+	  code, you MAY NOT supersede them in a derivative work either, and
+	  you MAY NOT select only certain terms of this License to apply. It
+	  applies in full, period.
+
+	  You MAY choose to ADD additional license terms to your derivative
+	  work, but they MAY NOT conflict with this License. As a corollary,
+	  you MAY NOT place your derivative work under GPL, because that
+	  is a different, though similar, licensing agreement and the
+	  License here does reflect constraints that are mutually exclusive.
+	  Again, this does not apply to projects related to HTTPi that
+	  *do not* include HTTPi or HTTPi-derived code, even if HTTPi is
+	  required for them to function.
+
+	* Despite the fact you MAY NOT charge a fee for a HTTPi distribution
+	  or a derivative work based on it, there are circumstances where
+	  HTTPi can still be part of a for-profit work if certain conditions
+	  are met.
+
+	  You MAY use HTTPi as the server solution to serve any commercial
+	  content, freely accessible or otherwise, as you are considered to
+	  be charging a fee for the products, content and services you sell
+	  via HTTPi, not for HTTPi itself, as long as said content does not
+	  involve distribution of HTTPi or a derivative work in violation of
+	  the other terms of this License.
 
 	  You MAY charge a fee for a product you sell that includes HTTPi as
 	  a bundled extra, as long as HTTPi is included in its unmodified
@@ -39,13 +71,15 @@ You MAY NOT:
 	  bundled as a free extra for the convenience of your users). Operating
 	  system distributions are, for example, specifically permitted.
 
+	  However, if you make any modifications to HTTPi, then you MAY NOT
+	  sell it in any aggregate form (OS distributions, bundled extra or
+	  otherwise) if HTTPi or HTTPi-derived code is included, unless you
+	  make the derivative work separately available without cost in
+	  addition.
+
 	  You MAY charge a fee for a HTTPi installation providing you also
 	  make the software available for free (i.e., you are requesting a fee
 	  for the act of installation, not for the software you install).
-
-	  You also MAY NOT place your derivative work under GPL, because that
-	  is a different, though similar, licensing agreement, and the
-	  License here does reflect constraints that are mutually exclusive.
 
 	* make a distribution of HTTPi that does not include ALL files,
 	  including this license, and ONLY these files. If not, it is a
@@ -55,7 +89,7 @@ You MAY NOT:
 	  state the copyright (i.e.
 
 Contains or is based on the HTTPi web server
-(C)1998-2001 Cameron Kaiser. All rights reserved.
+(C)1998-2005 Cameron Kaiser. All rights reserved.
 http://httpi.floodgap.com/
 
 	  would be just about perfect), or make or distribute a derivative of
@@ -68,7 +102,7 @@ You MUST:
 	* include this LICENSE agreement in any and all derivative
 	  works you create, as either a separate file or part of your
 	  non-mutually exclusive license (that is, does not conflict
-	  with these terms).
+	  with these terms, as stated above).
 
 	* absolve the programmers of HTTPi (including yours truly :-) and
 	  any contributors) of any liability, real or imagined, and certify
@@ -94,8 +128,10 @@ copyright holder, IN WRITING.
 I reserve the right to interpret this document, and I also reserve the right
 to make license changes without notice effective on issue date. All legal
 issues shall be dealt with in accordance with the State of California, United
-States of America.
+States of America. The most current copy of this license is always available
+from HTTPi's home page at http://httpi.floodgap.com/
 
-Other than that, have a blast! Keep software free.
+Thanks for reading the fine print and respecting author's rights. Have a
+blast!
 
-Revised 07/06/2002
+Revised 08/23/2005

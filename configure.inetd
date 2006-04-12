@@ -11,7 +11,7 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "") unless ($DEFAULT);
-Configure (inetd) for HTTPi/$ACTUAL_VERSION (C)1998-2003 Cameron Kaiser
+Configure (inetd) for HTTPi/$ACTUAL_VERSION
 
 This is the configure script for inetd systems (most Unix boxen).
 
@@ -65,19 +65,9 @@ Questions pertaining to inetd installation won't be asked by this script.
 
 EOF
 	}
-$DEF_UNAME = &wherecheck("Finding uname", "uname");
-if ($DEF_UNAME) {
-	chomp($DEF_ARCH = `$DEF_UNAME -s`);
-	print "Smells like $DEF_ARCH.\n";
-} else {
-	print "Hmm. This might not be a Unix box, but we'll keep trying.\n";
-}
-$DEF_PERL = &wherecheck("Finding your perl", "perl", <<"EOF");
 
-Good grief, you've managed to run this with Perl not in your path. Where
-the heck is it, anyway? Put Perl in your path and rerun.
+&firstchecks;
 
-EOF
 $DEF_SERV = &wherecheck("Verifying /etc/services", "/etc/services", <<"EOF");
 
 Without /etc/services, your inetd won't know what port to run HTTPi on. You

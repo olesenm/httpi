@@ -45,17 +45,16 @@ they'll just override all the types they'll define with the same MIME type.
 %restrictions = (
 	 "/nw" => "^10\.##^Mozilla#MSIE",
 	 "/status" => "####voyeur:daNrZR3TcSwD2",
-	 "/" => "###(NPBot|WebZIP|HTTrack|eCatch|Offline Explorer|UdmSearch|WebCopier|internetseer|MSIECrawler)",
+	 "/" => "###(NPBot|WebZIP|HTTrack|eCatch|Offline Explorer|UdmSearch|WebCopier|internetseer|MSIECrawler|SuperBot|LinkWalker|Tutorial Crawler|Googlebot-Image|WebReaper)",
 	);
 		# See documentation for interpreting this string.
 ~
 ~
 ~check NAMEREDIR
 %nameredir = (
+	 "floodgap.com" => "http://www.floodgap.com",
 	 "stockholm.floodgap.com" => "http://www.floodgap.com",
 	 "httpi.floodgap.com" => "http://www.floodgap.com/httpi",
-	 "www.retrobits.com" => "http://www.floodgap.com/retrobits",
-	 "retrobits.com" => "http://www.floodgap.com/retrobits",
 	);
 ~
 ~

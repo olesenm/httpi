@@ -19,8 +19,8 @@ Content-type: text/html
 EOF
 
 if (-r "README" && -s "README") {
-	open(Q, "README"); while(<Q>) { print stdout $_; } close(Q);
-	print stdout "\n\n";
+	open(Q, "README"); while(<Q>) { print STDOUT $_; } close(Q);
+	print STDOUT "\n\n";
 }
 
 format STDOUT =

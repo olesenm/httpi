@@ -9,7 +9,7 @@ Please make sure it's in the current directory.
 EOF
 
 &prompt(<<"EOF", "") unless ($DEFAULT);
-Configure (demonic) for HTTPi/$ACTUAL_VERSION (C)1998-2003 Cameron Kaiser
+Configure (demonic) for HTTPi/$ACTUAL_VERSION
 
 This is the configure script for Demonic HTTPi, the daemonized HTTPi version.
 
@@ -31,14 +31,9 @@ Press ENTER to continue or BREAK/CTRL-C to bail out:
 EOF
 
 print "\nChecking system defaults ...\n\n";
-$DEF_UNAME = &wherecheck("Finding uname", "uname");
-if ($DEF_UNAME) {
-	chomp($DEF_ARCH = `$DEF_UNAME -s`);
-	print "Smells like $DEF_ARCH.\n";
-} else {
-	print "Hmm. This might not be a Unix box, but we'll keep trying.\n";
-	$DEF_ARCH = "???";
-}
+
+&firstchecks;
+
 $q = &yncheck("Can we fork()?",
 	'if ($pid = fork()) { waitpid($pid,0); } else { exit; }',
 	<<"EOF");
@@ -48,13 +43,7 @@ isolation. You'd have a very unstable HTTPi otherwise. Please run this on
 a proper OS. :-)
 
 EOF
-
-$DEF_PERL = &wherecheck("Finding your perl", "perl", <<"EOF");
-
-Good grief, you've managed to run this with Perl not in your path. Where
-the heck is it, anyway? Put Perl in your path and rerun.
-
-EOF
+$DEF_CANFORK = 1;
 
 eval 'require "conquests.pl";'; die(<<"EOF") if ($@);
 
@@ -146,6 +135,10 @@ if (!$CC) {
 Okay, where the heck *is* your C compiler? If you don't have one, and want
 to try using Socket.pm or entering them by hand, enter none (the default). If
 you *do* have one that I'm just unable to find, enter the absolute path below.
+
+If this is on Mac OS X, you probably forgot to install Xcode or the Apple
+Developer Tools. Do that first (on your OS X Install Disc), and then run
+this script again.
 
 Path to C compiler?
 EOF

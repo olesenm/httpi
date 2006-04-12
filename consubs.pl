@@ -1,6 +1,6 @@
-$version_key = "HTTPi/1.4";
+$version_key = "HTTPi/1.5";
 $my_version_key = 0;
-$ACTUAL_VERSION = "1.4";
+$ACTUAL_VERSION = "1.5 (C)1998-2006 Cameron Kaiser";
 
 sub detaint { # sigh
 	my ($w) = (@_);
@@ -62,8 +62,12 @@ sub preproc {
 		next if ($ifl > 0);
 		if (/^~check/) {
 			(/^~check (.+)$/) && ($def = $1);
-			eval "\$j = \$DEF_$def;";
-			if ($j) {
+			@ldefs = split(/,\s*/, $def);
+			$j=0;
+			foreach $def (@ldefs) {
+				eval "\$j += \$DEF_$def;";
+			}
+			if ($j == scalar(@ldefs)) {
 				$ifl = -2;
 			} else {
 				$ifl = 1;
@@ -173,6 +177,82 @@ Check your permissions on that file or directory.
 EOF
 	select(L); $|++; select(stdout);
 	print L "$version_key\n";
+}
+
+sub firstchecks {
+	$DEF_UNAME = &wherecheck("Finding uname", "uname");
+	if ($DEF_UNAME) {
+		chomp($DEF_ARCH = `$DEF_UNAME -s`);
+		print "Smells like $DEF_ARCH.\n";
+	} else {
+		print
+	"Hmm. This might not be a Unix box, but we'll keep trying.\n";
+		$DEF_ARCH = "???";
+	}
+
+	$didnt_work = 1;
+	PERLCHEK: while($didnt_work) {
+		$DEF_PERL = &wherecheck("Finding your perl", "perl", <<"EOF");
+
+Good grief, you've managed to run this with Perl not in your path. Where
+the heck is it, anyway? Put Perl in your path and rerun.
+
+EOF
+		$DEF_PERL = &prompt(<<"EOF", $DEF_PERL, 1);
+If you want to use this Perl to execute HTTPi, just hit RETURN/ENTER. However,
+if you have another Perl executable you want to use instead, then enter it
+here; it will be probed and then put in HTTPi's #! line.
+... 
+EOF
+		print "Checking out your Perl ...\n";
+		$test_script = 'print"$] ";eval"use POSIX";print"$@"';
+		if(!open(Q, "$DEF_PERL -e '$test_script'|")) {
+			print "Failed to execute $DEF_PERL ... $!\n";
+			print "Let's try that again.\n\n";
+			next PERLCHEK;
+		}
+		chomp($x = scalar(<Q>));
+		close(Q);
+		($PERL_VERSION, $pox) = split(/\s+/, $x, 2);
+		$HAS_POSIX = (length($pox) < 1);
+		$PERL_VERSION += 0;
+		if ($PERL_VERSION < 4) {
+			print <<"EOF";
+The version response that program gives me doesn't make sense, or you're using
+a really wacky (ancient?) Perl. Try again.
+
+EOF
+			next PERLCHEK;
+		}
+		if ($PERL_VERSION < 5) {
+			print <<"EOF";
+Hmm, $PERL_VERSION.
+An oldie but not necessarily goodie -- you may need to build a new Perl
+to run HTTPi. Still, let's see how far we get, yes?
+EOF
+		} else {
+			print "$PERL_VERSION ... ";
+			if ($PERL_VERSION < 5.006) {
+				print "that was a good year.\n";
+			} elsif ($PERL_VERSION < 5.008005) {
+				print "has this wine been corked?\n";
+			} else {
+			print
+		"obviously not a connoisseur, this wine's barely aged.\n"
+			}
+		}
+		if ($HAS_POSIX) {
+			print "Your Perl does have a POSIX.pm.\n";
+			print "It is, however, the older unsuitable one.\n"
+				if ($PERL_VERSION < 5.008);
+		} else {
+			print <<"EOF";
+Just a warning; this Perl can't dredge up POSIX.pm ($pox).
+We'll use \$SIG-based signaling instead, though this may be less reliable.
+EOF
+		}
+		$didnt_work = 0;
+	}
 }
 
 1;

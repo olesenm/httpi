@@ -1,4 +1,4 @@
-# Useless makefile for managing HTTPi versions (C)1999-2003 Cameron Kaiser
+# Useless makefile for managing HTTPi versions (C)1999-2006 Cameron Kaiser
 #
 # This is really only needed for my use, but if you want, here it is, no
 # support or strings attached, if you want to roll your own dists. The guts
@@ -38,7 +38,7 @@ revert:
 	${CP} -f stock/*.in .
 	
 clean:
-	${RM} -f transcript.* sockcons testtpi uttpi
+	${RM} -f transcript.* sockcons testtpi uttpi core
 
 version:
 	@${CAT} VERSION
@@ -78,7 +78,7 @@ _testdir: version clean unrevert
 
 dist: _testdir
 	echo\
-	"${TAR} cvf `${HEAD} -1 VERSION`.tar `${HEAD} -1 VERSION`/*"\
+	"${TAR} cvf `${HEAD} -1 VERSION`.tar `${HEAD} -1 VERSION`"\
 		>> /tmp/httpinst
 	echo "${GZIP} `${HEAD} -1 VERSION`.tar" >> /tmp/httpinst
 	echo "${MV} `${HEAD} -1 VERSION`.tar.gz ${REPOSITORY}"\

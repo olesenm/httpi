@@ -1,7 +1,9 @@
 $HOSTNAME = &wherecheck('Finding hostname', 'hostname');
 $DEF_MCANALARM = &yncheck('Can we use alarm()?', 'alarm 0;');
+unless ($DEF_CANFORK) {
 $DEF_CANFORK = $q = &yncheck("Can we fork()?",
         'if ($pid = fork()) { waitpid($pid,0); } else { exit; }');
+}
 $DEF_CANDOSETRUID = &yncheck("Can we use setruid()?",
 	'$q = $<;$< = 65534;$< = $q;');
 &prompt(<<"EOF", "") if (!$DEF_MCANALARM);
@@ -48,6 +50,51 @@ WARNING TO xinetd/inetd INSTALLERS: If you are doing a full install to update
 
 Install path?
 EOF
+
+$q = ($PERL_VERSION >= 5.008) ? 'y' : 'n';
+if ($HAS_POSIX) {
+	$DEF_MUSEPOSIX = (&prompt(<<"EOF", $q, 1) eq 'y') ? 1 : 0;
+As a reminder, you do have POSIX.pm, and the Perl you've decided to build
+HTTPi with is version $PERL_VERSION, which is capable of using sigaction().
+Let's talk signals.
+
+On Perls 5.005, 5.6 ("5.006") and prior to 5.8, POSIX sigaction() didn't work
+properly (if at all). Those systems should continue to use the \$SIG method
+of signal handling, which is technically unsafe but mostly functional.
+
+On Perls 5.8 ("5.008") and higher, sigaction() not only works, but works
+better than the old \$SIG method for HTTPi's purposes and may be required in
+future Perls for HTTPi's signal handling to work at all. You should only use
+\$SIG in this case if you are building HTTPi for another system with an older
+or impoverished Perl. If that Perl lacks POSIX.pm, consider setting the
+environment variable PERL_SIGNALS to 'unsafe' for the previous behaviour.
+If you answer 'n' then this will be added to HTTPi for you.
+
+The recommended default for your version of Perl is given, but you can
+override it here. If you don't know what to do, choose the default.
+
+Use sigaction()/POSIX.pm for signal handling?
+EOF
+} else {
+	$q = ($q eq 'y') ?
+"Because your Perl version is >= 5.8.0 and you don't have any other solution,"
+:
+"Although you don't need it right now, if you move HTTPi to a Perl >= 5.8.0"
+;
+	&prompt(<<"EOF", "");
+Your system is unable to use sigaction-based signals (no POSIX.pm), although
+recent Perls (>= 5.8.0) may benefit strongly from it -- you are using version
+$PERL_VERSION. Using \$SIG-based signaling instead.
+
+$q
+consider setting the environment variable PERL_SIGNALS to 'unsafe' for the
+previous behaviour, which is considered poor form, but will probably work.
+This will be added to HTTPi for you.
+
+Press RETURN or ENTER to continue.
+EOF
+}
+
 unless ($DEF_MDEMONIC) {
 	$DEF_AF_INET = &prompt(<<"EOF", 2, 1);
 In an effort to make non-Demonic HTTPi less Unix-oriented (you decide if this
@@ -55,7 +102,7 @@ actually helps any), the one item in HTTPi that used to be a hardcoded
 network constant now actually makes an effort to be portable. If you know
 that your system's AF_INET macro is something other than two, enter it here.
 (I have yet to find an OS where it wasn't, but I'm sure they're out there,
-although it was 2 on AIX, SCO, HP/UX, Solaris, NetBSD and Linux.) 
+although it was 2 on AIX, Darwin/OS X, SCO, HP/UX, Solaris, NetBSD and Linux.) 
 
 If you don't know what this is, accept the default -- it's probably correct.
 
@@ -186,37 +233,7 @@ EOF
 
 $DEF_MHTTPERL = (($DEF_MHTTPERL eq 'y') ? 1 : 0);
 
-if ($DEF_CANFORK) {
-	$q = &prompt(<<"EOF", "n", 1);
-Address->hostname resolution can be expensive. Since you have fork(), this
-version of HTTPi offers you the ability to make logging asynchronous, i.e.,
-logging and reverse lookup occur in parallel with the actual handling of the
-client request.
-
-This has the advantage of increasing your server's apparent responsiveness,
-but makes logging slightly more kludgy, and may cause transiently higher
-subprocess load (for example, when a client handled by a particularly bad
-nameserver has multiple requests pending simultaneously).
-
-Since this option is experimental, this option defaults to no. If you would
-rather dispense with name lookups all together for maximal speed, consider
-the next option instead of this one.
-
-Use asynchronous logging?
-EOF
-	$DEF_MASYNCLOG = (($q eq 'y') ? 1 : 0);
-} else {
-	print <<"EOF";
-Sorry, without fork() I can't offer you asynchronous logging to improve
-hostname lookup performance. But ...
-
-EOF
-}
-
 $q = &prompt(<<"EOF", "y", 1);
-Speaking of resolving hostnames/expensive logging, here's an option that
-might be good for the performance-minded.
-
 If you don't really care if a hostname or an IP address appears in your
 access logs, you can save (in some cases substantial) time by instructing
 HTTPi not to bother doing name lookups when logging. Most of you will
@@ -227,6 +244,66 @@ Resolve IP addresses to hostnames?
 EOF
 
 $DEF_MHOSTNAMES = (($q eq 'y') ? 1 : 0);
+
+$DEF_REV_RESOLVE = "gethostbyaddr";
+$DEF_MABSOLVER = 0;
+$DEF_TO_ABSOLVER = 0;
+if ($DEF_MHOSTNAMES) {
+	$DEF_MANTISPOOF = (&prompt(<<"EOF", "n", 1) eq 'y') ? 1 : 0;
+Since you're resolving hostnames, I'm sure you've seen the phenomenon of some
+sites having bad or even fradulent PTRs when trying to reverse-resolve an
+address. This minor anti-spoof feature makes all hostnames into the form
+hostname/ip.address.of.hostname (example: localhost/127.0.0.1) so that you
+can independently see the IP address. If the IP cannot reverse resolve, then
+you get a doublet (example: 99.99.99.256/99.99.99.256).
+
+I've found this handy for accounting, but this might break some loggers
+or executables expecting a resolvable name, so this option defaults to no.
+This will also affect the REMOTE_HOST CGI variable. REMOTE_ADDR is unchanged.
+
+Always use name/address syntax for reverse resolved names?
+EOF
+	if ($DEF_MCANALARM) {
+		$q = &prompt(<<"EOF", "n", 1);
+Since your Perl has the alarm() call -- and it might even work -- you can make
+reverse lookups more reliable (even when the result you get back is fradulent)
+instead of having HTTPi pause on bad or defective DNS servers. This defines a
+new subroutine &absolver which kills lagging DNS queries after five seconds.
+Without it, you are at the mercy of the timeout specified by your operating
+system's implementation (but this may be perfectly adequate, so this option
+defaults to no). If you're concerned about this, test reliability both ways.
+
+Use DNS "absolver" for reverse queries?
+EOF
+		if ($q eq 'y') {
+			$DEF_REV_RESOLVE = "absolver";
+			$DEF_MABSOLVER = 1;
+			$DEF_TO_ABSOLVER = &prompt(<<"EOF", "7", 1);
+Your sins are absolved, my son.
+
+How fast do you want the absolver to kill queries? Making this too fast may
+have consequences for your log files, as it may take a few requests for a
+name to be reverse-resolved. On the other hand, HTTPi will wait patiently
+for a response and this may impair performance if set too slow. Five to eight
+seconds seems good for well-connected hosts with reasonably reliable DNS. You
+may need to tweak this for your locality/network environment.
+
+Setting this to zero means there is NO limit, so don't do that unless you're
+weird or something.
+
+Timeout for DNS "absolver" reverse queries (in seconds)?
+EOF
+		} else {
+			print "Not absolved. Confess your sins later.\n\n";
+		}
+	} else {
+		print <<"EOF";
+You don't have alarm(), so let's hope your operating system DNS timeouts
+are reasonable or this could hang your server on bad queries.
+
+EOF
+	}
+}
 
 $q = &prompt(<<"EOF", "n", 1);
 HTTPi 0.99 and up can do IP-less virtual hosting by redirecting host
@@ -248,7 +325,7 @@ EOF
 
 $DEF_NAMEREDIR = (($q eq 'y') ? 1 : 0);
 
-$q = &prompt(<<"EOF", "n", 1);
+$q = &prompt(<<"EOF", "y", 1);
 The New Security Model, introduced in 1.4, adds a additional level of control
 over how files are served.
 
@@ -263,9 +340,10 @@ Other consequences exist -- PLEASE READ THE DOCUMENTATION FIRST.
 The New Security Model is ONLY SALIENT IF YOU RUN HTTPi AS ROOT. Otherwise,
 it simply adds bulk and overhead.
 
-The New Security Model is experimental in this version, so this option
-defaults to n (No). If you use the user filesystem, or preparsing, however,
-and you are running your server as root, it is strongly recommended.
+As of 1.5, the New Security Model is now well-tested enough that it is the
+strongly recommended default. It may break old installations, so the choice
+is still offered, but if you use the user filesystem or preparsing and you
+are running your server as root, it is strongly recommended.
 
 Use the New Security Model?
 EOF
@@ -291,7 +369,7 @@ haven't been created yet. AGAIN, THIS IS ONLY RELEVANT IF YOU ARE RUNNING
 HTTPi as ROOT! Also note that root can NEVER serve files, so specifying zero
 as the minimum UID is meaningless.
 
-Lowest UID to serve files?
+Lowest UID to serve files (FYI: your euid is $>)? 
 EOF
 }
 
@@ -386,15 +464,15 @@ EOF
 $DEF_MTHROTTLE = ($q eq 'y') ? 1 : 0;
 unless ($DEF_MTHROTTLE) {
 	print "Hmm, bandwidth leeches ahoy, eh? ;-)\nSkipping onward ...\n\n";
-	$DEF_READBUFFER = 16384;
+	$DEF_READBUFFER = 32768;
 	$DEF_THROTWAIT = 0;
 } else {
-	$DEF_READBUFFER = &prompt(<<"EOF", "16384", 1);
+	$DEF_READBUFFER = &prompt(<<"EOF", "32768", 1);
 How much to consume at one gulp? Remember, larger numbers mean larger
 HTTPi, but mean faster throughput, so make your decision based on how
 practical you want large transfers to be.
 
-The default is 16K, which is good for most sites. Entering multi-megabytes
+The default is 32K, which is good for most sites. Entering multi-megabytes
 here is probably silly and unnecessary, but the option is offered anyway.
 ENTER THIS NUMBER IN BYTES, NOT KILOBYTES, NOT MEGABYTES, NOT GIGABYTES!
 (Remember, 1MB = 1024KB = 1048576 bytes; 1K = 1024 bytes)
@@ -409,14 +487,15 @@ How long to wait between gulps? If you're pathological, or want your
 bandwidth usage curves to decline really fast by setting the 'bytes per
 gulp' high and this high as well, you can set this to two or more seconds.
 Otherwise, waiting one second between gulps is usually plenty, and is as
-granular as this gets.
+granular as this gets. There are reasons for being weird with this (see the
+manual).
 
 Since this uses 'sleep' to achieve its voodoo, it is subject to all the
 limitations thereof, including that it may not sleep the complete time
 given, *and* most implementations that I know of do not support fractions.
 
 If you enter 1 here (the default), then your theoretical max throughput is
-bytes per gulp/sec (so using default for both, you get 16K/sec per
+bytes per gulp/sec (so using default for both, you get 32K/sec per
 individual process instance).
 
 Gulp delay (in seconds)?
@@ -429,7 +508,7 @@ Now the ugly kludge section. This is really only relevant to inetd users, but
 this option may be occasionally useful to Demonic and xinetd installs.
 
 Some inetds will time out, and then shut down, services that hold sockets
-open for longer than a critical period of time (Linux inetd is the most
+open for longer than a critical period of time (some Linux inetds are most
 notorious). This usually happens when a very large file is being downloaded
 over a very slow link. The upshot is, HTTPi will be turned off by inetd and
 fail to respond to requests until inetd gets another -HUP signal. This might
@@ -472,8 +551,8 @@ EOF
 } else {
 	print <<"EOF";
 You don't support alarm(), so I can't give you the ugly kludge for keeping
-inetd HTTPis stable on certain platforms (notably Linux) even though you
-might need it.
+inetd HTTPis stable on certain platforms (notably some Linux inetds) even
+though you might need it.
 
 EOF
 }
