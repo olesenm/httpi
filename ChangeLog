@@ -1,3 +1,9 @@
+Changes since 1.5:
+
+	fixes:
+	* potential socket-binding bug in Demonic and newer Perls
+	* directory sorts and bugs with browsed
+
 Changes since 1.4:
 
 	new:

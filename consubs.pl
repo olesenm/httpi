@@ -1,6 +1,6 @@
 $version_key = "HTTPi/1.5";
 $my_version_key = 0;
-$ACTUAL_VERSION = "1.5 (C)1998-2006 Cameron Kaiser";
+$ACTUAL_VERSION = "1.5.1 (C)1998-2006 Cameron Kaiser";
 
 sub detaint { # sigh
 	my ($w) = (@_);

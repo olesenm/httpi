@@ -23,6 +23,7 @@ GREP		= /usr/bin/grep
 HEAD		= /usr/bin/head
 TAR		= /usr/bin/tar
 GZIP		= /usr/local/bin/gzip
+LYNX		= /usr/local/bin/lynx
 
 REPOSITORY	= /usr/local/htdocs/httpi
 
@@ -62,6 +63,8 @@ install: version
 _testdir: version clean unrevert
 	@echo "ABOUT TO OVERWRITE OLD INSTALL! STOP NOW IF THIS ISN'T CORRECT!"
 	@${SLEEP} 3
+	${LYNX} -dump http://www.floodgap.com/software/ffsl/license.html \
+		> LICENSE
 	${RM} -f configure Manifest
 	echo "#####" > /tmp/httpinst
 	echo "${RM} -rf ../`${HEAD} -1 VERSION` ../`${HEAD} -1 VERSION`.ta*"\

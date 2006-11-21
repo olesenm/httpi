@@ -19,7 +19,7 @@ use POSIX;
 ~
 $ENV{'PERL_SIGNALS'} = "unsafe";
 ~
-$VERSION = "1.5 (DEF_CONF_TYPE/DEF_ARCH)";
+$VERSION = "1.5.1 (DEF_CONF_TYPE/DEF_ARCH)";
 
 # HTTPi Hypertext Tiny Truncated Process Implementation
 # Copyright 1999-2006 Cameron Kaiser # All rights reserved
@@ -84,6 +84,8 @@ $VERSION = "1.5 (DEF_CONF_TYPE/DEF_ARCH)";
 	 "sit" => "application/x-stuffit",
 	 "Z" => "application/x-compress",
 	 "gz"  => "application/x-gzip",
+	 "dmg" => "application/octet-stream",
+	 "img" => "application/octet-stream",
 	 "lzh" => "application/octet-stream",
 	 "lha" => "application/octet-stream",
 	 "zip" => "application/x-zip-compressed",

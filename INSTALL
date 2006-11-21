@@ -34,8 +34,8 @@ Some sort of inetd installation:
 configure.inetd		Most Unix boxen. Use this if you use the vanilla
 			inetd. Will autoconfigure your files for you if root.
 
-configure.xinetd	For users of the inetd clone http://synack.net/xinetd/
-			Will autoconfigure your files for you. Tres cool.
+configure.xinetd	For users of the inetd clone http://www.xinetd.org/
+			Will autoconfigure your files for you if root.
 
 Others:
 
@@ -48,8 +48,9 @@ requires some special care and feeding. See the documentation. Most people
 prefer it. So will you.
 
 xinetd is vewwy vewwy fast. If you have the means, I highly recommend it. (To
-quote Ferris Bueller.) You'll realise about a 25% speed increase with it,
-at least according to my numbers. It assumes, however, that your .conf file
+quote Ferris Bueller.) Many people will see a significant speed difference with
+it over your OS's stock inetd; as such, many OS "inetd"s are really stealth
+xinetds running in compat mode! It assumes, however, that your .conf file
 is /etc/xinetd.conf, which is xinetd's default.
 
 Some of you will be running configure.inetd, so for backwards compatibility
@@ -61,12 +62,14 @@ Make sure that consubs.pl and conquests.pl are in the current directory.
 
 $ perl configure.demonic # most unices that don't want inetd installation
 $ perl configure.inetd	 # most unices that want inetd installation
-$ perl configure.xinetd	 # smart unices/sysadmins that want inetd installation
+$ perl configure.xinetd	 # smart unices/sysadmins that want xinetd installation
 $ perl configure.generic # others
 
 Do *not* use the Makefile. The Makefile is not intended for installation;
 it's used for rolling your own distributions. Do *not* use the Makefile.
 Do *not* chew your nails.
+
+For that matter, don't use perl Makefile.PL either.
 
 NOTE TO (x)inetd INSTALLERS:
 If you're on a Unix box, you must run as root for full install options.

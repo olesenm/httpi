@@ -45,7 +45,7 @@ they'll just override all the types they'll define with the same MIME type.
 %restrictions = (
 	 "/nw" => "^10\.##^Mozilla#MSIE",
 	 "/status" => "####voyeur:daNrZR3TcSwD2",
-	 "/" => "###(NPBot|WebZIP|HTTrack|eCatch|Offline Explorer|UdmSearch|WebCopier|internetseer|MSIECrawler|SuperBot|LinkWalker|Tutorial Crawler|Googlebot-Image|WebReaper)",
+	 "/" => "###(NPBot|WebZIP|HTTrack|eCatch|Offline Explorer|UdmSearch|WebCopier|internetseer|MSIECrawler|SuperBot|LinkWalker|Tutorial Crawler|WebReaper)",
 	);
 		# See documentation for interpreting this string.
 ~

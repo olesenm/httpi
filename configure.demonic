@@ -102,9 +102,9 @@ trying to use HTTPi to support virtual servers.
 Bind to which numerical IP address?
 EOF
 
-$DEF_INADDR_ANY = '"\0\0\0\0"';
+$DEF_INADDR_ANY = 'pack("C4", 0, 0, 0, 0)';
 if (($o1, $o2, $o3, $o4) = split(/\./, $DEF_IP_ADDR)) {
-	$DEF_INADDR_ANY = "chr($o1).chr($o2).chr($o3).chr($o4)";
+	$DEF_INADDR_ANY = "pack('C4', $o1, $o2, $o3, $o4)";
 }
 $DEF_IP_ADDR = "ANY" if ($DEF_IP_ADDR eq '0.0.0.0');
 

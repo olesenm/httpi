@@ -7,20 +7,24 @@
 
 $j = $ENV{'SCRIPT_FILENAME'}; $j =~ s#/[^/]*$##; chdir($j) || die;
 $j = $ENV{'SCRIPT_NAME'}; $j =~ s#/[^/]*$##; opendir(D, ".") || die;
+($ENV{'SCRIPT_NAME'} =~ m#/([^/]*)$#) && ($ME = $1 || "index.html");
 
 print <<"EOF";
 HTTP/1.0 200 OK
 Content-type: text/html
 
 <html>
+<head>
+<title>Index of $j</title>
+</head>
 <body>
 <h1>Index of $j</h1>
 <pre>
 EOF
 
 if (-r "README" && -s "README") {
-	open(Q, "README"); while(<Q>) { print STDOUT $_; } close(Q);
-	print STDOUT "\n\n";
+	open(Q, "README"); while(<Q>) { print stdout $_; } close(Q);
+	print stdout "\n\n";
 }
 
 format STDOUT =
@@ -28,12 +32,23 @@ format STDOUT =
 "$j</a>", -s $q, ((-d $q) ? "Directory" : ($q =~ /\.s?htm?l?$/i) ? "HTML Document" : ($q =~ /\.(gif|jpg|jpeg)$/i) ? "Image" : ($q =~ /\.(lha|lzh|gz|zip)$/i) ? "Archive" : "")
 .
 
+@files = ();
+
 while(defined($q = readdir(D))) {
-	next if ($q =~ /^\./); $j = $q;
-	print "<a href = \"$q\">"; $j =~ s/(^.{39}).+$/\1.../; write;
+	next if ($q =~ /^\./ || $q eq 'core' || $q eq $ME || $q eq 'README');
+	push(@files, $q);
 }
 
 closedir(D);
+
+foreach $q (sort {
+		-d $a && -d $b ? $a cmp $b :
+		-d $a ? -1 :
+		-d $b ? 1 :
+		$a cmp $b } @files) {
+	$j = $q;
+	print "<a href = \"$q\">"; $j =~ s/(^.{39}).+$/\1.../; write;
+}
 
 print <<"EOF";
 </pre>
