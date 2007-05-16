@@ -1,6 +1,6 @@
 $version_key = "HTTPi/1.5";
 $my_version_key = 0;
-$ACTUAL_VERSION = "1.5.1 (C)1998-2006 Cameron Kaiser";
+$ACTUAL_VERSION = "1.5.2 (C)1998-2007 Cameron Kaiser";
 
 sub detaint { # sigh
 	my ($w) = (@_);
@@ -11,7 +11,7 @@ sub yncheck {
 	local ($prompt, $evals, $fatal) = (@_);
 	local $setv;
 
-	print stdout "$prompt ... ";
+	print STDOUT "$prompt ... ";
 	eval $evals;
 	if (!$@) {
 		print "yes\n"; $setv = 1;
@@ -30,7 +30,7 @@ sub wherecheck {
 	@paths = ('') if ($filename =~ m#^/#); # for absolute paths
 	local $setv = 0;
 
-	print stdout "$prompt ... ";
+	print STDOUT "$prompt ... ";
 	foreach(@paths) {
 		if (-r "$_/$filename") {
 			$setv = "$_/$filename";
@@ -76,7 +76,7 @@ sub preproc {
 		}
 		if (/^~insert/) {
 			(/^~insert (.+)$/) && ($def = $1);
-			open(Q, $def) || (print(stdout <<"EOF"), exit);
+			open(Q, $def) || (print(STDOUT <<"EOF"), exit);
 
 COMPILATION FAILURE: Could not include file $def.
 ($@ $!)
@@ -100,7 +100,7 @@ sub prompt {
 
 	if (!$DEFAULT) {
 		chomp $prompt;
-		print stdout "$prompt [$default]: ";
+		print STDOUT "$prompt [$default]: ";
 		chomp($entry = <STDIN>);
 		$entry = (length($entry) ? $entry : $default);
 	} else {
@@ -175,7 +175,7 @@ Can't open transcript file transcript.$p.$f for write.
 Check your permissions on that file or directory.
 
 EOF
-	select(L); $|++; select(stdout);
+	select(L); $|++; select(STDOUT);
 	print L "$version_key\n";
 }
 

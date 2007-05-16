@@ -1,5 +1,5 @@
 ** Upgrading protocol for HTTPi
-** Copyright 1999-2006 Cameron Kaiser
+** Copyright 1999-2007 Cameron Kaiser
 
 To make HTTPi as easy as possible to migrate between versions, I have created
 specific upgrading instructions to facilitate the process.

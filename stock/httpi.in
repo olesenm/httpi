@@ -19,10 +19,10 @@ use POSIX;
 ~
 $ENV{'PERL_SIGNALS'} = "unsafe";
 ~
-$VERSION = "1.5.1 (DEF_CONF_TYPE/DEF_ARCH)";
+$VERSION = "1.5.2 (DEF_CONF_TYPE/DEF_ARCH)";
 
 # HTTPi Hypertext Tiny Truncated Process Implementation
-# Copyright 1999-2006 Cameron Kaiser # All rights reserved
+# Copyright 1999-2007 Cameron Kaiser # All rights reserved
 # Please read LICENSE # Do not strip this copyright message.
 
 %system_content_types =
@@ -333,7 +333,7 @@ $date = "$dt/$mon/$yr:$tm DEF_TIME_ZONE";
 
 select(STDOUT); $|=1; $address = 0; 
 ~check MCANALARM
-alarm 1;
+alarm 5;
 ~
 ~
 while (<STDIN>) {
@@ -728,11 +728,22 @@ $0 = "dhttpi: on DEF_IP_ADDR:DEF_TCP_PORT, ready!";
 $master_pid = $$;
 for (;;) {
 	if ($secondary_pid = fork()) {
-		waitpid($secondary_pid, 0);
-		$statiosltr = scalar localtime;
+		$w = scalar localtime;
+~
+~
+~check STATIOS
+		# done this way for compatibility
+		$statioslastsec=(($w eq $statiosltr) ? $statioslastsec : 0)+1;
+		$statiosltr = $w;
 		$statiosreq++;
-		$0 = "dhttpi: on DEF_IP_ADDR:DEF_TCP_PORT, last request " .
-			scalar localtime;
+~
+~
+~check MDEMONIC
+		waitpid($secondary_pid, 0);
+~
+~
+~check MDEMONIC
+		$0 = "dhttpi: on DEF_IP_ADDR:DEF_TCP_PORT, last request $w";
 	} else {
 		$0 = "dhttpi (child of $master_pid): waiting for connect";
 		$addr=accept(NS,S);

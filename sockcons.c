@@ -3,7 +3,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-/* sockcons (C)1999, 2006 Cameron Kaiser -- for HTTPi 1.3+
+/* sockcons (C)1999, 2007 Cameron Kaiser -- for HTTPi 1.3+
  *
  * A hack to dump major socket constants (somewhat more trustworthy than
  * Socket.pm on some [misconfigured?] systems). Known to compile with cc

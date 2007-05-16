@@ -1,4 +1,4 @@
-# Useless makefile for managing HTTPi versions (C)1999-2006 Cameron Kaiser
+# Useless makefile for managing HTTPi versions (C)1999-2007 Cameron Kaiser
 #
 # This is really only needed for my use, but if you want, here it is, no
 # support or strings attached, if you want to roll your own dists. The guts

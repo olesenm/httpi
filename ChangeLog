@@ -1,3 +1,12 @@
+Changes since 1.5.1:
+
+	fixes:
+	* leftover compatibility fixes to configure.*
+	* looser timeouts for better tolerance of slower clients
+	enhanced:
+	* dmg img MIME types
+	* tweaks to STATIOS for future changes in 1.6
+
 Changes since 1.5:
 
 	fixes:
