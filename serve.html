@@ -18,23 +18,25 @@ thoroughly first.
 Invoking and managing HTTPi sessions is very simple to do, and depending
 on the way you have HTTPi installed, literally automatic.
 <p>
-If you have installed HTTPi to run in <code>(x)inetd</code>, HTTPi will 
-be managed by <code>(x)inetd</code>. <i>You'll never need to start your
+If you have installed HTTPi to run in <code>(x)inetd</code>,
+<code>stunnel</code> or <code>launchd</code>,
+the superserver will manage HTTPi for you once it is configured.
+<i>You'll never need to start your
 server manually or place it in your system's <code>rc</code> scripts,
-and <code>xinetd</code> will automatically manage all your virtual servers
+and will automatically manage all your server instances and/or virtual servers
 for you if you have them set up.</i> You will not see any HTTPi processes
 running when there are no requests pending. To stop the server, you must
-manually remove the entry from your <code>(x)inetd</code>'s configuration file.
+manually remove the entry from your superserver's configuration.
 <p>
 Demonic HTTPi has some special care and feeding rules that are slightly
 different than other webservers. In particular, you need one Demonic HTTPi
 executable running per IP address it is bound to (so multiple virtual
 servers require multiple instances of Demonic HTTPi built for each IP address
-to separate executables). <i>This is unlike Apache or Roxen,
-which manage their server processes in one master process.</i>
+to separate executables).
 These processes do not autostart, and should be
-invoked in your system's <code>rc</code> scripts or equivalent to make sure
-that your server comes up on reboot. 
+invoked in your system's <code>rc</code> scripts or equivalent such as
+<code>launchd</code> itself to make sure
+that your server comes up on reboot.
 <p>
 Demonic HTTPi
 is invoked by simply calling it from the command line. You must be
@@ -70,7 +72,8 @@ affected by the New Security Model (see below).
 <table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
 <td bgcolor = "#e0e0ff">
 As of 0.99, Demonic HTTPi optionally includes STATIOS, a configure-time
-option allowing you to monitor your server's activity. You can see
+option allowing you to monitor your server's activity. STATIOS was
+considerably expanded in 1.6. You can see
 <a href = "/status">an example of the information it provides</a>
 on this server. Log in as <code>voyeur</code>, password <code>wannapeek</code>.
 </td></tr></table>
@@ -100,12 +103,12 @@ offers a modicum of security so that people can't just riffle your files.
 <p>
 If your Perl supports the <code>alarm()</code> system call, which any
 port worth its salt does,
-requests have to be received within one second of startup or the
+requests have to be received within a few seconds of startup or the
 socket is closed. This is a paranoia feature to help cut down on clients
 maliciously holding sockets open.
 <p>
-<table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
-<td bgcolor = "#e0e0ff">
+<table width = 100% cellspacing = 2 cellpadding = 5 border = 0>
+<tr><td bgcolor = "#e0e0ff">
 As of 0.99, HTTPi does include a tool to let you make a directory browseable
 if you like (but subdirectories of that directory won't be unless you take
 the same steps with them). Copy <code>browsed</code> from the
@@ -217,8 +220,7 @@ reason, it is the default in 1.5 and above.
 <h4>IP-Based Virtual Hosting</h4>
 <table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
 <td bgcolor = "#ffe0e0">
-This option is <b>not</b> available to <code>inetd</code> installations,
-but only to <code>xinetd</code> and Demonic installations.
+This option is <b>not</b> available to <code>inetd</code> installations.
 </td></tr></table><p>
 IP-based virtual hosting (one IP address per virtual host) is handled by
 individual, distinct instances of HTTPi binding each IP address. <b>You must
@@ -228,8 +230,8 @@ others.</b>
 <p>
 Each IP-based virtual server is an individual, distinct process and is
 separate from all others. If you are using Demonic HTTPi, each server must
-also be booted separately; if you are using <code>xinetd</code> HTTPi, each
-server must have its own, separate entry in <code>xinetd.conf</code>. For
+also be booted separately; the other flavours of HTTPi will require separate
+entries in the superserver's configuration. For
 managing these individual processes, see <a href = "#ssto">Starting and
 Stopping HTTPi</a>.
 <h4>IP-Less Virtual Hosting Using <code>%nameredir</code></h4>
@@ -290,8 +292,8 @@ CGI, though some interface features are common.
 <p>
 When a file being requested is executable by HTTPi's uid, it sets a few
 environment variables and transforms itself (via <code>exec()</code> or
-another method, explained later) into the executable instead,
-unlike other webservers which may fork a process. If HTTPi is running as
+another method, explained later) into the executable instead.
+If HTTPi is running as
 <code>root</code>,
 it and therefore the executable will assume the egid and euid of the
 executable's owner. <i>It does not act like
@@ -331,7 +333,9 @@ provided the <code>REMOTE_HOST</code>, <code>REMOTE_ADDR</code>,
 <code>CONTENT_LENGTH</code> (for POST requests),
 <code>HTTP_USER_AGENT</code> and <code>HTTP_REFERER</code> environment
 variables. In addition, as of 1.4, you are also provided the
-<code>HTTP_COOKIE</code> header with any cookies sent by the client.
+<code>HTTP_COOKIE</code> header with any cookies sent by the client, and
+as of 1.6, <code>HTTP_ACCEPT_*</code>, <code>HTTP_ACCEPT</code>, 
+<code>HTTP_IF_MODIFIED_SINCE</code> and <code>HTTP_X_REQUESTED_WITH</code>.
 <p>
 Here's the good news:
 most NPH CGIs will probably need no modification at all, and most other CGIs
@@ -355,6 +359,16 @@ Note that the <code>REMOTE_HOST</code> variable may be affected if you
 enable DNS anti-spoofing at configure time in 1.5 and up. If your
 executables are expecting a directly-resolvable string to be present,
 you should modify the executable or disable anti-spoofing.
+<p>
+<table width = 100% cellspacing = 2 cellpadding = 5 border = 0>
+<tr><td bgcolor = "#e0e0ff">
+Certain filesystems may not have reliable execute bits. For those systems,
+you can force only certain extensions to be executable (i.e., the file
+must not only have execute bits, but must end in
+<code>(exe|com|pl|cgi|cmd|perl|[ckbap]*sh)</code>). This is available in 1.6
+as a configure-time option.
+</td></tr>
+</table>
 <h4>HTTPerl vs. <code>exec()</code></h4>
 As of 0.7, HTTPi gives you two ways of running your executables.
 When configuring HTTPi, you can either choose to use the HTTPerl hack, or do a
