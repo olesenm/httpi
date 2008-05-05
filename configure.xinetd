@@ -1,4 +1,5 @@
 $DEF_MDEMONIC = 0;
+$DEF_MSTUNNEL = 0;
 $DEF_CONF_TYPE = "xinetd";
 
 eval 'require "consubs.pl";'; die(<<"EOF") if ($@);
@@ -50,7 +51,7 @@ the same install path), you should probably answer "n".
 If you are starting from scratch -- nothing installed -- answer "y" unless
 you really don't want xinetd to know about HTTPi yet.
 
-Do everything, including inetd.conf and services modifications?
+Do everything, including xinetd.conf and services modifications?
 EOF
 	$DO_INSTALL = ($DO_INSTALL eq 'y' && !$DEFAULT) ? 1 : 0;
 }
@@ -82,11 +83,11 @@ the current directory.
 
 EOF
 
-$USER_ID = &prompt(<<"EOF", "nobody") unless (!$DO_INSTALL);
+$USER_ID = &prompt(<<"EOF", $ENV{'SUDO_USER'} || $ENV{'USER'} || 'nobody') unless (!$DO_INSTALL);
 What user do you want the server to run as? If you select someone other than
 'root', the server will not be able to change (e)uid to an executable's owner,
 and you'll need to make sure the access log (getting to that) is writeable
-to them.
+by that user.
 
 On the other hand, if you select 'root', be forewarned this is a potential
 security hole (to run *any* webserver as root, not just HTTPi).
@@ -96,8 +97,7 @@ EOF
 
 $WAIT_MODE = &prompt(<<"EOF", "0") unless (!$DO_INSTALL);
 A further bonus to slow systems is, because HTTPi runs out of xinetd, the
-ability to restrict the number of simultaneous HTTPis that can run. Since
-HTTPi supports persistent connections, if your clients are suitably clued,
+ability to restrict the number of simultaneous HTTPis that can run. Thus,
 you can get by with a practically invisible webserver by specifying very
 few, or just one, instance(s) to run at a time.
 
@@ -106,7 +106,10 @@ actually set a maximum forking in xinetd. Specify the maximum number of
 simultaneous HTTPi processes you want running.
 
 USE 0 FOR INFINITE NUMBER (note that xinetd will curtail runaway processes,
-so fear not -- this will not chomp your system like Apache will).
+so fear not -- this will not chomp your system).
+
+Some versions of xinetd may not behave correctly with a non-zero value that
+is set too low.
 
 How many processes maximum (0 for no maximum)?
 EOF
@@ -119,10 +122,10 @@ xinetd HTTPi can do IP-based virtual hosting like Demonic HTTPi can, allowing
 you to bind different instances of HTTPi to different IP addresses if you
 prefer not to use the IP-less Host:-based redirect feature.
 
-If you just say "default", it will bind to INADDR_ANY, the default interface
-on your machine. YOU MUST HAVE A SEPARATE HTTPi EXECUTABLE AND PROCESS PER IP
-ADDRESS BOUND -- IP address information is *hardcoded* into HTTPi, and you'll
-need individual executable builds for each IP address.
+If you just say "default", it will bind to INADDR_ANY and will listen on any
+interface. Otherwise, YOU MUST HAVE A SEPARATE HTTPi EXECUTABLE AND PROCESS
+PER IP ADDRESS BOUND -- HTTPi is not designed to share one executable across
+multiple sockets. Make sure that ports don't conflict either.
 
 Which IP address to bind to?
 EOF

@@ -1,4 +1,5 @@
 $DEF_MDEMONIC = 0;
+$DEF_MSTUNNEL = 0;
 $DEF_CONF_TYPE = "inetd";
 
 eval 'require "consubs.pl";'; die(<<"EOF") if ($@);
@@ -17,13 +18,15 @@ This is the configure script for inetd systems (most Unix boxen).
 
 DO NOT RUN THIS IF:
 	* you want to run HTTPi as a >> daemon << (run configure.demonic)
-	* you have xinetd (run configure.xinetd instead)
+	* you have xinetd or launchd (run configure.xinetd or
+		configure.launchd instead)
+	* you want to use SSL (run configure.stunnel)
 	* you have NO inetd or an unsupported one (run configure.generic)
 
 If you don't know what you have, but you're running on Unix, chances are
 this is the right script. (I'll stop you if it isn't.)
 
-In the current version, Win32 and MacPerl inetds, if any, are not supported
+In the current version, Win32 and Classic Mac inetds, if any, are not supported
 directly. YOU MUST RUN configure.generic for these systems if you want your
 inetd to control HTTPi.
 
@@ -140,10 +143,10 @@ EOF
 }
 }
 
-$USER_ID = &prompt(<<"EOF", "nobody") unless (!$DO_INSTALL);
+$USER_ID = &prompt(<<"EOF", $ENV{'SUDO_USER'} || $ENV{'USER'} || 'nobody') unless (!$DO_INSTALL);
 What user do you want the server to run as? If you select someone other than
 'root', the server will not be able to change (e)uid to an executable's owner,
-and you'll need to make sure the access log is writeable by them.
+and you'll need to make sure the access log is writeable by that user.
 
 On the other hand, if you select 'root', be forewarned this is a potential
 security hole (to run *any* webserver as root, not just HTTPi).
@@ -159,10 +162,14 @@ However, if you intend to put a little strain on HTTPi, this will not help
 (and in fact make it worse on inetd), particularly with rude clients like
 Netscape that insist on opening up multiple connections to a server.
 
-HTTPi's default is to have inetd open up one HTTPi process per open socket,
-and kill each off after it completes its job (answer no to this question).
+The default is to have inetd open up one HTTPi process per open socket, and
+kill each one off after it completes its job (answer no to this question).
 Unless you're masochistic or have a real anal-retentive streak about CPU time
 usage, the default is probably just fine.
+
+Some inetds may not like the way HTTPi forks out client handlers, even though
+it's still functionally a 'single instance'. If you answer 'y' and your HTTPi
+hangs when you try to access it, you must disable this restriction ('n').
 
 Restrict HTTPi to a single process?
 EOF
@@ -292,9 +299,9 @@ Successfully configured!
 
 Now, you must send a HUP signal to your inetd process to enable the webserver.
 AIX: refresh -s inetd
-Linux: killall -HUP inetd
+Most Un*xy things: killall -HUP inetd
 
-Other systems, find its PID with ps first.
+If you don't have killall, find the PID with ps and kill -HUP that.
 
 Remember to read the documentation for last minute information! Bye now.
 EOF
@@ -305,7 +312,7 @@ Done.
 IF THIS IS A FIRST-TIME INSTALL:
 Note that no changes have been made to inetd, so the webserver will not
 actually run yet. You will need to re-run as root and answer yes to the
-first question for that to happen.
+first question for that to happen, or connect HTTPi in yourself.
 
 IF NOT:
 The changes should take effect on the webserver's next access (assuming it's

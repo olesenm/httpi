@@ -1,0 +1,240 @@
+#[https-e]
+
+$DEF_MDEMONIC = 0;
+$DEF_MSTUNNEL = 1;
+$DEF_CONF_TYPE = "stunnel";
+
+eval 'require "consubs.pl";'; die(<<"EOF") if ($@);
+
+Could not load consubs.pl, which is required for running the configure script.
+Please make sure it's in the current directory.
+
+EOF
+
+&prompt(<<"EOF", "") unless ($DEFAULT);
+Configure (stunnel) for HTTPi/$ACTUAL_VERSION
+
+This is the configure script for users of stunnel (http://www.stunnel.org/).
+It is currently the only supported configuration for using HTTPi for SSL.
+4.x is required, and 4.20 or higher is strongly suggested.
+
+DO NOT RUN IF:
+	* you don't have stunnel configured (run something else)
+	* your stunnel.conf is not set up -- you will need to set up your
+		options and certs in stunnel.conf BEFORE YOU RUN THIS SCRIPT!
+	* you intend to run HTTPi as a daemon and use transparent mode to
+		connect it to stunnel. For that use, run configure.demonic
+		and then set up stunnel manually.
+	* you want to run stunnel itself in inetd mode. This is not supported.
+
+Remember that using stunnel DEMANDS that you keep your SSL libraries up to
+date, as your server could be compromised or attacked (cryptographically or
+otherwise) by a flaw in any of HTTPi, OpenSSL/SSLeay or stunnel. In the
+current version, HTTPi runs with stunnel's UID (usually root). Because of
+its high security demands, HTTPi over SSL is considered EXPERIMENTAL in
+this release.
+
+Press ENTER to continue or BREAK/CTRL-C to bail out:
+EOF
+
+print "\nChecking system defaults ...\n\n";
+$DEF_ROOT = &yncheck("Are we running as root?", "die if ($<);");
+if (!$DEF_ROOT && !$DEFAULT) {
+	&prompt(<<"EOF", "");
+
+You will only be able to write out the object file, and you might not be
+able to even do that without appropriate permissions. Consider running this
+Configure script as root if you want to install HTTPi fully.
+
+Press ENTER to continue.
+EOF
+	$DO_INSTALL = 0;
+} else {
+	$DO_INSTALL = &prompt(<<"EOF", "y") unless ($DEFAULT);
+You're running as root, so we can do the whole caboodle, including write out
+the object file and update stunnel's configuration file. If you say "n"
+to this question, we'll just write out the object file.
+
+If you are just patching an already existing and running HTTPi installation
+(i.e. the changes are already in stunnel.conf, and it's going to go to
+the same install path), you should probably answer "n".
+
+If you are starting from scratch -- nothing installed -- answer "y" unless
+you really don't want stunnel to know about HTTPi yet.
+
+Do everything, including configuration file modifications?
+EOF
+	$DO_INSTALL = ($DO_INSTALL eq 'y' && !$DEFAULT) ? 1 : 0;
+}
+if (!$DO_INSTALL) {
+	print <<"EOF";
+Questions pertaining to stunnel installation won't be asked by this script.
+
+EOF
+	}
+
+&firstchecks;
+if ($DO_INSTALL) {
+	$WHERE_GO = &prompt(<<"EOF", "/usr/local/etc/stunnel/stunnel.conf");
+
+Where is your stunnel.conf located? This file SHOULD ALREADY have your
+certificates defined, along with any crypto and other global options you
+want enabled. configure will APPEND to this file.
+
+If you do not have this information already in stunnel.conf, PRESS
+CTRL-C NOW!
+
+Full path to stunnel.conf?
+EOF
+
+	die (<<"EOF") if (! -r $WHERE_GO);
+
+Filename $WHERE_GO is not readable by me!
+You need to have this file set up and configured BEFORE you run this script.
+
+EOF
+}
+
+eval 'require "conquests.pl";'; die(<<"EOF") if ($@);
+
+Could not load conquests.pl, which is required as part of the standard
+questions suite for all of the configure scripts. Please make sure it's in
+the current directory.
+
+EOF
+
+unless (!$DO_INSTALL) {
+$IP_ADDR = &prompt(<<"EOF", "default");
+stunnel HTTPi can do IP-based virtual hosting like Demonic HTTPi can, allowing
+you to bind different instances of HTTPi to different IP addresses if you
+prefer not to use the IP-less Host:-based redirect feature.
+
+If you just say "default", it will bind to INADDR_ANY and will listen on any
+interface. Otherwise, YOU MUST HAVE A SEPARATE HTTPi EXECUTABLE AND PROCESS
+PER IP ADDRESS BOUND -- HTTPi is not designed to share one executable across
+multiple sockets. Make sure that ports don't conflict either.
+
+Which IP address to bind to?
+EOF
+
+$IP_ADDR = ($IP_ADDR eq 'default') ? '' : "${IP_ADDR}:";
+
+$PORT_NO = &prompt(<<"EOF", "443");
+What numerical TCP port do you want the webserver to run on? 443 is the default
+for HTTPS, but if you're using configure to build multiple HTTPis on multiple
+ports, make sure you give a different answer this time.
+
+Which TCP port number?
+EOF
+
+$SERV_NAME = &prompt(<<"EOF", ($PORT_NO eq '80')?"httpi":"httpi$PORT_NO");
+To run properly in stunnel, stunnel.conf must contain a service mapped to
+the TCP port number you chose ($PORT_NO). Each name must be unique to its
+port number so that stunnel can unambiguously decipher which goes where.
+
+Avoid having multiple services mapped to the same port number -- it's really
+very confusing.
+
+Which service name?
+EOF
+
+print "Checking $WHERE_GO for competing services ... ";
+open(S, $WHERE_GO) || die("\nNo read access.\n\n");
+$j = 0; while(<S>) {
+	/^\s*\[$SERV_NAME\]/ && ($j = $_);
+}
+if ($j) {
+	prompt(<<"EOF", "");
+
+ack! I found one!:
+$j
+
+YOU WILL NEED TO EDIT YOUR stunnel.conf AFTERWARDS, BEFORE YOU START THE
+WEBSERVER UP! Otherwise, stunnel will be very confused. Make sure you select
+ONLY ONE -- either HTTPi's service block or this one. You may need to re-run
+configure and select a new port also.
+
+Press RETURN/ENTER to continue, or CTRL-C to bail out:
+EOF
+} else {
+	print "\nnone found.\nWhew! (BUT MAKE SURE NOTHING'S ON THE SAME PORT!)\n\n";
+}
+}
+
+$j = &prompt(<<"EOF", "") unless (!$DO_INSTALL);
+LAST CHANCE BEFORE CHANGES ARE COMMITTED!
+
+If you continue beyond this point, configure will alter your stunnel.conf
+located at $WHERE_GO
+and place the new HTTPi build in $INSTALL_PATH.
+
+If you want to continue, just press ENTER.
+If you don't, press CTRL-C NOW!
+EOF
+$j = &prompt(<<"EOF", "") unless ($DO_INSTALL);
+LAST CHANCE BEFORE CHANGES ARE COMMITTED!
+
+If you continue beyond this point, configure will build your HTTPi and
+overwrite any file currently at $INSTALL_PATH.
+
+If you want to continue, just press ENTER.
+If you don't, press CTRL-C NOW!
+EOF
+
+$INSTALL_PATH = &detaint($INSTALL_PATH);
+print "Writing out the configured httpi to $INSTALL_PATH ... ";
+(open(S, "httpi.in") && open(T, ">$INSTALL_PATH")) || die(<<"EOF");
+
+Couldn't write out the new httpi. Check permissions on httpi.in in the
+current directory and the destination path.
+
+EOF
+print T &preproc(\*S); close(T); close(S);
+print "done.\n\n";
+
+if ($DO_INSTALL) {
+print "Writing changes to $WHERE_GO ... ";
+open(S, ">>$WHERE_GO") || die(
+	"\n\nAre you really root? I can't write to this file.\n");
+(@x) = split(/\//, $INSTALL_PATH);
+$j = pop(@x);
+print S <<"EOF";
+
+; added by HTTPi install
+[$SERV_NAME]
+accept  = ${IP_ADDR}${PORT_NO}
+exec    = $INSTALL_PATH
+execargs = $j
+TIMEOUTclose = 0
+
+EOF
+close(S);
+print "done.\n\nchmod()ding $INSTALL_PATH to 0755 ... ";
+chmod 0755, "$INSTALL_PATH" || die("\n\nWhat the heck? Can't do it.\n");
+print "done.\n\n";
+
+print <<"EOF";
+Successfully configured!
+
+Now, you must restart your stunnel process to enable the webserver. If
+you require special options to stunnel, you should edit your stunnel.conf NOW!
+
+Remember to read the documentation for last minute information! Bye now.
+EOF
+exit; } else {
+	print <<"EOF";
+Done.
+
+IF THIS IS A FIRST-TIME INSTALL:
+Note that no changes have been made to stunnel.conf, so the webserver will
+not actually run yet. You will need to re-run as root and answer yes to the
+first question for that to happen.
+
+IF NOT:
+The changes should take effect on the webserver's next access (assuming it's
+running).
+
+Remember to read the documentation file for last minute information. Bye!
+
+EOF
+}

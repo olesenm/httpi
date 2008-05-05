@@ -1,3 +1,25 @@
+Changes since 1.5.2:
+
+	new:
+	* SSL is now supported using stunnel (http://www.stunnel.org/)
+		and your crypto libraries with configure.stunnel
+		** EXPERIMENTAL ONLY! **
+	* Mac OS X launchd is now supported with configure.launchd
+	* If-Modified-Since exact-prefix support (returns 304)
+	* compatibility verified against Perl 5.10
+	enhanced:
+	* additional explicit header support (thanks Robert Brown)
+		and MIME types
+	* additional STATIOS load tracking statistics and clarified prompts
+	* progress indicator on process list for transfers
+	fixes:
+	* Makefile executables and logic cleaned up (but NOT for installation)
+	* file extension filtering for filesystems with weird execute bits
+		(thanks Al Guintu)
+	* STATIOS requests bug out if they are the very first after startup
+	* meta tags added to prevent status page indexing
+	* transcript files are locked to HTTPi flavour to eliminate confusion
+
 Changes since 1.5.1:
 
 	fixes:
@@ -5,7 +27,7 @@ Changes since 1.5.1:
 	* looser timeouts for better tolerance of slower clients
 	enhanced:
 	* dmg img MIME types
-	* tweaks to STATIOS for future changes in 1.6
+	* tweaks to STATIOS for future changes
 
 Changes since 1.5:
 

@@ -1,4 +1,4 @@
-# Useless makefile for managing HTTPi versions (C)1999-2007 Cameron Kaiser
+# Useless makefile for managing HTTPi versions (C)1999-2008 Cameron Kaiser
 #
 # This is really only needed for my use, but if you want, here it is, no
 # support or strings attached, if you want to roll your own dists. The guts
@@ -17,8 +17,8 @@ CP		= /bin/cp
 MV		= /bin/mv
 CAT		= /bin/cat
 LS		= /bin/ls
-LN		= /usr/bin/ln
-SLEEP		= /usr/bin/sleep
+LN		= /bin/ln
+SLEEP		= /bin/sleep
 GREP		= /usr/bin/grep
 HEAD		= /usr/bin/head
 TAR		= /usr/bin/tar
@@ -28,6 +28,7 @@ LYNX		= /usr/local/bin/lynx
 REPOSITORY	= /usr/local/htdocs/httpi
 
 default_target: install
+.PHONY: default_target install clean spotless realclean unrevert revert version configure configure.inetd configure.xinetd configure.launchd configure.stunnel configure.demonic configure.generic _testdir playbox test dist
 
 spotless: clean revert
 realclean: clean revert
@@ -50,10 +51,14 @@ configure.inetd: install
 configure.demonic: install
 configure.xinetd: install
 configure.generic: install
+configure.stunnel: install
+configure.launchd: install
 
 install: version
 	@echo "Do one of: 'perl configure.inetd'"
 	@echo "           'perl configure.demonic'"
+	@echo "           'perl configure.stunnel'"
+	@echo "           'perl configure.launchd'"
 	@echo "           'perl configure.xinetd'"
 	@echo "           'perl configure.generic'"
 	@echo

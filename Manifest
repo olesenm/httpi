@@ -1,50 +1,52 @@
-total 239
--rw-r--r--   1 spectre  staff       9366 May 15 20:13 ChangeLog
--rw-r--r--   1 spectre  staff       3667 May 15 20:13 INSTALL
--rw-r--r--   1 spectre  staff      15169 May 15 20:13 LICENSE
--rw-r--r--   1 spectre  staff       2712 May 15 20:13 Makefile
--rw-r--r--   1 spectre  staff        116 May 15 20:13 Makefile.PL
--rw-r--r--   1 spectre  staff       1060 May 15 20:13 README
--rw-r--r--   1 spectre  staff        479 May 15 20:13 THANKS
--rw-r--r--   1 spectre  staff        542 May 15 20:13 UPGRADING
--rw-r--r--   1 spectre  staff         47 May 15 20:13 VERSION
-lrwxrwxrwx   1 spectre  staff         15 May 15 20:13 configure@ -> configure.inetd
--rw-r--r--   1 spectre  staff       8767 May 15 20:13 configure.demonic
--rw-r--r--   1 spectre  staff       2304 May 15 20:13 configure.generic
--rw-r--r--   1 spectre  staff       9833 May 15 20:13 configure.inetd
--rw-r--r--   1 spectre  staff       8461 May 15 20:13 configure.xinetd
--rw-r--r--   1 spectre  staff      23146 May 15 20:13 conquests.pl
--rw-r--r--   1 spectre  staff       5963 May 15 20:13 consubs.pl
--rw-r--r--   1 spectre  staff      17898 May 15 20:13 httpi.in
--rw-r--r--   1 spectre  staff        138 May 15 20:13 modules.in
--rw-r-----   1 spectre  staff        592 May 15 20:13 sockcons.c
--rw-r--r--   1 spectre  staff        134 May 15 20:13 sockcons.pl
-drwxr-xr-x   2 spectre  staff        512 May 15 20:13 stock/
-drwxr-xr-x   3 spectre  staff        512 May 15 20:13 tools/
-drwxr-xr-x   2 spectre  staff        512 May 15 20:13 toys/
--rw-r--r--   1 spectre  staff        977 May 15 20:13 userfunc.in
--rw-r--r--   1 spectre  staff       2574 May 15 20:13 uservar.in
+total 286
+-rw-r--r--   1 spectre  staff      10259 May 04 17:07 ChangeLog
+-rw-r--r--   1 spectre  staff       4988 May 04 17:07 INSTALL
+-rw-r--r--   1 spectre  staff      15169 May 04 17:07 LICENSE
+-rw-r--r--   1 spectre  staff       3070 May 04 17:07 Makefile
+-rw-r--r--   1 spectre  staff        116 May 04 17:07 Makefile.PL
+-rw-r--r--   1 spectre  staff       1120 May 04 17:07 README
+-rw-r--r--   1 spectre  staff        502 May 04 17:07 THANKS
+-rw-r--r--   1 spectre  staff        542 May 04 17:07 UPGRADING
+-rw-r--r--   1 spectre  staff         45 May 04 17:07 VERSION
+lrwxrwxrwx   1 spectre  staff         15 May 04 17:07 configure@ -> configure.inetd
+-rw-r--r--   1 spectre  staff       8811 May 04 17:07 configure.demonic
+-rw-r--r--   1 spectre  staff       2401 May 04 17:07 configure.generic
+-rw-r--r--   1 spectre  staff      10277 May 04 17:07 configure.inetd
+-rw-r--r--   1 spectre  staff       8761 May 04 17:07 configure.launchd
+-rw-r--r--   1 spectre  staff       7697 May 04 17:07 configure.stunnel
+-rw-r--r--   1 spectre  staff       8528 May 04 17:07 configure.xinetd
+-rw-r--r--   1 spectre  staff      24693 May 04 17:07 conquests.pl
+-rw-r--r--   1 spectre  staff       6655 May 04 17:07 consubs.pl
+-rw-r--r--   1 spectre  staff      19807 May 04 17:07 httpi.in
+-rw-r--r--   1 spectre  staff        138 May 04 17:07 modules.in
+-rw-r--r--   1 spectre  staff        592 May 04 17:07 sockcons.c
+-rw-r--r--   1 spectre  staff        134 May 04 17:07 sockcons.pl
+drwxr-xr-x   2 spectre  staff        512 May 04 17:07 stock/
+drwxr-xr-x   3 spectre  staff        512 May 04 17:07 tools/
+drwxr-xr-x   2 spectre  staff        512 May 04 17:07 toys/
+-rw-r--r--   1 spectre  staff        977 May 04 17:07 userfunc.in
+-rw-r--r--   1 spectre  staff       2571 May 04 17:07 uservar.in
 ./stock:
-total 44
--rw-r--r--   1 spectre  staff      17898 May 15 20:13 httpi.in
--rw-r--r--   1 spectre  staff        138 May 15 20:13 modules.in
--rw-r--r--   1 spectre  staff        977 May 15 20:13 userfunc.in
--rw-r--r--   1 spectre  staff       2574 May 15 20:13 uservar.in
+total 48
+-rw-r--r--   1 spectre  staff      19807 May 04 17:07 httpi.in
+-rw-r--r--   1 spectre  staff        138 May 04 17:07 modules.in
+-rw-r--r--   1 spectre  staff        977 May 04 17:07 userfunc.in
+-rw-r--r--   1 spectre  staff       2571 May 04 17:07 uservar.in
 
 ./tools:
 total 7
--rwxr-xr-x   1 spectre  staff       1402 May 15 20:13 browsed*
--rwxr-xr-x   1 spectre  staff        598 May 15 20:13 crapword*
--rwxr-xr-x   1 spectre  staff        327 May 15 20:13 noodle*
-drwxr-xr-x   2 spectre  staff        512 May 15 20:13 phproxy/
+-rwxr-xr-x   1 spectre  staff       1402 May 04 17:07 browsed*
+-rwxr-xr-x   1 spectre  staff        598 May 04 17:07 crapword*
+-rwxr-xr-x   1 spectre  staff        327 May 04 17:07 noodle*
+drwxr-xr-x   2 spectre  staff        512 May 04 17:07 phproxy/
 
 ./tools/phproxy:
 total 12
--rw-r--r--   1 spectre  staff       1474 May 15 20:13 README
--rw-r--r--   1 spectre  staff        237 May 15 20:13 add_to_modules.in
--rwxr-xr-x   1 spectre  staff       3245 May 15 20:13 phproxy*
--rw-r--r--   1 spectre  staff         21 May 15 20:13 phproxy_test.php
+-rw-r--r--   1 spectre  staff       1474 May 04 17:07 README
+-rw-r--r--   1 spectre  staff        237 May 04 17:07 add_to_modules.in
+-rwxr-xr-x   1 spectre  staff       3245 May 04 17:07 phproxy*
+-rw-r--r--   1 spectre  staff         21 May 04 17:07 phproxy_test.php
 
 ./toys:
 total 3
--rw-r-----   1 spectre  staff       1310 May 15 20:13 httpismall.gif
+-rw-r-----   1 spectre  staff       1310 May 04 17:07 httpismall.gif

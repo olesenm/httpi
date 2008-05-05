@@ -19,6 +19,8 @@ DO NOT RUN THIS IF:
 	* you have inetd (run configure.inetd instead)
 	* you have xinetd (run configure.xinetd instead)
 	* you want the demonised version (run configure.demonic instead)
+	* you have launchd (run configure.launchd instead)
+	* you have stunnel (run configure.stunnel instead)
 
 DO RUN THIS IF:
 	* you don't have an inetd but want to build an executable
@@ -26,8 +28,8 @@ DO RUN THIS IF:
 	* you don't want to use Demonic HTTPi
 
 Note that you will need to roll your own changes to whatever inetd equivalent
-you have (configure.generic will tell you). YOU MUST HAVE AN INETD OR SOME
-EQUIVALENT TO RUN HTTPi IN THE GENERIC CONFIGURATION.
+you have to actually serve anything. YOU MUST HAVE AN INETD OR SOME EQUIVALENT
+TO RUN HTTPi IN THE GENERIC CONFIGURATION.
 
 Press ENTER to continue, or BREAK/CTRL-C to bail out now:
 EOF

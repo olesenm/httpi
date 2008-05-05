@@ -15,7 +15,7 @@ allows better process control, which reduces the chance of system overload.
 More importantly, if you intend to use inetd HTTPi on a system that times
 inetd processes out if sockets remain open, you will be running a very
 unstable server without alarm() support. (This is only an issue with inetd
-HTTPi, not Demonic or xinetd HTTPis.)
+HTTPi, not the other forms.)
 
 You can still install HTTPi, but consider running this on a system that
 supports alarm() in its Perl port.
@@ -43,10 +43,10 @@ Where do you want the resultant script placed? If you're using configure to
 build multiple instances of HTTPi on different ports, make sure this changes
 unless you're darn certain that they'll all be configured the same way.
 IF YOU'RE USING CONFIGURE TO BUILD MULTIPLE INSTANCES OF HTTPi ON MULTIPLE
-IP ADDRESSES (xinetd/Demonic only), THIS *MUST* BE DIFFERENT IN EACH CASE!
+IP ADDRESSES, THIS *MUST* BE DIFFERENT IN EACH CASE!
 
-WARNING TO xinetd/inetd INSTALLERS: If you are doing a full install to update
-(x)inetd's config files simultaneously, THIS MUST BE AN ABSOLUTE PATH!
+If you are doing a full install to update the configuration files for
+launchd/inetd/xinetd/stunnel/etc. simultaneously, THE PATH MUST BE ABSOLUTE!
 
 Install path?
 EOF
@@ -55,14 +55,14 @@ $q = ($PERL_VERSION >= 5.008) ? 'y' : 'n';
 if ($HAS_POSIX) {
 	$DEF_MUSEPOSIX = (&prompt(<<"EOF", $q, 1) eq 'y') ? 1 : 0;
 As a reminder, you do have POSIX.pm, and the Perl you've decided to build
-HTTPi with is version $PERL_VERSION, which is capable of using sigaction().
+HTTPi with is version $PERL_MVERSION, which is capable of using sigaction().
 Let's talk signals.
 
-On Perls 5.005, 5.6 ("5.006") and prior to 5.8, POSIX sigaction() didn't work
+On Perls 5.005, 5.6 and prior to 5.8, POSIX sigaction() didn't work
 properly (if at all). Those systems should continue to use the \$SIG method
 of signal handling, which is technically unsafe but mostly functional.
 
-On Perls 5.8 ("5.008") and higher, sigaction() not only works, but works
+On Perls 5.8 and higher, sigaction() not only works, but actually works
 better than the old \$SIG method for HTTPi's purposes and may be required in
 future Perls for HTTPi's signal handling to work at all. You should only use
 \$SIG in this case if you are building HTTPi for another system with an older
@@ -84,12 +84,13 @@ EOF
 	&prompt(<<"EOF", "");
 Your system is unable to use sigaction-based signals (no POSIX.pm), although
 recent Perls (>= 5.8.0) may benefit strongly from it -- you are using version
-$PERL_VERSION. Using \$SIG-based signaling instead.
+$PERL_MVERSION. Using \$SIG-based signaling instead.
 
 $q
 consider setting the environment variable PERL_SIGNALS to 'unsafe' for the
 previous behaviour, which is considered poor form, but will probably work.
-This will be added to HTTPi for you.
+This will be added to HTTPi for you, but you should probably put it in your
+global environment as a precaution.
 
 Press RETURN or ENTER to continue.
 EOF
@@ -128,6 +129,11 @@ $DEF_ACCESS_LOG = &prompt(<<"EOF", "$DEF_HTDOCS_PATH/access.log", 1);
 Where do you want the server to put the access log? If you don't want
 logging, specify /dev/null. This is the webserver's log file path.
 
+Note that the default is fetchable, i.e., your log can be requested by and
+served to a client. Sometimes this is useful, and sometimes this is an
+information hole. If this is not desirable to you, make sure the log is not
+located under the webserver's mount point.
+
 EOF
 print <<"EOF";
 WARNING: Make sure the access log is writeable, or there won't be much in it.
@@ -162,8 +168,8 @@ EOF
 
 $DEF_MRESTRICTIONS = &prompt(<<"EOF", "y", 1);
 HTTPi's answer to .htaccess and access control is the restriction matrix, 
-allowing access control based on IP address, agent/browser type, and, in
-0.99 and up, a user list you can specify. For example, the restriction
+allowing access control based on IP address, agent/browser type, and a user
+list you can specify with HTTP Basic Auth. For example, the restriction
 matrix can restrict access to a certain page only to user fred from the
 local LAN, and *then* only if he's using Netscape. This code is slightly
 complex, however, so it will add bulk and execution time to your build.
@@ -233,6 +239,27 @@ EOF
 
 $DEF_MHTTPERL = (($DEF_MHTTPERL eq 'y') ? 1 : 0);
 
+
+$DEF_CGIEXT = &prompt(<<"EOF", "n", 1);
+Normally HTTPi uses the execute bits to determine if an executable, well, is.
+However, on certain filesystems, or certain filesystems trying to look like
+something they're not (Cygwin on FAT32, for example), the execute bits may
+not be controllable and HTTPi will end up trying to execute files it
+shouldn't or can't. The usual symptom is spurious error messages trying to
+serve content and a lot of status 100 in the server log.
+
+To get around this problem, in addition to the execute bit HTTPi can be told
+to only execute certain specific file extensions (i.e., they must both be 
+executable, and have an allowed extension). This is generally not preferred
+but may be needed depending on your particular environment. For speed, this
+includes only the following: [\\-\\._](exe|[ckpba]*sh|p[er]*l|cgi|cmd|com)\$. Only
+enable this if needed by your operating environment.
+
+Enable CGI file extension validation?
+EOF
+
+$DEF_CGIEXT =  (($DEF_CGIEXT =~ /^y/i) ? 1: 0 );
+
 $q = &prompt(<<"EOF", "y", 1);
 If you don't really care if a hostname or an IP address appears in your
 access logs, you can save (in some cases substantial) time by instructing
@@ -268,7 +295,7 @@ EOF
 Since your Perl has the alarm() call -- and it might even work -- you can make
 reverse lookups more reliable (even when the result you get back is fradulent)
 instead of having HTTPi pause on bad or defective DNS servers. This defines a
-new subroutine &absolver which kills lagging DNS queries after five seconds.
+new subroutine &absolver which kills lagging DNS queries after a few seconds.
 Without it, you are at the mercy of the timeout specified by your operating
 system's implementation (but this may be perfectly adequate, so this option
 defaults to no). If you're concerned about this, test reliability both ways.
@@ -306,15 +333,15 @@ EOF
 }
 
 $q = &prompt(<<"EOF", "n", 1);
-HTTPi 0.99 and up can do IP-less virtual hosting by redirecting host
+Modern HTTPi in any flavour can do IP-less virtual hosting by redirecting host
 aliases to addresses. For example, you might define (as I do) the alias
 httpi.floodgap.com to point to http://www.floodgap.com/httpi/.
 
 This is useful for large hosting sites and aliases, but probably not for
 HTTPi's prototypical usage of a little server on a little system, so it's
 not enabled by default. If your HTTPi supports it (both xinetd and Demonic
-do), you may wish to consider IP-based virtual hosting where you can do
-multihoming with individual HTTPi processes as an alternative.
+do, for example), you may wish to consider IP-based virtual hosting where you
+can do multihoming with individual HTTPi processes as an alternative.
 
 The settings for IP-less virtual hosting are hardcoded into uservar.in, and
 to change your settings you must edit that file and rebuild HTTPi. For help,
@@ -338,7 +365,7 @@ or run executables on behalf of them (again, root uid is always illegal too).
 Other consequences exist -- PLEASE READ THE DOCUMENTATION FIRST.
 
 The New Security Model is ONLY SALIENT IF YOU RUN HTTPi AS ROOT. Otherwise,
-it simply adds bulk and overhead.
+it simply adds bulk and overhead. It is also only relevant to Un*xy worlds.
 
 As of 1.5, the New Security Model is now well-tested enough that it is the
 strongly recommended default. It may break old installations, so the choice
@@ -349,7 +376,10 @@ Use the New Security Model?
 EOF
 $DEF_MNSECMODEL = (($q eq 'y') ? 1 : 0);
 if ($DEF_MNSECMODEL) {
-	$DEF_NSECUID = &prompt(<<"EOF", 1, 1);
+	$eUID = ($>) ? $> : ($ENV{'SUDO_UID'} || 0);
+	$is_not_root = (!$> && $ENV{'SUDO_UID'}) ? 'pre-sudo ' : '';
+	$useful = ($eUID) ? " (FYI: your ${is_not_root}euid is $eUID)" : "";
+	$DEF_NSECUID = &prompt(<<"EOF", $eUID || 1, 1);
 Specify the *lowest* UID that is ALLOWED to serve files. For example, consider
 this hypothetical /etc/passwd file (crypts and uids changed to protect the
 guilty^Winnocent):
@@ -369,7 +399,7 @@ haven't been created yet. AGAIN, THIS IS ONLY RELEVANT IF YOU ARE RUNNING
 HTTPi as ROOT! Also note that root can NEVER serve files, so specifying zero
 as the minimum UID is meaningless.
 
-Lowest UID to serve files (FYI: your euid is $>)? 
+Lowest UID to serve files${useful}?
 EOF
 }
 

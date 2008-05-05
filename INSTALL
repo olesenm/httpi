@@ -1,5 +1,5 @@
 ** Installation procedure for HTTPi
-** Copyright 1998-2007 Cameron Kaiser
+** Copyright 1998-2008 Cameron Kaiser
 
 1. Check that all files are present. Make sure you have Perl 5 installed.
    You only need the executable, not the standard distribution in full.
@@ -21,13 +21,15 @@ to know your AF_INET socket constant, although HTTPi probably knows it
 already. On Linux, AIX, SCO, HP/UX and Solaris, and probably every other
 Unixy thing, it's invariably 2. Demonic will try to autodetect it.)
 
+If you want to use HTTPi for SSL, your ONLY option is configure.stunnel.
+
 Demonic installation:
 
 configure.demonic	For Demonic HTTPi, the daemonised version. You'll
 			either need Socket.pm, a C compiler, or a list of
 			your system's socket constants (these are only
 			needed for constants, not execution). Your Perl must
-			also support fork().
+			also support fork(). This is the most popular option.
 
 Some sort of inetd installation:
 
@@ -38,6 +40,17 @@ configure.xinetd	For users of the inetd clone http://www.xinetd.org/
 			Will autoconfigure your files for you if root.
 
 Others:
+
+configure.launchd	Most Mac OS X users (10.4 and higher) who aren't
+			using Demonic HTTPi, or for people who are using
+			launchd and don't want to use the other options.
+			Will autoconfigure your files for you if root.
+
+configure.stunnel	For users of stunnel http://www.stunnel.org/
+			This is the only supported method for an SSL server.
+			Will autoconfigure your files for you if root.
+			** DUE TO ITS HIGH SECURITY DEMANDS, THIS SHOULD BE
+			CONSIDERED EXPERIMENTAL!! **
 
 configure.generic	Don't know what inetd you have, or one I don't support
 			yet. You'll have to connect HTTPi to your inetd
@@ -53,8 +66,19 @@ it over your OS's stock inetd; as such, many OS "inetd"s are really stealth
 xinetds running in compat mode! It assumes, however, that your .conf file
 is /etc/xinetd.conf, which is xinetd's default.
 
-Some of you will be running configure.inetd, so for backwards compatibility
-it's still named configure (just a symlink to configure.inetd).
+Most modern Mac OS X users who do not want a daemon HTTPi will need to run
+configure.launchd. 10.2 and 10.3 users can still use configure.inetd or
+.xinetd, though this may require some internal configuration. 10.0 and 10.1
+are not recommended and not supported.
+
+configure.stunnel requires that your stunnel be already setup with a working
+stunnel.conf and all of your options and certificates preloaded. Do not
+run this script until that is accomplished.
+
+Some of you will still be running configure.inetd, so for backwards
+compatibility it's still named configure (just a symlink to configure.inetd).
+
+Do not run configure.generic if you can run one of the others.
 
 Make sure that consubs.pl and conquests.pl are in the current directory.
 
@@ -63,7 +87,9 @@ Make sure that consubs.pl and conquests.pl are in the current directory.
 $ perl configure.demonic # most unices that don't want inetd installation
 $ perl configure.inetd	 # most unices that want inetd installation
 $ perl configure.xinetd	 # smart unices/sysadmins that want xinetd installation
-$ perl configure.generic # others
+$ perl configure.launchd # those wacky Maccies (like me) who dislike daemons
+$ perl configure.stunnel # SSL via stunnel
+$ perl configure.generic # others who can't help it
 
 Do *not* use the Makefile. The Makefile is not intended for installation;
 it's used for rolling your own distributions. Do *not* use the Makefile.
@@ -71,10 +97,10 @@ Do *not* chew your nails.
 
 For that matter, don't use perl Makefile.PL either.
 
-NOTE TO (x)inetd INSTALLERS:
+NOTE TO (x)inetd/launchd/stunnel INSTALLERS:
 If you're on a Unix box, you must run as root for full install options.
-Any user can build an object, but only root can modify your (x)inetd's
-configuration files.
+Any user can build an object, but only root can modify your configuration
+files, unless you are really dumb and made them writeable (BAD IDEA).
 
 7. Follow the handy and verbose prompts. The configure program may have
    additional directions to follow. Follow them.
@@ -84,7 +110,7 @@ configuration files.
 	httpi@floodgap.com
 
 9. DO NOT TOAST THE INSTALL DIRECTORY. If you make config changes, etc.,
-   you will need these files again. Don't lose them. Especially hold on
+   you will need these files again. Don't delete them. Especially hold on
    to the configure transcript file, as it will make tweaking HTTPi's code
    much more painless.
 

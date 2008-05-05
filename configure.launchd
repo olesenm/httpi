@@ -1,0 +1,281 @@
+$DEF_MDEMONIC = 0;
+$DEF_MSTUNNEL = 0;
+$DEF_CONF_TYPE = "launchd";
+
+eval 'require "consubs.pl";'; die(<<"EOF") if ($@);
+
+Could not load consubs.pl, which is required for running the configure script.
+Please make sure it's in the current directory.
+
+($@)
+
+EOF
+
+&prompt(<<"EOF", "") unless ($DEFAULT);
+Configure (launchd) for HTTPi/$ACTUAL_VERSION
+
+This is the configure script for launchd systems (mostly Mac OS X 10.4+).
+
+If you're not running Mac OS X, and you don't have launchd installed,
+you probably want one of the other configure files (most likely
+configure.inetd or configure.demonic).
+
+Press ENTER to continue or BREAK/CTRL-C to bail out:
+EOF
+
+print "\nChecking system defaults ...\n\n";
+
+&wherecheck("Finding launchctl", "launchctl", <<"EOF");
+
+Either launchctl is not in your path, or launchd is not installed on this
+system. Please correct the problem and re-run this configure script.
+
+EOF
+
+$DEF_ROOT = &yncheck("Are we running as root?", "die if ($<);");
+if (!$DEF_ROOT && !$DEFAULT) {
+	&prompt(<<"EOF", "");
+
+You will only be able to write out the object file, and you might not be
+able to even do that without appropriate permissions. Consider running this
+Configure script as root if you want to install HTTPi fully.
+
+Press ENTER to continue.
+EOF
+	$DO_INSTALL = 0;
+} else {
+	$DO_INSTALL = &prompt(<<"EOF", "y") unless ($DEFAULT);
+You're running as root, so we can do the whole caboodle, including write out
+the object file and drop a .plist in your daemons directory. If you answer
+"n" to this question, we'll just write out the object file.
+
+If you are just patching an already existing and running HTTPi-on-launchd
+installation, you should probably answer "n" unless you are altering port
+numbers or other launchd-specific settings. In this case, be sure that
+the old .plist is removed if you choose not to overwrite it.
+
+If you are starting from scratch -- nothing installed -- answer "y" unless
+you really don't want launchd to know about HTTPi yet.
+
+Do everything, including create a .plist?
+EOF
+	$DO_INSTALL = ($DO_INSTALL eq 'y' && !$DEFAULT) ? 1 : 0;
+}
+if (!$DO_INSTALL) {
+	print <<"EOF";
+Questions pertaining to launchd installation won't be asked by this script.
+
+EOF
+	}
+
+&firstchecks;
+
+eval 'require "conquests.pl";'; die(<<"EOF") if ($@);
+
+Could not load conquests.pl, which is required as part of the standard
+questions suite for all of the configure scripts. Please make sure it's in
+the current directory.
+
+($@)
+
+EOF
+
+if ($DO_INSTALL) {
+$DEFDR = (-x "/Library/LaunchDaemons") ? "/Library/LaunchDaemons"
+	: ".";
+$PLIST = &prompt(<<"EOF", "$DEFDR/httpid.plist");
+Where do you want the generated .plist to be stored? If you are on Mac OS X,
+the default location is already selected. Otherwise, specify a convenient
+file name. Remember, if you have multiple servers, you will need multiple
+plists.
+
+Write property list to what filename?
+EOF
+print <<"EOF" if (-e $PLIST);
+
+WARNING: This file already exists. If you don't want the installation to
+overwrite it, abort now.
+
+EOF
+$PLIST_LABEL = &prompt(<<"EOF", "com.floodgap.httpi");
+What label should this .plist use for this service? Normally the default is
+correct/acceptable, but if you intend to run multiple server instances,
+these should be different.
+
+Property list label?
+EOF
+}
+
+$USER_ID = &prompt(<<"EOF", $ENV{'SUDO_USER'} || $ENV{'USER'} || 'nobody') unless (!$DO_INSTALL);
+What user do you want the server to run as? If you select someone other than
+'root', you may have difficulty accessing files if permissions are funny,
+and you'll need to make sure the access log is writeable by that user.
+
+On the other hand, if you select 'root', be forewarned this is a potential
+security hole (to run *any* server as root, not just HTTPi).
+
+You can specify group momentarily.
+
+What user do you want the script to run as?
+EOF
+
+$GROUP_ID = &prompt(<<"EOF", $ENV{'SUDO_GROUP'} || $ENV{'GROUP'} || 'nobody') unless (!$DO_INSTALL);
+What group do you want the server to run as? Again, same security
+considerations should apply.
+
+What group do you want the script to run as?
+EOF
+
+$DEF_CANDOSETRUID = &yncheck("Can we use setruid()?",
+	'$q = $<;$< = 65534;$< = $q;');
+
+$WAIT_MODE = "n";
+if (0) { # this does not currently work, and is thus presently disabled
+$WAIT_MODE = &prompt(<<"EOF", "n") unless (!$DO_INSTALL);
+A further bonus to slow systems is, because HTTPi runs from launchd, the
+ability to restrict the number of simultaneous HTTPis that can run. With
+this set to a single process, the server can be practically invisible. However,
+this may reduce performance if multiple clients want access simultaneously.
+
+HTTPi's default is to have launchd open up one HTTPi process per open
+socket, and kill each off after it completes its job (answer no to this
+question). Unless you're masochistic or have a real anal-retentive streak
+about CPU time usage, the default is probably just fine.
+
+Restrict HTTPi to a single process?
+EOF
+}
+
+$IP_ADDR = &prompt(<<"EOF", "default") unless (!$DO_INSTALL);
+launchd HTTPi can do IP-based virtual hosting, allowing you to bind
+different instances of HTTPi to different IP addresses.
+
+If you just say "default", it will bind to INADDR_ANY and will listen on any
+interface. Otherwise, YOU MUST HAVE A SEPARATE HTTPi EXECUTABLE AND PROCESS
+PER IP ADDRESS BOUND -- HTTPi is not designed to share one executable across
+multiple sockets. Make sure that ports don't conflict either.
+
+Which IP address to bind to?
+EOF
+
+$PORT_NO = &prompt(<<"EOF", "80") unless (!$DO_INSTALL);
+What numerical TCP port do you want the webserver to run on? 80 is the default
+but if you're using configure to build multiple HTTPis on multiple ports,
+make sure you give a different answer this time.
+
+Which TCP port number?
+EOF
+
+$j = &prompt(<<"EOF", "") unless (!$DO_INSTALL);
+LAST CHANCE BEFORE CHANGES ARE COMMITTED!
+
+If you continue beyond this point, configure will create a sane(?)
+launchd.plist in $PLIST,
+and place the new HTTPi build in $INSTALL_PATH.
+
+If you want to continue, just press ENTER.
+If you don't, press CTRL-C NOW!
+EOF
+$j = &prompt(<<"EOF", "") unless ($DO_INSTALL);
+LAST CHANCE BEFORE CHANGES ARE COMMITTED!
+
+If you continue beyond this point, configure will build your HTTPi and
+overwrite any file currently at $INSTALL_PATH.
+
+If you want to continue, just press ENTER.
+If you don't, press CTRL-C NOW!
+EOF
+
+$INSTALL_PATH = &detaint($INSTALL_PATH);
+print "Writing out the configured httpid to $INSTALL_PATH ... ";
+(open(S, "httpi.in") && open(T, ">$INSTALL_PATH")) || die(<<"EOF");
+
+Couldn't write out the new httpi. Check permissions on httpi.in in the
+current directory and the destination path.
+
+EOF
+print T &preproc(\*S); close(T); close(S);
+print "done.\n\n";
+
+if ($DO_INSTALL) {
+print "Writing changes to $PLIST ... ";
+open(S, ">$PLIST") || die(
+	"\n\nAre you really root? I can't write to this file.\n");
+(@x) = split(/\//, $INSTALL_PATH);
+$j = pop(@x);
+$wmode = ($WAIT_MODE eq 'n') ? 'false' : 'true'; # in this version always false
+$listener = '';
+$listener .= <<"EOF" if ($IP_ADDR ne 'default');
+			<key>SockNodeName</key>
+			<string>$IP_ADDR</string>
+EOF
+$listener .= <<"EOF";
+			<key>SockServiceName</key>
+			<string>$PORT_NO</string>
+EOF
+print S <<"EOF";
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>$PLIST_LABEL</string>
+	<key>UserName</key>
+	<string>$USER_ID</string>
+	<key>GroupName</key>
+	<string>$GROUP_ID</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>$INSTALL_PATH</string>
+	</array>
+	<key>inetdCompatibility</key>
+	<dict>
+		<key>Wait</key>
+		<$wmode/>
+	</dict>
+	<key>Sockets</key>
+	<dict>
+		<key>Listeners</key>
+		<dict>
+$listener		</dict>
+	</dict>
+</dict>
+</plist>
+EOF
+close(S);
+print "done.\n\nchmod()ding $INSTALL_PATH to 0755 ... ";
+chmod 0755, "$INSTALL_PATH" || die("\n\nWhat the heck? Can't do it.\n");
+print "done.\n\n";
+
+print <<"EOF";
+Successfully configured!
+
+Now, you must tell launchd about the new plist. Unload any old one (if
+it was already running) with something like
+
+	launchctl unload $PLIST
+
+using the correct filename, and then
+
+	launchctl load $PLIST
+
+to install the new one.
+Remember to read the documentation for last minute information! Bye now.
+EOF
+exit; } else {
+	print <<"EOF";
+
+IF THIS IS A FIRST-TIME INSTALL:
+Note that no changes have been made to launchd, so the server will not
+actually run yet. You will need to re-run as root and answer yes to the
+first question for that to happen, or connect HTTPi in yourself.
+
+IF NOT:
+The changes should take effect on the server's next access (assuming it's
+running, and that there are no competing files).
+
+Remember to read the documentation file for last minute information. Bye!
+
+EOF
+}
+

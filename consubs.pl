@@ -1,6 +1,6 @@
-$version_key = "HTTPi/1.5";
+$version_key = "HTTPi/1.6/$DEF_CONF_TYPE";
 $my_version_key = 0;
-$ACTUAL_VERSION = "1.5.2 (C)1998-2007 Cameron Kaiser";
+$ACTUAL_VERSION = "1.6 (C)1998-2008 Cameron Kaiser";
 
 sub detaint { # sigh
 	my ($w) = (@_);
@@ -120,11 +120,11 @@ EOF
 if ($ARGV[0] =~ /^--?d/) {
 	print <<"EOF";
 ** DEFAULT MODE ENABLED ** -- $0 will autoconfigure everything!
-(Installation questions relevant to inetd or xinetd will not be asked, if any.)
+(Installation questions relevant to config files will not be asked, if any.)
 HIT CTRL-C NOW IF THIS IS NOT WHAT YOU WANT!
 
 EOF
-	sleep 1;
+	sleep 2;
 	$DEFAULT = 1;
 	if (length($ARGV[1]) && -e $ARGV[1]) {
 		open(P, "$ARGV[1]");
@@ -140,12 +140,12 @@ EOF
 					print <<"EOF";
 Whoops, screeching halt time, bud.
 
-This is a transcript file from an earlier and incompatible HTTPi configure
+This is a transcript file from an incompatible or earlier HTTPi configure
 sequence (looks like version $my_version_key).
 
 Since the question sequence and possible choices have changed, the responses
 you gave in this transcript file are no longer valid. Please start over and
-run $0 from scratch.
+run $0 from scratch. Sorry!
 
 EOF
 					exit;
@@ -213,8 +213,18 @@ EOF
 		}
 		chomp($x = scalar(<Q>));
 		close(Q);
+		if (!length($x)) {
+			print <<"EOF";
+I didn't get any response at all. Are you sure you specified the right file?
+Try again.
+
+EOF
+			next PERLCHEK;
+		}
 		($PERL_VERSION, $pox) = split(/\s+/, $x, 2);
 		$HAS_POSIX = (length($pox) < 1);
+		("$PERL_VERSION" =~ /^(\d+)\.(\d\d\d)(\d+)/) &&
+			(($major, $minor, $patch) = ($1, $2, $3));
 		$PERL_VERSION += 0;
 		if ($PERL_VERSION < 4) {
 			print <<"EOF";
@@ -231,10 +241,22 @@ An oldie but not necessarily goodie -- you may need to build a new Perl
 to run HTTPi. Still, let's see how far we get, yes?
 EOF
 		} else {
-			print "$PERL_VERSION ... ";
-			if ($PERL_VERSION < 5.006) {
+			$major += 0;
+			$minor += 0;
+			$PERL_MVERSION = ($major < 6 && $minor < 6) ?
+				"${major}.00${minor}" : "${major}.${minor}";
+			$patch += 0;
+			$PERL_MVERSION .= ($major < 6 && $minor < 6) ?
+				(($patch < 10) ? "0${patch}" : "${patch}") :
+				".${patch}";
+			print "$PERL_MVERSION ... ";
+			if ($PERL_VERSION < 5.005) {
+				print
+"by now, this vintage is vinegar!\n" .
+"WARNING: Jokes aside, the oldest Perl I still officially support is 5.005.\n";
+			} elsif ($PERL_VERSION < 5.006) {
 				print "that was a good year.\n";
-			} elsif ($PERL_VERSION < 5.008005) {
+			} elsif ($PERL_VERSION < 5.010) {
 				print "has this wine been corked?\n";
 			} else {
 			print

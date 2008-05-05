@@ -19,10 +19,10 @@ use POSIX;
 ~
 $ENV{'PERL_SIGNALS'} = "unsafe";
 ~
-$VERSION = "1.5.2 (DEF_CONF_TYPE/DEF_ARCH)";
+$VERSION = "1.6 (DEF_CONF_TYPE/DEF_ARCH)";
 
 # HTTPi Hypertext Tiny Truncated Process Implementation
-# Copyright 1999-2007 Cameron Kaiser # All rights reserved
+# Copyright 1999-2008 Cameron Kaiser # All rights reserved
 # Please read LICENSE # Do not strip this copyright message.
 
 %system_content_types =
@@ -59,19 +59,23 @@ $VERSION = "1.5.2 (DEF_CONF_TYPE/DEF_ARCH)";
 	 "aif" => "audio/x-aiff",
 	 "aiff" => "audio/x-aiff",
 	 "ogg" => "audio/x-ogg", 
+	 "oga" => "audio/x-ogg",
 	 "mid" => "audio/midi",
-	 "ra" => "audio/vnd.m-realaudio",
-	 "ram" => "audio/vnd.m-realaudio",
 	 "wma" => "audio/x-ms-wma",
-	 "mov" => "video/quicktime",
 	 "mpeg" => "video/mpeg",
 	 "mpg" => "video/mpeg",
+	 "aac" => "audio/aac",
+	 "ogv" => "video/x-ogg",
+	 "ogx" => "application/x-ogg",
 	 "avi" => "video/x-msvideo",
 	 "wmv" => "video/x-ms-wmv",
 	 "asf" => "video/x-ms-asf",
+	 "mov" => "video/quicktime",
 	 "mp4" => "video/mp4",
 	 "rv" => "video/vnd.m-realvideo",
 	 "rm" => "application/vnd.m-realmedia",
+	 "ra" => "audio/vnd.m-realaudio",
+	 "ram" => "audio/vnd.m-realaudio",
 	 "pdf" => "application/pdf",
 	 "fdf" => "application/vnd.fdf",
 	 "class" => "application/octet-stream",
@@ -88,9 +92,12 @@ $VERSION = "1.5.2 (DEF_CONF_TYPE/DEF_ARCH)";
 	 "img" => "application/octet-stream",
 	 "lzh" => "application/octet-stream",
 	 "lha" => "application/octet-stream",
+	 "exe" => "application/octet-stream",
+	 "com" => "application/octet-stream",
 	 "zip" => "application/x-zip-compressed",
 	 "hqx" => "application/x-binhex",
 	 "swf" => "x-shockwave-flash",
+	 "flv" => "video/x-flv",
 
 	 "bin" => "application/octet-stream");
 
@@ -146,8 +153,20 @@ sub sock_to_host {
 	return ($cache_hn, $cache_port, $cache_ip)
 		if (length($cache_ip));
 
+~check MSTUNNEL
+	if ($ENV{'REMOTE_HOST'}) {
+		$ip = $ENV{'REMOTE_HOST'};
+		$cache_port = 443;
+		$thataddr = pack("C4", map { 0+$_ } split(/\./, $ip));
+	} else {
+~
+~
 	return (undef, undef, undef) if (!$sock);
 	my($AFC, $cache_port, $thataddr, $zero) = unpack($sockaddr, $sock);
+~check MSTUNNEL
+	}
+~
+~
 	$cache_ip = join('.', unpack("C4", $thataddr));
 	$cache_hn =
 ~check MHOSTNAMES
@@ -318,12 +337,11 @@ sub master {
 	$0 = "dhttpi: handling request";
 ~
 ~
+~check MSTUNNEL
+~
 $sock = getpeername(STDIN);
-$rfcdate = scalar gmtime;
-($dow, $mon, $dt, $tm, $yr) = ($rfcdate =~
-	m/(...) (...) (..) (..:..:..) (....)/);
-$dt += 0; $yr += 0;
-$rfcdate = "$dow, $dt $mon $yr $tm GMT";
+~
+$rfcdate = &rfctime(scalar gmtime, 1);
 $date = scalar localtime;
 ($dow, $mon, $dt, $tm, $yr) = ($date =~
 	m/(...) (...) (..) (..:..:..) (....)/);
@@ -346,25 +364,39 @@ while (<STDIN>) {
 		$httpver = ($httpver =~ m#HTTP/([0-9]\.[0-9]+)#) ?
 			($1) : (0.9);
 		$address =~ s#^http://[^/]+/#/#;
-		$0 = "dhttpi: $method $address $httpver";
+		$0 = $execstring = "dhttpi: $method $address $httpver";
 		next unless ($httpver < 1);
 	} else {
 		s/[\r\l\n\s]+$//;
-		(/^Host: (.+)/i) && ($httphost = $1) && ($httphost =~
-			s/:\d+$//);
-		(/^Referer: (.+)/i) && ($httpref = $1);
-		(/^User-agent: (.+)/i) && ($httpua = $1);
-		(/^Content-length: (\d+)/i) && ($ENV{'CONTENT_LENGTH'} =
-			$httpcl = $1);
-		(/^Content-type: (.+)/i) && ($ENV{'CONTENT_TYPE'} =
-			$httpct = $1);
-		(/^Expect: /) && ($expect = 1);
-		(/^Cookie: (.+)/i) && ($ENV{'HTTP_COOKIE'} = $1);
+		(/^Host:\s+(.+)/i) && ($httphost = substr($1, 0, 255))
+			&& ($httphost =~ s/:\d+$//);
+		(/^Referer:\s+(.+)/i) && ($httpref = substr($1, 0, 1024));
+		(/^User-agent:\s+(.+)/i) && ($httpua = substr($1, 0, 1024));
+		(/^Content-length:\s+(\d+)/i) &&
+			($ENV{'CONTENT_LENGTH'} = $httpcl = 0+$1);
+		(/^Content-type:\s+(.+)/i) &&
+			($ENV{'CONTENT_TYPE'} = $httpct = substr($1, 0, 255));
+		(/^Expect:\s+/) && ($expect = 1);
+		(/^Cookie:\s+(.+)/i) &&
+			($ENV{'HTTP_COOKIE'} = substr($1, 0, 16384));
 ~check MRESTRICTIONS
-		(/^Authorization: Basic (.+)/i) && ($httprawu = $1);
+		(/^Authorization:\s+Basic (.+)/i) &&
+			($httprawu = substr($1, 0, 1024));
 ~
 ~
-		(/^Range: (.+)/i) && ($ENV{'CONTENT_RANGE'} = $1);
+		(/^Range:\s+(.+)/i) &&
+			($ENV{'CONTENT_RANGE'} = substr($1, 0, 255));
+		(/^If-Modified-Since:\s+(.+)/i) &&
+			($modsince = $ENV{'HTTP_IF_MODIFIED_SINCE'} =
+				substr($1, 0, 255));
+		(/^Accept:\s+(.+)/i) &&
+			($ENV{'HTTP_ACCEPT'} = substr($1, 0, 255));
+		# Accept-Encoding, etc.
+		(/^Accept-([a-zA-Z0-9]+):\s+(.+)/i) &&
+			($ENV{'HTTP_ACCEPT_'.uc(substr($1, 0, 16))} =
+				substr($2, 0, 255));
+		(/^X-Requested-With:\s+(.+)/i) &&
+			($ENV{'HTTP_X_REQUESTED_WITH'} = substr($1, 0, 1024));
 		next unless (/^$/);
 	}
 	if ($expect) {
@@ -373,7 +405,7 @@ while (<STDIN>) {
 			"The server does not support this method.");
 		&log; exit;
 	}
-	if (!$address || (0+$httpver > 1 && !$httphost)) {
+	if (!length($address) || (0+$httpver > 1 && !$httphost)) {
 		&htsponse(400, "Bad Request");
 		&hterror("Bad Request",
 			"The server cannot understand your request.");
@@ -465,9 +497,9 @@ EOF
 	alarm 0;
 ~
 ~
-~insert modules.in
 
 ~check STATIOS
+	$statioslastsec = 1 if ($statiosltr ne (scalar localtime)); # kludge
 	if ($address eq '/status') {
 		&htsponse(200, "OK");
 		$contentlength = 0; # kludge
@@ -481,7 +513,8 @@ EOF
 			close(S);
 		}
 		$p = (time() - $statiosuptime);
-		$rps = $p/$statiosreq;
+		$spr = $p/$statiosreq;
+		$rps = $statiosreq/$p;
 		$d = int($p / 86400); $p -= $d * 86400;
 		$h = int($p / 3600); $p -= $h * 3600;
 		$m = int($p / 60); $s = $p - ($m * 60);
@@ -489,21 +522,29 @@ EOF
 		("0$m" =~ /(\d{2})$/) && ($m = $1);
 		$h +=0; $d += 0;
 		$suptime = scalar localtime $statiosuptime;
+		$thistime = scalar localtime;
+		# kludge
 		&htcontent(<<"EOF", "text/html");
 <html>
 <head>
 <title>
 HTTPi Status for Server DEF_SERVER_HOST
 </title>
+<meta name="robots" content="noindex,nofollow">
+<META NAME="Googlebot" CONTENT="noindex,nofollow">
 </head>
 <body bgcolor = "#ffffff" text = "#000000" vlink = "#0000ff" link = "#0000ff">
 <h1>HTTPi Server Status (<code>$VERSION</code>)</h1>
 <h3><code>DEF_SERVER_HOST</code> on DEF_IP_ADDR:DEF_TCP_PORT</h3>
 <b>Started at:</b> $suptime<br>
 <b>Uptime:</b> $d days, $h:$m:$s<br>
-<b>Last request time:</b> $statiosltr<p>
+<b>Previous request time:</b> $statiosltr<br>
+<b>This request time:</b> $thistime
+<p>
 <b>Requests received:</b> $statiosreq<br>
-<b>Average time between requests:</b> ${rps}s
+<b>Average time between requests:</b> ${spr}s (${rps}req/sec)<br>
+<b>Requests this second:</b> $statioslastsec<br>
+<b>Peak requests per second:</b> $statiosmaxsec
 <p>
 <b>Most recent requests:</b>
 <form action = "/status" method = "post">
@@ -521,10 +562,13 @@ EOF
 	}
 ~
 ~
+
+~insert modules.in
+
 ~check MVIRTFILES
 	if (defined $virtual_files{$address}) {
+		$mtime = &rfctime($statiosuptime); # thus always needed
 		$virt_buffer = 1;
-		$mtime = $statiosuptime; # thus always needed
 		goto SERVEIT;		# yes, it's bad but it's fast
 	}
 ~
@@ -547,7 +591,12 @@ EOF
 			if (-d $raddress);
 	IRED: ($hostname, $port, $ip) = &sock_to_host();
 	if(!sysopen(S, $raddress, 0)) { &hterror404; } else {
-		if (-x $raddress) {
+		if ((-x $raddress) 
+~check CGIEXT
+	&& ($raddress =~ /[\-\._](exe|[ckpba]*sh|p[er]*l|cgi|cmd|com)$/i)
+~
+~
+			) {
 			$currentcode = 100; &log; &nsecmodel;
 			$ENV{'REQUEST_METHOD'} = $method;
 			$ENV{'SERVER_NAME'} = "DEF_SERVER_HOST";
@@ -604,13 +653,16 @@ EOF
 				$ctype = $content_types{$_};
 			}
 		}
-SERVEIT:	$ctype ||= 'text/plain';
+		$mtime = &rfctime($mtime);
+SERVEIT:	
+		if ($mtime eq $modsince) {
+			&htsponse(304, "Not Modified");
+			&hthead("Last-Modified: $mtime", 1);
+			&log; exit;
+		}
+		$ctype ||= 'text/plain';
 		&htsponse(200, "OK");
-		$mtime = scalar gmtime $mtime;
-		($dow, $mon, $dt, $tm, $yr) =
-			($mtime =~ m/(...) (...) (..) (..:..:..) (....)/);
-		$dt += 0; $yr += 0;
-		&hthead("Last-Modified: $dow, $dt $mon $yr $tm GMT");
+		&hthead("Last-Modified: $mtime");
 ~check MDEMONIC
 		if ($pid = fork()) { kill 15, $$; exit; }
 ~
@@ -644,6 +696,7 @@ SERVEIT:	$ctype ||= 'text/plain';
 ~
 ~
 			&htcontent("", $ctype, $length);
+			$bytecount = 0;
 			unless ($method eq 'HEAD') {
 				while(!eof(S)) {
 					read(S, $q, DEF_READBUFFER);
@@ -652,6 +705,9 @@ SERVEIT:	$ctype ||= 'text/plain';
 					sleep DEF_THROTWAIT if(!eof(S));
 ~
 ~
+					$bytecount += DEF_READBUFFER;
+					$0 = $execstring .
+						" ($bytecount bytes sent)";
 				}
 			}
 ~check MPREPARSE
@@ -714,6 +770,14 @@ sub nsecmodel {
 	}
 }
 
+sub rfctime {
+	my $mtime = shift;
+	$mtime = (scalar gmtime $mtime) if (!(shift));
+	my ($dow, $mon, $dt, $tm, $yr) =
+		($mtime =~ m/(...) (...) (..) (..:..:..) (....)/);
+	$dt += 0; $yr += 0;
+	return "$dow, $dt $mon $yr $tm GMT";
+}
 ~insert userfunc.in
 
 ~check MFALSE
@@ -723,27 +787,39 @@ sub nsecmodel {
 
 ~
 ~
+~check STATIOS
+$statiosmaxsec = $statioslastsec = $statiosreq = 1;
+~
+~
 ~check MDEMONIC
 $0 = "dhttpi: on DEF_IP_ADDR:DEF_TCP_PORT, ready!";
 $master_pid = $$;
 for (;;) {
-	if ($secondary_pid = fork()) {
-		$w = scalar localtime;
 ~
 ~
 ~check STATIOS
-		# done this way for compatibility
-		$statioslastsec=(($w eq $statiosltr) ? $statioslastsec : 0)+1;
-		$statiosltr = $w;
+	$statiosltr = scalar localtime;
+~
+~
+~check MDEMONIC
+	if ($secondary_pid = fork()) {
+		waitpid($secondary_pid, 0);
+~
+~
+~check STATIOS
+		if ($statiosltr eq (scalar localtime)) {
+			$statioslastsec++;
+		} else {
+			$statiosmaxsec = ($statiosmaxsec <= $statioslastsec)
+				? $statioslastsec : $statiosmaxsec;
+			$statioslastsec = 1;
+		}
 		$statiosreq++;
 ~
 ~
 ~check MDEMONIC
-		waitpid($secondary_pid, 0);
-~
-~
-~check MDEMONIC
-		$0 = "dhttpi: on DEF_IP_ADDR:DEF_TCP_PORT, last request $w";
+		$0 = "dhttpi: on DEF_IP_ADDR:DEF_TCP_PORT, last request " .
+			scalar localtime;
 	} else {
 		$0 = "dhttpi (child of $master_pid): waiting for connect";
 		$addr=accept(NS,S);

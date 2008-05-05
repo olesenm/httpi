@@ -17,8 +17,9 @@ DO NOT RUN THIS IF:
 	* your Perl doesn't support fork() (currently that's mostly the
 		weird non-Unix ports)
 	* you don't have a good idea of how your system implements sockets
-	* you would prefer to have HTTPi run in inetd or xinetd (run
-		configure.inetd or configure.xinetd, respectively, instead)
+	* you would prefer to have HTTPi run in inetd, xinetd or launchd (run
+		one of the other scripts)
+	* you need SSL (currently only configure.stunnel supports this)
 
 You don't need Socket.pm, though it helps. You *will* need socket constants. I
 will first ask your C compiler what they are. If you don't have one, or it's
@@ -95,7 +96,7 @@ HAVE A SEPARATE DEMONIC HTTPi EXECUTABLE AND PROCESS PER IP ADDRESS BOUND --
 IP address information is *hardcoded* into your build, so different IP
 addresses must be enabled separately into different executable builds.
 
-0.0.0.0, the default, will bind to whatever address it can find. This is
+0.0.0.0, the default, will bind to whatever address(es) it can find. This is
 usually fine for most systems, and should only be changed if you are in fact
 trying to use HTTPi to support virtual servers.
 

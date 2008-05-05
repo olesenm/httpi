@@ -72,7 +72,7 @@ EOF
     filespec, or DATA with the data inlined next. Read the manual first --
     there's some gotchas with this.
 
-Demonic feature only; xinetd/inetd/juniper need not apply.
+Demonic feature only; xinetd/inetd/etc. need not apply.
 
 ~
 ~
