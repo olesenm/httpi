@@ -1,5 +1,5 @@
 ** Installation procedure for HTTPi
-** Copyright 1998-2008 Cameron Kaiser
+** Copyright 1998-2009 Cameron Kaiser
 
 1. Check that all files are present. Make sure you have Perl 5 installed.
    You only need the executable, not the standard distribution in full.

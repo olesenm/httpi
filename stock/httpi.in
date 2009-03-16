@@ -19,10 +19,10 @@ use POSIX;
 ~
 $ENV{'PERL_SIGNALS'} = "unsafe";
 ~
-$VERSION = "1.6 (DEF_CONF_TYPE/DEF_ARCH)";
+$VERSION = "1.6.1 (DEF_CONF_TYPE/DEF_ARCH)";
 
 # HTTPi Hypertext Tiny Truncated Process Implementation
-# Copyright 1999-2008 Cameron Kaiser # All rights reserved
+# Copyright 1999-2009 Cameron Kaiser # All rights reserved
 # Please read LICENSE # Do not strip this copyright message.
 
 %system_content_types =
@@ -580,6 +580,7 @@ EOF
 ~
 	;
 ~
+	1 while ($raddress =~ s#//#/#);
 ~check MDEMONIC
 	&hterror301("http://DEF_SERVER_HOST:DEF_TCP_PORT$address/")
 ~
@@ -661,8 +662,6 @@ SERVEIT:
 			&log; exit;
 		}
 		$ctype ||= 'text/plain';
-		&htsponse(200, "OK");
-		&hthead("Last-Modified: $mtime");
 ~check MDEMONIC
 		if ($pid = fork()) { kill 15, $$; exit; }
 ~
@@ -673,6 +672,8 @@ SERVEIT:
 ~
 ~check MVIRTFILES
 		if ($virt_buffer) {
+			&htsponse(200, "OK");
+			&hthead("Last-Modified: $mtime");
 			&htcontent($virtual_files{$address}->[2],
 				$virtual_files{$address}->[0], 0);
 			&log; exit;
@@ -680,9 +681,12 @@ SERVEIT:
 ~
 ~
 ~check MNSECMODEL
-		$contentlength ||= $length; &log; &nsecmodel;
+		$contentlength ||= $length; &nsecmodel;
 ~
 ~
+		&htsponse(200, "OK");
+		&hthead("Last-Modified: $mtime");
+		&log;
 ~check MPREPARSE
 		if ($raddress =~ /\.sDEF_PREGEXPAhtm?l?/i) {
 ~
@@ -757,15 +761,15 @@ sub nsecmodel {
 		(!$uid || !$gid) && die "file is root-owned\n";
 ~
 ~check CANDOSETRUID
-		($< = $uid) || die "can't set ruid to $uid";
-		($( = $gid) || die "can't set rgid to $gid";
+		($) = "$gid $gid") || die "can't set egid to $gid";
 		($> = $uid) || die "can't set euid to $uid";
-		($) = $gid) || die "can't set egid to $gid";
+		($( = "$gid $gid") || die "can't set rgid to $gid";
+		($< = $uid) || die "can't set ruid to $uid";
 ~
+		eval { (($(, $)) = ("$gid $gid", "$gid $gid")) } ||
+			die("setregid workaround failed gid $gid");
 		eval { (($<, $>) = ($uid, $uid)) } ||
 			die("setreuid workaround failed uid $uid");
-		eval { (($(, $)) = ($gid, $gid)) } ||
-			die("setregid workaround failed gid $gid");
 ~
 	}
 }

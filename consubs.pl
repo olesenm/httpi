@@ -1,6 +1,6 @@
 $version_key = "HTTPi/1.6/$DEF_CONF_TYPE";
 $my_version_key = 0;
-$ACTUAL_VERSION = "1.6 (C)1998-2008 Cameron Kaiser";
+$ACTUAL_VERSION = "1.6.1 (C)1998-2009 Cameron Kaiser";
 
 sub detaint { # sigh
 	my ($w) = (@_);
@@ -32,9 +32,9 @@ sub wherecheck {
 
 	print STDOUT "$prompt ... ";
 	foreach(@paths) {
-		if (-r "$_/$filename") {
-			$setv = "$_/$filename";
-			1 while $setv =~ s#//#/#;
+		$setv = "$_/$filename";
+		1 while $setv =~ s#//#/#;
+		if (-r $setv) {
 			print "$setv\n";
 			last;
 		}

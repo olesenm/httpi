@@ -1,3 +1,10 @@
+Changes since 1.6:
+
+	fixes:
+	* filesystems where // != / now should work (MachTen, others)
+	* New Security Model did not always drop all groups
+	* &nsecmodel should be called before setting HTTP 200
+
 Changes since 1.5.2:
 
 	new:

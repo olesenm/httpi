@@ -1,14 +1,14 @@
 
                         Floodgap Free Software License
-                                       
+
    The author of your software has chosen to distribute it under the
    Floodgap Free Software License. Although this software is without
    cost, it is not released under Copyleft or GPL, and there are
    differences which you should read. Your use of this software package
    constitutes your binding acceptance without restriction.
-   
+
   This software is without cost
-  
+
    The Floodgap Free Software License (FFSL) has one overriding mandate:
    that software using it, or derivative works based on software that
    uses it, must be free. By free we mean simply "free as in beer" -- you
@@ -16,17 +16,17 @@
    whether or not you choose to release your changes or updates publicly,
    but you must not ask any fee for it. (There are certain exceptions for
    for-profit use which we will discuss below.)
-   
+
   Definitions and terms
-  
+
    Author
           The declared copyright owner of this software package.
-          
+
    Binary
           A pre-compiled or pre-interpreted bytecode or machine language
           representation of a software package not designed for further
           modification and tied to a particular platform or architecture.
-          
+
    Derivative work
           Any distribution (q.v.) that contains any modification to or
           deviation from the official reference distribution (q.v.); or
@@ -40,34 +40,34 @@
           architecture or operating system environment. Derivative works
           of packages released under this license are also considered
           subject to this license.
-          
+
           However, a software package that requires this package but does
           not include it or is not based upon it, even if it will not
           operate without it, is not considered a derivative work. For
           example, interpreted programs requiring an interpreter issued
           under this license, assuming they are not distributed with any
           portion of the interpreter, are not derivative works.
-          
+
    Distribution
           A packaged release of this software, either the author's
           original work (the "reference distribution") or a derivative
           work based upon it.
-          
+
    Reference distribution
           A packaged release of this software explicitly designated as
           the official release, written by or on behalf of the Author
           with his or her explicit designation as official. Only exact
           copies of the reference distribution may be called reference
           distributions; all other forms are derivative works.
-          
+
    Source code
           The human-readable programming instructions of the package
           which might be easily read as text and subsequently edited, but
           requiring compilation or interpretation into binary before
           being directly useable.
-          
+
   What you are permitted to do under this license
-  
+
    Pursuant to the remainder of the terms below,
      * You may freely use, copy, and disseminate this software package
        for any non-commercial purpose as well as the commercial purposes
@@ -156,9 +156,9 @@
        reference distribution's license, including in this document
        itself, in similar fashion to other licenses allowing compatible
        licenses to co-govern a particular package's use.
-       
+
   What you must not do under this license
-  
+
    Remember that these limits apply only to redistribution of a reference
    distribution, or to a true derivative work. If your project does not
    include this package or code based upon it, even if it requires this
@@ -180,9 +180,9 @@
        specify that your modified work is a derivative work, including
        binary-only releases if the original included source code and you
        do not even if you did not modify the source prior to compilation.
-       
+
   What you must do under this license
-  
+
      * You must agree to all terms specified (agreement to which is
        unconditionally signified by your usage, modification or
        repurposing of this package), or to remove the package from your
@@ -217,28 +217,28 @@
        might be based on, and all applicable copyrights, either in your
        documentation, your work's standard human-readable output, or
        both. A suggested method might be
-       
+
      Contains or is based on the Foo software package.
      Copyright (C) 2112 D. Original Author. All rights reserved.
      http://their.web.site.invalid/
-       
+
   Additional notes
-  
+
    Enforcement is the responsibility of the Author. However, violation of
    this license may subject you to criminal and civil penalties depending
    on your country.
-   
+
    This package is bound by the version of license that accompanies it.
    Future official versions of a particular package may use a more
    updated license, and you should always review the license before use.
    This license's most current version is always available from the
    following locations:
-   
+
      [1]http://www.floodgap.com/software/ffsl/
      [2]gopher://gopher.floodgap.com/1/ffsl/
-     
+
    This license is version 1, dated 19 November 2006.
-   
+
    This license is copyright © 2006 Cameron Kaiser. All rights reserved.
    The text of this license is available for re-use and re-distribution
    under the Creative Commons. The use of the term "Floodgap Free
@@ -247,11 +247,11 @@
    using portions of these terms may refer to themselves as modified
    FFSL, with the proviso that their modifications be clearly marked, as
    specified below:
-   
-       [3]Creative Commons License-[4][somerights20.png] This work is
-      licensed under a [5]Creative Commons Attribution-ShareAlike 2.5
-                                  License.
-                                      
+
+             [3]Creative Commons License-[4][somerights20.png] 
+             This work is licensed under a [5]Creative Commons
+                    Attribution-ShareAlike 2.5 License.
+
    Only the text of this license, and not programs covered by this
    license, is so offered under Creative Commons.
 
