@@ -1,6 +1,6 @@
 $version_key = "HTTPi/1.6/$DEF_CONF_TYPE";
 $my_version_key = 0;
-$ACTUAL_VERSION = "1.6.1 (C)1998-2009 Cameron Kaiser";
+$ACTUAL_VERSION = "1.6.2 (C)1998-2009 Cameron Kaiser/Contributors";
 
 sub detaint { # sigh
 	my ($w) = (@_);
@@ -53,7 +53,7 @@ sub preproc {
 	$ifl = 0;
 	while(<$mf>) {
 		chomp;
-		if (/^~$/) {
+		if (/^~$/ || /^~\s*#/) { # ignore trailing comments
 			next if (!$ifl);
 			$ifl = abs($ifl);
 			$ifl--;
@@ -116,6 +116,33 @@ EOF
 	printf(L "%s\n", $entry) if ($dontcare && !$DEFAULT);
 	return $entry;
 }			
+
+sub inter_homedir {
+	# based on an idea by Mark Olesen
+	my $w = shift;
+	my $x = $w;
+	$x =~ s#^~/#\$ENV{'HOME'}/#; # so that interpolation occurs
+	my $w = '';
+	eval qq{ \$w = "$x"; };
+	return ($w, $@);
+}
+
+sub interprompt {
+	my($prompt, $default, $dontcare, $interpolator) = (@_);
+
+	while(1) {
+		my $k = &prompt($prompt, $default, $dontcare);
+		my ($l, $err) = &$interpolator($k);
+		if (length($l)) {
+			print "(expanded to $l)\n\n" if ($l ne $k);
+			return $l;
+		} else {
+			print "Your expression made no sense: $@";
+			print "Try again, with feeling.\n\n";
+		}
+	}
+	die("not reached\n");
+}
 
 if ($ARGV[0] =~ /^--?d/) {
 	print <<"EOF";
@@ -205,7 +232,7 @@ here; it will be probed and then put in HTTPi's #! line.
 ... 
 EOF
 		print "Checking out your Perl ...\n";
-		$test_script = 'print"$] ";eval"use POSIX";print"$@"';
+		$test_script = 'print"$] ";eval"use POSIX ()";print"$@"';
 		if(!open(Q, "$DEF_PERL -e '$test_script'|")) {
 			print "Failed to execute $DEF_PERL ... $!\n";
 			print "Let's try that again.\n\n";
@@ -269,7 +296,7 @@ EOF
 				if ($PERL_VERSION < 5.008);
 		} else {
 			print <<"EOF";
-Just a warning; this Perl can't dredge up POSIX.pm ($pox).
+Just a warning; I can't use POSIX.pm with this Perl ($pox).
 We'll use \$SIG-based signaling instead, though this may be less reliable.
 EOF
 		}

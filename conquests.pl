@@ -38,7 +38,8 @@ right. Common sense is a virtue :-)
 Press RETURN or ENTER to continue.
 EOF
 
-$INSTALL_PATH = &prompt(<<"EOF", "/usr/local/bin/httpi", 1);
+$INSTALL_PATH =
+	&interprompt(<<"EOF", "/usr/local/bin/httpi", 1, \&inter_homedir);
 Where do you want the resultant script placed? If you're using configure to
 build multiple instances of HTTPi on different ports, make sure this changes
 unless you're darn certain that they'll all be configured the same way.
@@ -47,6 +48,10 @@ IP ADDRESSES, THIS *MUST* BE DIFFERENT IN EACH CASE!
 
 If you are doing a full install to update the configuration files for
 launchd/inetd/xinetd/stunnel/etc. simultaneously, THE PATH MUST BE ABSOLUTE!
+
+You can use Perl variables for this option (example: \$ENV{'HOME'}/bin/httpi).
+As a shortcut, ~/ in first position will be turned into \$ENV{'HOME'}/,
+which is "$ENV{'HOME'}/".
 
 Install path?
 EOF
@@ -113,18 +118,25 @@ doesn't need to ask (besides, it's pretty Unix-centric as it is anyhow).
 System AF_INET constant (nearly invariably 2)?
 EOF
 }
-$DEF_HTDOCS_PATH = &prompt(<<"EOF", "/usr/local/htdocs", 1);
+$DEF_HTDOCS_PATH =
+	&interprompt(<<"EOF", "/usr/local/htdocs", 1, \&inter_homedir);
 Where do you want the server to serve documents from? All files that HTTPi
 will make available, executables included, must be under this tree (except
 for the user filesystem option if enabled, coming up shortly). This is the
 webserver's mount directory.
 
+You can use Perl variables for this option (example: \$ENV{'HOME'}/bin/httpi).
+As a shortcut, ~/ in first position will be turned into \$ENV{'HOME'}/,
+which is "$ENV{'HOME'}/".
+
+Mount point?
 EOF
 print <<"EOF" if (!-d $DEF_HTDOCS_PATH);
 WARNING: That directory hasn't been created yet. Make sure you create it.
 
 EOF
-$DEF_ACCESS_LOG = &prompt(<<"EOF", "$DEF_HTDOCS_PATH/access.log", 1);
+$DEF_ACCESS_LOG =
+  &interprompt(<<"EOF", "$DEF_HTDOCS_PATH/access.log", 1, \&inter_homedir);
 
 Where do you want the server to put the access log? If you don't want
 logging, specify /dev/null. This is the webserver's log file path.
@@ -134,6 +146,11 @@ served to a client. Sometimes this is useful, and sometimes this is an
 information hole. If this is not desirable to you, make sure the log is not
 located under the webserver's mount point.
 
+You can use Perl variables for this option (example: \$ENV{'HOME'}/bin/httpi).
+As a shortcut, ~/ in first position will be turned into \$ENV{'HOME'}/,
+which is "$ENV{'HOME'}/".
+
+Log path?
 EOF
 print <<"EOF";
 WARNING: Make sure the access log is writeable, or there won't be much in it.
@@ -493,7 +510,8 @@ Use throttling?
 EOF
 $DEF_MTHROTTLE = ($q eq 'y') ? 1 : 0;
 unless ($DEF_MTHROTTLE) {
-	print "Hmm, bandwidth leeches ahoy, eh? ;-)\nSkipping onward ...\n\n";
+	print "Hmm, bandwidth leeches ahoy, eh? ;-)\nSkipping onward ...\n\n"
+		unless ($DEFAULT);
 	$DEF_READBUFFER = 32768;
 	$DEF_THROTWAIT = 0;
 } else {
@@ -586,6 +604,11 @@ though you might need it.
 
 EOF
 }
+
+# prompt for extra custom variables/configuration (if they exist)
+# place at the end of our normal list to avoid compatibility issues
+eval 'require "custom-config.pl";';
+
 # leave alone
 1;
 

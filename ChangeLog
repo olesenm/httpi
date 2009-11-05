@@ -1,3 +1,21 @@
+Changes since 1.6.1:
+
+	fixes:
+	* clean up after testing for socket constants (thanks Mark Olesen)
+	* don't load the whole POSIX namespace (thanks Mark Olesen)
+	* log errors better if preparsing fails. This requires using a stub
+	  function for the New Security Model to support installations that
+	  disable it. ** IN 1.7, THE NEW SECURITY MODEL WILL BE MANDATORY
+	  AND THE STUB WILL BE TAKEN OUT! YOU ARE WARNED **
+	* assert proper signals in child processes
+	* internal code refactoring
+	enhanced:
+	* xsl => text/xml (thanks Mark Olesen)
+	* Perl expressions accepted to certain configure responses
+		(thanks Mark Olesen)
+	* custom-config.pl for packages using HTTPi as a front end
+		(thanks Mark Olesen)
+
 Changes since 1.6:
 
 	fixes:

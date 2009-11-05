@@ -162,6 +162,7 @@ EOF
 		}
 		close(S);
 	}
+	unlink("./sockcons"); # tidy up afterward
 	if ($cons ne 'cons') {
 		print <<"EOF";
 Nuts! Either the compiler doesn't like ANSI C, or you're header-file (or

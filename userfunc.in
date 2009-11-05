@@ -11,12 +11,12 @@ should not be changed as other subroutines call it for their error handling.
 ~
 
 sub hterror {
-	my($errstr, $expl) = (@_);
+	my($errstr, @expl) = (@_);
 	&htcontent(<<"EOF", "text/html");
 <html>
 <body>
 <h1>$errstr</h1>
-$expl
+@expl
 <hr>
 <address><a href = "http://httpi.floodgap.com/">httpi/$VERSION</a>
 by Cameron Kaiser</address>
@@ -26,8 +26,8 @@ EOF
 	}
 
 sub hterror404 {
-	&htsponse(404, "File Not Found");
-	&hterror("File Not Found",
+	&htsponse(404, "Not Found");
+	&hterror("Not Found",
 		"The resource <tt>$address</tt> was not found on this system.");
 	&log; exit;
 }
