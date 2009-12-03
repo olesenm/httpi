@@ -1,0 +1,785 @@
+~ifdef ISNTINSTALLEDYET
+();
+sub BEGIN { die(<<"EOF");
+  -*- Perl -*-
+
+  ****************************************************************************
+  **** HEY! THIS ISN'T THE REAL WEBSERVER! DON'T RUN THIS! RUN CONFIGURE! ****
+  ****************************************************************************
+
+
+EOF
+}
+~endif
+#!DEF_PERL
+~ifdef MUSEPOSIX
+use POSIX qw(SIGALRM SIGTERM sigaction);
+~else
+$ENV{'PERL_SIGNALS'} = "unsafe";
+~endif
+$VERSION = "1.6.2 (DEF_CONF_TYPE/DEF_ARCH)";
+
+# HTTPi Hypertext Tiny Truncated Process Implementation
+# Copyright 1999-2009 Cameron Kaiser and Contributors # All rights reserved
+# Please read LICENSE # Do not strip this copyright message.
+
+###############################################################
+# WHITE HATS ONLY BELOW THIS POINT -- SEE DOCUMENTATION FIRST #
+###############################################################
+
+%system_content_types =
+	("html" => "text/html",
+	 "htm" => "text/html",
+~ifdef MPREPARSE
+	 "shtml" => "text/html",
+	 "shtm" => "text/html",
+	 "sht" => "text/html",
+~endif
+	 "txt" => "text/plain",
+	 "xml" => "text/xml",
+	 "xsl" => "text/xml",
+	 "xhtml" => "application/xhtml+xml",
+	 "css" => "text/css",
+	 "wml" => "text/vnd.wap.wml",
+	 "gif" => "image/gif",
+	 "jpeg" => "image/jpeg",
+	 "jpg" => "image/jpeg",
+	 "bmp" => "image/bmp",
+	 "png" => "image/png",
+	 "tif" => "image/tiff",
+	 "tiff" => "image/tiff",
+	 "ico" => "image/x-icon",
+	 "svg" => "image/svg+xml",
+	 "svgz" => "image/svg+xml",
+	 "wbmp" => "image/vnd.wap.wbmp",
+	 "wbm" => "image/vnd.wap.wbmp",
+	 "xbm" => "image/x-xbitmap",
+	 "mp3" => "audio/x-mpeg",
+	 "wma" => "audio/x-ms-wma",
+	 "wav" => "audio/x-wav",
+	 "au" => "audio/basic",
+	 "aif" => "audio/x-aiff",
+	 "aiff" => "audio/x-aiff",
+	 "ogg" => "audio/x-ogg",
+	 "oga" => "audio/x-ogg",
+	 "mid" => "audio/midi",
+	 "wma" => "audio/x-ms-wma",
+	 "mpeg" => "video/mpeg",
+	 "mpg" => "video/mpeg",
+	 "aac" => "audio/aac",
+	 "ogv" => "video/x-ogg",
+	 "ogx" => "application/x-ogg",
+	 "avi" => "video/x-msvideo",
+	 "wmv" => "video/x-ms-wmv",
+	 "asf" => "video/x-ms-asf",
+	 "mov" => "video/quicktime",
+	 "mp4" => "video/mp4",
+	 "rv" => "video/vnd.m-realvideo",
+	 "rm" => "application/vnd.m-realmedia",
+	 "ra" => "audio/vnd.m-realaudio",
+	 "ram" => "audio/vnd.m-realaudio",
+	 "pdf" => "application/pdf",
+	 "fdf" => "application/vnd.fdf",
+	 "class" => "application/octet-stream",
+	 "jar" => "application/octet-stream",
+	 "js" => "application/x-javascript",
+	 "lnk" => "application/x-hyperlink",
+	 "prg" => "application/x-c64-prg-binary",
+	 "d64" => "application/x-c64-disk-image",
+	 "tar" => "application/x-tar",
+	 "sit" => "application/x-stuffit",
+	 "Z" => "application/x-compress",
+	 "gz"  => "application/x-gzip",
+	 "dmg" => "application/octet-stream",
+	 "img" => "application/octet-stream",
+	 "lzh" => "application/octet-stream",
+	 "lha" => "application/octet-stream",
+	 "exe" => "application/octet-stream",
+	 "com" => "application/octet-stream",
+	 "zip" => "application/x-zip-compressed",
+	 "hqx" => "application/x-binhex",
+	 "swf" => "x-shockwave-flash",
+	 "flv" => "video/x-flv",
+
+	 "bin" => "application/octet-stream");
+
+$logfile = "DEF_ACCESS_LOG";
+$path = "DEF_HTDOCS_PATH";
+$sockaddr = 'S n a4 x8';
+~#
+~# *** For convenience, the server host and port are provided as variables
+~#     but the hardwired values are still used in the remaining code.
+~#     This might change in the future.
+~#
+$server_host = "DEF_SERVER_HOST";
+$server_port = "DEF_TCP_PORT";
+
+~include <uservar.exptl>
+
+%content_types = (%system_content_types, %content_types);
+undef %system_content_types;
+
+~ifdef MVIRTFILES
+while (($file, $arrayref) = each(%virtual_files)) {
+	my ($mime, $type, $block) = (@{ $arrayref });
+	next if ($type ne 'FILE');
+	if(open(S, "$block")) {
+		$j = $/; undef $/; $virtual_files{$file}->[2] = scalar(<S>);
+		$/ = $j; close(S);
+	} else {
+		warn "while getting virtual file $file: $!\n";
+		undef $virtual_files{$file};
+	}
+}
+~endif
+
+~ifdef MDEMONIC
+if ($pid = fork()) { exit; }
+$0 = "dhttpi: binding port ...";
+$bindthis = pack($sockaddr, DEF_AF_INET, DEF_TCP_PORT, DEF_INADDR_ANY);
+socket(S, DEF_PF_INET, DEF_SOCK_STREAM, DEF_IPPROTO_TCP);
+setsockopt(S, DEF_SOL_SOCKET, DEF_SO_REUSEADDR, 1);
+bind(S, $bindthis) || die("$0: while binding port DEF_TCP_PORT:\n\"$!\"\n");
+listen(S, DEF_SOMAXCONN);
+$0 = "dhttpi: connected and waiting DEF_IP_ADDR:DEF_TCP_PORT";
+~else
+$0 = "httpi: handling request";
+~endif
+
+$statiosuptime = time();
+
+sub sock_to_host {
+~#
+~# *** Turn STDIN's socket address into an IP and, if we're lucky, a host name.
+~#
+	return ($cache_hn, $cache_port, $cache_ip)
+		if (length($cache_ip));
+
+~ifdef MSTUNNEL
+	if ($ENV{'REMOTE_HOST'}) {
+		$ip = $ENV{'REMOTE_HOST'};
+		$cache_port = 443;
+		$thataddr = pack("C4", map { 0+$_ } split(/\./, $ip));
+	} else {
+~endif
+	return (undef, undef, undef) if (!$sock);
+	my($AFC, $cache_port, $thataddr, $zero) = unpack($sockaddr, $sock);
+~ifdef MSTUNNEL
+	}
+~endif
+	$cache_ip = join('.', unpack("C4", $thataddr));
+	$cache_hn =
+~ifdef MHOSTNAMES
+		DEF_REV_RESOLVE($thataddr, DEF_AF_INET) ||
+~endif
+		$cache_ip;
+~ifdef MANTISPOOF
+	$cache_hn = "$cache_hn/$cache_ip" ;
+~endif
+	return ($cache_hn, $cache_port, $cache_ip);
+}
+
+~ifdef MABSOLVER
+sub absolver {
+	my ($them, $af) = (@_);
+	my $pid;
+	my $thataddr;
+
+	eval {
+		&alarmsignals;
+		alarm DEF_TO_ABSOLVER;
+		$thataddr = gethostbyaddr($them, $af);
+		alarm 0;
+	};
+	&defaultsignals;
+	return $thataddr;
+}
+~endif
+
+sub htsponse {
+~#
+~# *** Return an HTTP status code and explanation, along with any collected
+~#     headers.
+~#
+	($currentcode, $currentstring) = (@_);
+	return if (0+$httpver < 1);
+	my($what) = <<"EOF";
+HTTP/$httpver $currentcode $currentstring
+${headers}Date: $rfcdate
+EOF
+	$what =~ s/\n/\r\n/g;
+	print STDOUT $what;
+	&hthead("Connection: close") if (0+$httpver > 1);
+}
+
+sub hthead {
+~#
+~#*** Add headers to the HTTP output, and/or terminate the header block.
+~#
+	my($header, $term) = (@_);
+	return if (0+$httpver < 1);
+	print STDOUT "$header\r\n" , ($term) ? "\r\n" : "";
+}
+
+sub htcontent {
+~#
+~#*** Spew content, with the proper content type header and length header.
+~#
+	my($what, $ctype, $mode) = (@_);
+	($contentlength) = $mode || length($what);
+	&hthead("Content-Length: $contentlength");
+	&hthead("Content-Type: $ctype", 1);
+	return if ($method eq 'HEAD' || $mode);
+	print STDOUT $what;
+}
+
+sub log {
+~#
+~# *** Log the request.
+~#
+	if (open(J, ">>$logfile")) {
+		my $q = $address . (($variables) ? "?$variables" : "");
+		$contentlength += 0;
+		$contentlength = 0 if ($method eq 'HEAD');
+		my ($hostname, $port, $ip) = &sock_to_host();
+		$hostname ||= "-";
+		$httpuser ||= "-";
+~ifdef ORIG_LOG
+		print J <<"EOF";
+$hostname - $httpuser [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "$httpref" ""
+~endif
+~ifdef GROSS_LOG
+		print J <<"EOF";
+$hostname - $httpuser [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "$httpref" "$httpua"
+~endif
+~ifdef TERSE_LOG
+		print J <<"EOF";
+$hostname - $httpuser [$date] "$method $q HTTP/$httpver" $currentcode $contentlength "" ""
+~endif
+EOF
+		close(J);
+	}
+}
+
+~#
+~# *** Various signal handlers.
+~#
+
+sub bye { exit; }
+sub byebye { kill(9,$secondary_pid) if ($secondary_pid); exit; }
+
+sub dead {
+	&htsponse(500, "Server Error");
+	&hterror("Server Error", <<"EOF");
+The server cannot comply with your request for resource <tt>$::address</tt>.
+Please attempt to notify the administrators.
+<p>Useful(?) debugging information:
+<pre>
+@_
+</pre>
+EOF
+	&log; exit;
+}
+
+sub defaultsignals {
+	$SIG{'__DIE__'} = \&dead;
+~ifdef MUSEPOSIX
+	sigaction SIGALRM, new POSIX::SigAction \&bye
+		or die "sigalrm failed: $!\n";
+	sigaction SIGTERM, new POSIX::SigAction \&byebye
+		or die "sigterm failed: $!\n";
+~else
+	$SIG{'ALRM'} = \&bye;
+	$SIG{'TERM'} = \&byebye;
+~endif
+}
+&defaultsignals;
+
+sub alarmsignals {
+	undef $SIG{'__DIE__'};
+~ifdef MUSEPOSIX
+	sigaction SIGALRM, new POSIX::SigAction sub { die; }
+		or die "sigalrm failed: $!\n";
+~else
+	$SIG{'ALRM'} = sub { die; };
+~endif
+}
+
+~#
+~# *** Main loop.
+~#
+
+~ifdef MDEMONIC
+sub master {
+	$0 = "dhttpi: handling request";
+~endif
+~ifndef MSTUNNEL
+$sock = getpeername(STDIN);
+~endif
+$rfcdate = &rfctime(scalar gmtime, 1);
+$date = scalar localtime;
+($dow, $mon, $dt, $tm, $yr) = ($date =~
+	m/(...) (...) (..) (..:..:..) (....)/);
+$dt += 0;
+$dt = substr("0$dt", length("0$dt") - 2, 2);
+$date = "$dt/$mon/$yr:$tm DEF_TIME_ZONE";
+
+select(STDOUT); $|=1; $address = 0;
+~ifdef MCANALARM
+alarm 5;
+~endif
+while (<STDIN>) {
+	if(/^([A-Z]+)\s+([^\s]+)\s+([^\s\r\l\n]*)/) {
+		$method = $1;
+		$address = $2;
+		$httpver = $3;
+		$httpref = '';
+		$httpua = '';
+		$httpver = ($httpver =~ m#HTTP/([0-9]\.[0-9]+)#) ?
+			($1) : (0.9);
+		$address =~ s#^http://[^/]+/#/#;
+		$0 = $execstring = "dhttpi: $method $address $httpver";
+		next unless ($httpver < 1);
+	} else {
+		s/[\r\l\n\s]+$//;
+		(/^Host:\s+(.+)/i) && ($httphost = substr($1, 0, 255))
+			&& ($httphost =~ s/:\d+$//);
+		(/^Referer:\s+(.+)/i) && ($httpref = substr($1, 0, 1024));
+		(/^User-agent:\s+(.+)/i) && ($httpua = substr($1, 0, 1024));
+		(/^Content-length:\s+(\d+)/i) &&
+			($ENV{'CONTENT_LENGTH'} = $httpcl = 0+$1);
+		(/^Content-type:\s+(.+)/i) &&
+			($ENV{'CONTENT_TYPE'} = $httpct = substr($1, 0, 255));
+		(/^Expect:\s+/) && ($expect = 1);
+		(/^Cookie:\s+(.+)/i) &&
+			($ENV{'HTTP_COOKIE'} = substr($1, 0, 16384));
+~ifdef MRESTRICTIONS
+		(/^Authorization:\s+Basic (.+)/i) &&
+			($httprawu = substr($1, 0, 1024));
+~endif
+		(/^Range:\s+(.+)/i) &&
+			($ENV{'CONTENT_RANGE'} = substr($1, 0, 255));
+		(/^If-Modified-Since:\s+(.+)/i) &&
+			($modsince = $ENV{'HTTP_IF_MODIFIED_SINCE'} =
+				substr($1, 0, 255));
+		(/^Accept:\s+(.+)/i) &&
+			($ENV{'HTTP_ACCEPT'} = substr($1, 0, 255));
+		(/^Accept-([a-zA-Z0-9]+):\s+(.+)/i) &&
+			($ENV{'HTTP_ACCEPT_'.uc(substr($1, 0, 16))} =
+				substr($2, 0, 255));
+		(/^X-Requested-With:\s+(.+)/i) &&
+			($ENV{'HTTP_X_REQUESTED_WITH'} = substr($1, 0, 1024));
+		next unless (/^$/);
+	}
+	if ($expect) {
+		&htsponse(417, "Expectation Failed");
+		&hterror("Expectation Failed",
+			"The server does not support this method.");
+		&log; exit;
+	}
+	if (!length($address) || (0+$httpver > 1 && !$httphost)) {
+		&htsponse(400, "Bad Request");
+		&hterror("Bad Request",
+			"The server cannot understand your request.");
+		&log; exit;
+	}
+	if ($method !~ /^(GET|HEAD|POST)$/) {
+		&htsponse(501, "Not Implemented");
+		&hterror("Not Implemented",
+			"Only GET, HEAD and POST are supported.");
+		&log; exit;
+	}
+~ifdef NAMEREDIR
+	if ($httphost && $httphost ne 'DEF_SERVER_HOST') {
+		if ($nameredir{$httphost}) {
+			&hterror301("$nameredir{$httphost}$address");
+		}
+		&hterror404;
+	}
+~endif
+	($address, $variables) = split(/\?/, $address);
+	$address =~ s/%([0-9a-fA-F]{2})/pack("H2", $1)/eg;
+	$address=~ s#^/?#/#;
+	1 while $address =~ s#/\.(/|$)#\1#;
+        1 while $address =~ s#/[^/]*/\.\.(/|$)#\1#;
+	1 while $address =~ s#^/\.\.(/|$)#\1#;
+~ifdef MRESTRICTIONS
+	$fail = 0;
+	J: foreach(sort { length $a <=> length $b }
+			keys %restrictions) {
+		next if ($address !~ /^$_/);
+		($allowip, $denyip, $allowua, $denyua, $auser) =
+			split(/#/, $restrictions{$_});
+		if ($allowip || $denyip) {
+			($hostname, $port, $ip) = &sock_to_host();
+			($allowip && $ip !~ /$allowip/) && ($fail = 1,
+				last J);
+			($denyip && $ip =~ /$denyip/) && ($fail = 1,
+				last J);
+		}
+		($allowua && $httpua !~ /$allowua/) &&
+			($fail = 2, last J);
+		($denyua && $httpua =~ /$denyua/) &&
+			($fail = 2, last J);
+	}
+	if ($fail) {
+		&htsponse(403, "Forbidden");
+		if ($fail == 1) {
+			&hterror("Forbidden (Client Disallowed)", <<"EOF");
+Your network address (<i>$ip</i>) is not allowed to access this resource.
+EOF
+			&log; exit;
+		} else {
+			&hterror("Forbidden (Browser Disallowed)", <<"EOF");
+The browser you are using (<i>$httpua</i>) is not capable of or
+is not allowed access to this resource.
+EOF
+			&log; exit;
+		}
+	}
+	if ($auser) {
+		$httprawu =~ tr#A-Za-z0-9+/##cd;
+		$httprawu =~ tr#A-Za-z0-9+/# -_#;
+		$httprawu = unpack("u", pack("c", 32+0.75*length($httprawu))
+			. $httprawu);
+		($httpuser, $httppw) = split(/:/, $httprawu);
+		$fail = 1;
+		foreach $user (split(/,/, $auser)) {
+			($user, $pw) = split(/:/, $user);
+			($fail = 0, last) if ($user eq $httpuser &&
+				crypt($httppw, substr($pw, 0, 2)) eq $pw);
+		}
+		if ($fail) {
+			$httpuser = '';
+			&htsponse(401, "Authorization Required");
+			&hthead("WWW-Authenticate: Basic realm=\"$address\"");
+			&hterror("Authorization Required", <<"EOF");
+You must provide a username and password to use this resource. Either you
+entered this information incorrectly, or your browser does not know how to
+present the credentials required.
+EOF
+			&log; exit;
+		}
+	}
+~endif
+
+~ifdef MCANALARM
+	alarm 0;
+~endif
+
+~ifdef STATIOS
+	$statioslastsec = 1 if ($statiosltr ne (scalar localtime)); # kludge
+	if ($address eq '/status') {
+		&htsponse(200, "OK");
+		$contentlength = 0; # kludge
+		&log;
+		if(open(S, $logfile)) {
+			seek(S, -5000, 2);
+			undef $/;
+			$logsnap = <S>;
+			$logsnap =~ s/^[^\n]+\n//s if
+				(length($logsnap) > 4999);
+			close(S);
+		}
+		$p = (time() - $statiosuptime);
+		$spr = $p/$statiosreq;
+		$rps = $statiosreq/$p;
+		$d = int($p / 86400); $p -= $d * 86400;
+		$h = int($p / 3600); $p -= $h * 3600;
+		$m = int($p / 60); $s = $p - ($m * 60);
+		("0$s" =~ /(\d{2})$/) && ($s = $1);
+		("0$m" =~ /(\d{2})$/) && ($m = $1);
+		$h +=0; $d += 0;
+		$suptime = scalar localtime $statiosuptime;
+		$thistime = scalar localtime;
+		# kludge
+		&htcontent(<<"EOF", "text/html");
+<html>
+<head>
+<title>
+HTTPi Status for Server DEF_SERVER_HOST
+</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="Googlebot" content="noindex,nofollow">
+</head>
+<body bgcolor = "#ffffff" text = "#000000" vlink = "#0000ff" link = "#0000ff">
+<h1>HTTPi Server Status (<code>$VERSION</code>)</h1>
+<h3><code>DEF_SERVER_HOST</code> on DEF_IP_ADDR:DEF_TCP_PORT</h3>
+<b>Started at:</b> $suptime<br>
+<b>Uptime:</b> $d days, $h:$m:$s<br>
+<b>Previous request time:</b> $statiosltr<br>
+<b>This request time:</b> $thistime
+<p>
+<b>Requests received:</b> $statiosreq<br>
+<b>Average time between requests:</b> ${spr}s (${rps}req/sec)<br>
+<b>Requests this second:</b> $statioslastsec<br>
+<b>Peak requests per second:</b> $statiosmaxsec
+<p>
+<b>Most recent requests:</b>
+<form action = "/status" method = "post">
+<textarea name = "bletch" rows = "8" cols = "70">
+$logsnap
+</textarea>
+</form>
+<hr>
+<address>maintained by <a href =
+"http://httpi.floodgap.com/">httpi/$VERSION</a></address>
+</body>
+</html>
+EOF
+		exit;
+	}
+~endif
+
+~include <modules.exptl>
+
+~ifdef MVIRTFILES
+	if (defined $virtual_files{$address}) {
+		$mtime = &rfctime($statiosuptime); # thus always needed
+		$virt_buffer = 1;
+		goto SERVEIT;		# yes, it's bad but it's fast
+	}
+~endif
+	$raddress = "$path$address"
+~ifdef MUSERFS
+		if ($raddress = $address, $raddress !~
+			s#/~([^/]+)#(getpwnam($1))[7]."/public_html"#e);
+~else
+	;
+~endif
+	1 while ($raddress =~ s#//#/#);
+~ifdef MDEMONIC
+	&hterror301("http://DEF_SERVER_HOST:DEF_TCP_PORT$address/")
+~else
+	&hterror301("http://DEF_SERVER_HOST$address/")
+~endif
+		if ($address !~ m#/$# && -d $raddress);
+	$raddress = (-r "${raddress}index.shtml") ?
+		"${raddress}index.shtml" : "${raddress}index.html"
+			if (-d $raddress);
+	IRED: ($hostname, $port, $ip) = &sock_to_host();
+	if(!sysopen(S, $raddress, 0)) { &hterror404; } else {
+		if ((-x $raddress)
+~ifdef CGIEXT
+	&& ($raddress =~ /[\-\._](exe|[ckpba]*sh|p[er]*l|cgi|cmd|com)$/i)
+~endif
+			) {
+			$currentcode = 100; &nsecmodel;
+			$ENV{'REQUEST_METHOD'} = $method;
+			$ENV{'SERVER_NAME'} = "DEF_SERVER_HOST";
+			$ENV{'SERVER_PROTOCOL'} = "HTTP/$httpver";
+			$ENV{'SERVER_SOFTWARE'} = "HTTPi/$VERSION";
+~ifdef MDEMONIC
+			$ENV{'SERVER_PORT'} = "DEF_TCP_PORT";
+			$ENV{'SERVER_URL'} = "http://DEF_SERVER_HOST:DEF_TCP_PORT/";
+~else
+			($x, $ENV{'SERVER_PORT'}, $x, $x) = unpack($sockaddr,
+				getsockname(STDIN));
+			$ENV{'SERVER_URL'} = "http://DEF_SERVER_HOST:$ENV{'SERVER_PORT'}/";
+~endif
+			$ENV{'SCRIPT_FILENAME'} = $raddress;
+			$ENV{'SCRIPT_NAME'} = $address;
+			$ENV{'REMOTE_HOST'} = $hostname;
+			$ENV{'REMOTE_ADDR'} = $ip;
+			$ENV{'REMOTE_PORT'} = $port;
+			$ENV{'QUERY_STRING'} = $variables;
+			$ENV{'HTTP_USER_AGENT'} = $httpua;
+			$ENV{'HTTP_REFERER'} = $httpref;
+~ifdef MDEMONIC
+			undef $pid;
+			if ($pid = fork()) { kill 15, $$; exit; }
+			elsif (!defined($pid)) {
+				die
+			"temporary(?) fork error, please retry request: $!\n";
+			} else {
+~endif
+~ifdef MHTTPERL
+				require $raddress;
+				exit;
+~else
+				if ($method eq 'POST') {
+					open(W, "|$raddress") || die
+						"can't POST to $raddress";
+					read(STDIN, $buf, $httpcl);
+					print W $buf;
+					exit;
+				}
+				exec "$raddress", "$variables";
+				die "exec() returned -1";
+~endif
+~ifdef MDEMONIC
+			}
+~endif
+		}
+		($x,$x,$x,$x,$x,$x,$x,$length,$x,$mtime) = stat(S);
+		$ctype = 0;
+		foreach(keys %content_types) {
+			if ($raddress =~ /\.$_$/i) {
+				$ctype = $content_types{$_};
+			}
+		}
+		$mtime = &rfctime($mtime);
+SERVEIT:
+		if ($mtime eq $modsince) {
+			&htsponse(304, "Not Modified");
+			&hthead("Last-Modified: $mtime", 1);
+			&log; exit;
+		}
+		$ctype ||= 'text/plain';
+~ifdef MDEMONIC
+		if ($pid = fork()) { kill 15, $$; exit; }
+~endif
+~ifdef MAUTOKILL
+		alarm DEF_AK_TIMEOUT;
+~endif
+~ifdef MVIRTFILES
+		if ($virt_buffer) {
+			&htsponse(200, "OK");
+			&hthead("Last-Modified: $mtime");
+			&htcontent($virtual_files{$address}->[2],
+				$virtual_files{$address}->[0], 0);
+			&log; exit;
+		} else {
+~endif
+		$contentlength ||= $length;
+~ifdef MPREPARSE
+		if ($raddress =~ /\.sDEF_PREGEXPAhtm?l?/i) {
+			$currentcode = 200; &stub_nsecmodel; # kludge
+			$j = $/; undef $/; $q = <S>; $/ = $j; close(S);
+			1 while ($fbuf = '',
+		$q =~ s#<perl>(.+?)</perl>#eval"$1" || $@ || ''#es);
+			&htsponse(200, "OK");
+			&htcontent($q, $ctype);
+		} else {
+~endif
+			&htsponse(200, "OK");
+			&hthead("Last-Modified: $mtime");
+			&htcontent("", $ctype, $length);
+			&stub_nsecmodel;
+			$bytecount = 0;
+			unless ($method eq 'HEAD') {
+				while(!eof(S)) {
+					read(S, $q, DEF_READBUFFER);
+					print STDOUT $q;
+~ifdef MTHROTTLE
+					sleep DEF_THROTWAIT if(!eof(S));
+~endif
+					$bytecount += DEF_READBUFFER;
+					$0 = $execstring .
+						" ($bytecount bytes sent)";
+				}
+			}
+~ifdef MPREPARSE
+		}
+~endif
+~ifdef MVIRTFILES
+		}
+~endif
+~ifdef MCANALARM
+		alarm 0;
+~endif
+	}
+	exit;
+}
+
+exit;
+~ifdef MDEMONIC
+}
+~endif
+
+~ifdef MPREPARSE
+sub output { $fbuf .= "@_"; }
+sub flush { $fbuf1 = $fbuf; $fbuf = ''; return $fbuf1; }
+sub include { if(open(INC, "@_")) { &output(join('', (<INC>))); close(INC); }
+	else { &output("<!-- $! -->\n"); } }
+sub finclude { &include(@_); return &flush; }
+~endif
+
+sub stub_nsecmodel {
+~# Don't expect this function to stay: it works around the preprocessor
+~# and supports disabling the New Security Model. 1.7 will make it mandatory.
+~ifdef MNSECMODEL
+	&nsecmodel;
+~else
+	&log;
+~endif
+}
+sub nsecmodel {
+	&log;
+~ifdef MNSECMODEL
+	($x,$x,$x,$x,$uid,$gid) = stat(S);
+	(!$uid || !$gid || $uid < DEF_NSECUID) &&
+		die "resource is root-owned, secured or not stat-able\n";
+	if (!$<) {
+~else
+	if (!$<) {
+		($x,$x,$x,$x,$uid,$gid) = stat(S);
+		(!$uid || !$gid) && die "file is root-owned\n";
+~endif
+~ifdef CANDOSETRUID
+		($) = "$gid $gid") || die "can't set egid to $gid";
+		($> = $uid) || die "can't set euid to $uid";
+		($( = "$gid $gid") || die "can't set rgid to $gid";
+		($< = $uid) || die "can't set ruid to $uid";
+~else
+		eval { (($(, $)) = ("$gid $gid", "$gid $gid")) } ||
+			die("setregid workaround failed gid $gid");
+		eval { (($<, $>) = ($uid, $uid)) } ||
+			die("setreuid workaround failed uid $uid");
+~endif
+	}
+}
+
+sub rfctime {
+	my $mtime = shift;
+	$mtime = (scalar gmtime $mtime) if (!(shift));
+	my ($dow, $mon, $dt, $tm, $yr) =
+		($mtime =~ m/(...) (...) (..) (..:..:..) (....)/);
+	$dt += 0; $yr += 0;
+	return "$dow, $dt $mon $yr $tm GMT";
+}
+~include <userfunc.exptl>
+
+~#
+~# *** accept() loop that spawns the single child for accepting connections
+~#     in Demonic HTTPi.
+~#
+~ifdef STATIOS
+$statiosmaxsec = $statioslastsec = $statiosreq = 1;
+~endif
+~ifdef MDEMONIC
+$0 = "dhttpi: on DEF_IP_ADDR:DEF_TCP_PORT, ready!";
+$master_pid = $$;
+for (;;) {
+~endif
+~ifdef STATIOS
+	$statiosltr = scalar localtime;
+~endif
+~ifdef MDEMONIC
+	if ($secondary_pid = fork()) {
+		waitpid($secondary_pid, 0);
+~endif
+~ifdef STATIOS
+		if ($statiosltr eq (scalar localtime)) {
+			$statioslastsec++;
+		} else {
+			$statiosmaxsec = ($statiosmaxsec <= $statioslastsec)
+				? $statioslastsec : $statiosmaxsec;
+			$statioslastsec = 1;
+		}
+		$statiosreq++;
+~endif
+~ifdef MDEMONIC
+		$0 = "dhttpi: on DEF_IP_ADDR:DEF_TCP_PORT, last request " .
+			scalar localtime;
+	} else {
+		$0 = "dhttpi (child of $master_pid): waiting for connect";
+		$addr=accept(NS,S);
+		open(STDIN, "<&NS");
+		open(STDOUT, ">&NS");
+		&defaultsignals;
+		&master;
+		exit;
+	}
+}
+~endif

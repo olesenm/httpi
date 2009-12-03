@@ -1,5 +1,14 @@
+# -*- perl -*-
+
 $DEF_MDEMONIC = 1;
 $DEF_CONF_TYPE = "Demonic";
+
+eval 'require "Mpp.pm";'; die(<<"EOF") if ($@);
+
+Could not load Mpp.pm, which is required for running the configure script.
+Please make sure it's in the current directory.
+
+EOF
 
 eval 'require "consubs.pl";'; die(<<"EOF") if ($@);
 
@@ -171,7 +180,7 @@ compiler-executable? :-) deficient.
 EOF
 	}
 }
-	
+
 if ($cons ne 'cons') {
 	print <<"EOF";
 Let's see if Perl knows what they are (99% reliable).
@@ -262,6 +271,17 @@ current directory and the destination path.
 EOF
 print T &preproc(\*S); close(T); close(S);
 print "done.\n\n";
+
+
+open(T, ">$INSTALL_PATH.exptl") || die(<<"EOF");
+
+Couldn't write out the new httpi. Check permissions on httpi.in in the
+current directory and the destination path.
+
+EOF
+print T Mpp->include("httpi.exptl"); close(T);
+print "done.\n\n";
+
 
 print "chmod()ding $INSTALL_PATH to 0755 ... ";
 chmod 0755, "$INSTALL_PATH" || die("\n\nWhat the heck? Can't do it.\n");
