@@ -57,18 +57,24 @@ sub include {
 
     my $contents = '';
 
-    my $fd;
-    open $fd, $filename
+    # older perl cannot handle lexical variables for open:
+##    my $fd;
+##    open $fd, $filename
+##      or warn "Can't open $filename: $!\n"
+##      and return $contents;
+
+    local *INCLUDE;
+    open INCLUDE, $filename
       or warn "Can't open $filename: $!\n"
       and return $contents;
-
 
     ## warn "logic prev:curr:exec\n";
 
     #
     # process each line
     local $_;
-    GETLINE: while (<$fd>) {
+##    GETLINE: while (<$fd>) {
+    GETLINE: while (<INCLUDE>) {
 
         ## strip comments
         if (/^~#/)
@@ -172,7 +178,8 @@ sub include {
         $contents .= $_;
     }
 
-    close $fd;    # close old filehandle
+##    close $fd;    # close old filehandle
+    close INCLUDE;    # close old filehandle
     return $contents;
 }
 
