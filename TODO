@@ -1,0 +1,8 @@
+For 1.8:
+-------
+
+explicit error log
+get Mpp.pm working on Perl 5.005 and use the new parser
+allow static gzipped documents (gztest/)
+nurse processes to watch executables and scripts for proper logging
+

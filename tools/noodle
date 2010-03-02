@@ -17,7 +17,7 @@ EOF
 foreach (sort keys %ENV) {
 	print "$_=$ENV{$_}\n"
 	if (/^QUERY_/ || /^CONTENT_/ || /^REMOTE_/ || /^REQUEST_/ ||
-		/^SCRIPT_/ || /^SERVER_/ || /^HTTP_/);
+		/^SCRIPT_/ || /^SERVER_/ || /^HTTP_/ || /^PATH_/);
 }
 
 

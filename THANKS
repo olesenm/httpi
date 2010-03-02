@@ -2,6 +2,9 @@ Thanks to those who have reported errors and deficiencies in HTTPi,
 contributed code suggestions, and just been generally helpful folks:
 
 Bill Benedetto (since 0.1 :-)
+Mark Olesen
+Rob Sayers
+Chris Dagdigian
 Fergus Gallagher
 Marc Slemko
 Aaron Spangler
@@ -10,10 +13,8 @@ Marcus Kreutzberger
 Henry Ptasinski
 Denis Fortin
 Nick Brown
-Chris Dagdigian
 Robert Brown
 Al Guintu
-Mark Olesen
 
 See the ChangeLog for specific contributions and notes from users.
 

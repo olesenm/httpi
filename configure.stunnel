@@ -2,12 +2,15 @@
 
 $DEF_MDEMONIC = 0;
 $DEF_MSTUNNEL = 1;
+$DEF_MGENERIC = 0;
 $DEF_CONF_TYPE = "stunnel";
 
-eval 'require "consubs.pl";'; die(<<"EOF") if ($@);
+eval 'require "./consubs.pl";'; die(<<"EOF") if ($@);
 
 Could not load consubs.pl, which is required for running the configure script.
 Please make sure it's in the current directory.
+
+($@)
 
 EOF
 
@@ -95,11 +98,13 @@ You need to have this file set up and configured BEFORE you run this script.
 EOF
 }
 
-eval 'require "conquests.pl";'; die(<<"EOF") if ($@);
+eval 'require "./conquests.pl";'; die(<<"EOF") if ($@);
 
 Could not load conquests.pl, which is required as part of the standard
 questions suite for all of the configure scripts. Please make sure it's in
 the current directory.
+
+($@)
 
 EOF
 
@@ -119,7 +124,7 @@ EOF
 
 $IP_ADDR = ($IP_ADDR eq 'default') ? '' : "${IP_ADDR}:";
 
-$PORT_NO = &prompt(<<"EOF", "443");
+$DEF_TCP_PORT = $PORT_NO = &prompt(<<"EOF", "443");
 What numerical TCP port do you want the webserver to run on? 443 is the default
 for HTTPS, but if you're using configure to build multiple HTTPis on multiple
 ports, make sure you give a different answer this time.

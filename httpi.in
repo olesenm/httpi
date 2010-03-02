@@ -19,10 +19,10 @@ use POSIX qw(SIGALRM SIGTERM sigaction);
 ~
 $ENV{'PERL_SIGNALS'} = "unsafe";
 ~
-$VERSION = "1.6.2 (DEF_CONF_TYPE/DEF_ARCH)";
+$VERSION = "1.7 (DEF_CONF_TYPE/DEF_ARCH)";
 
 # HTTPi Hypertext Tiny Truncated Process Implementation
-# Copyright 1999-2009 Cameron Kaiser and Contributors # All rights reserved
+# Copyright 1999-2010 Cameron Kaiser and Contributors # All rights reserved
 # Please read LICENSE # Do not strip this copyright message.
 
 ###############################################################
@@ -63,7 +63,7 @@ $VERSION = "1.6.2 (DEF_CONF_TYPE/DEF_ARCH)";
 	 "au" => "audio/basic",
 	 "aif" => "audio/x-aiff",
 	 "aiff" => "audio/x-aiff",
-	 "ogg" => "audio/x-ogg", 
+	 "ogg" => "audio/x-ogg",
 	 "oga" => "audio/x-ogg",
 	 "mid" => "audio/midi",
 	 "wma" => "audio/x-ms-wma",
@@ -129,7 +129,7 @@ undef %system_content_types;
 while (($file, $arrayref) = each(%virtual_files)) {
 	my ($mime, $type, $block) = (@{ $arrayref });
 	next if ($type ne 'FILE');
-	if(open(S, "$block")) {
+	if(sysopen(S, "$block", 0)) {
 		$j = $/; undef $/; $virtual_files{$file}->[2] = scalar(<S>);
 		$/ = $j; close(S);
 	} else {
@@ -361,9 +361,9 @@ $date = scalar localtime;
 	m/(...) (...) (..) (..:..:..) (....)/);
 $dt += 0;
 $dt = substr("0$dt", length("0$dt") - 2, 2);
-$date = "$dt/$mon/$yr:$tm DEF_TIME_ZONE"; 
+$date = "$dt/$mon/$yr:$tm DEF_TIME_ZONE";
 
-select(STDOUT); $|=1; $address = 0; 
+select(STDOUT); $|=1; $address = 0;
 ~check MCANALARM
 alarm 5;
 ~
@@ -371,7 +371,7 @@ alarm 5;
 while (<STDIN>) {
 	if(/^([A-Z]+)\s+([^\s]+)\s+([^\s\r\l\n]*)/) {
 		$method = $1;
-		$address = $2; 
+		$address = $2;
 		$httpver = $3;
 		$httpref = '';
 		$httpua = '';
@@ -517,7 +517,7 @@ EOF
 		&htsponse(200, "OK");
 		$contentlength = 0; # kludge
 		&log;
-		if(open(S, $logfile)) {
+		if(sysopen(S, $logfile, 0)) {
 			seek(S, -5000, 2);
 			undef $/;
 			$logsnap = <S>;
@@ -594,18 +594,48 @@ EOF
 	;
 ~
 	1 while ($raddress =~ s#//#/#);
-~check MDEMONIC
-	&hterror301("http://DEF_SERVER_HOST:DEF_TCP_PORT$address/")
-~
+~check MGENERIC
 	&hterror301("http://DEF_SERVER_HOST$address/")
+~
+	&hterror301("http://DEF_SERVER_HOST:DEF_TCP_PORT$address/")
 ~
 		if ($address !~ m#/$# && -d $raddress);
 	$raddress = (-r "${raddress}index.shtml") ?
 		"${raddress}index.shtml" : "${raddress}index.html"
 			if (-d $raddress);
+~check PATHINFO
+	if (! -e $raddress && ! -d $raddress
+			&& $raddress =~ m#^(.+)/$#
+			&& -x $1) {
+		$raddress = $1;
+		$ENV{'PATH_INFO'} = '/';
+	}
+	if (! -e $raddress) {
+		my $oldraddress = $raddress;
+		my @path_array = split('/', $raddress);
+		my @path_info = ();
+		my $k;
+
+		while(scalar(@path_array) &&
+				((! -e $raddress) || (-d $raddress))) {
+			unshift(@path_info, pop(@path_array));
+			$raddress = join('/', @path_array);
+		}
+		if (scalar(@path_array) && (-x $raddress)) {
+			$ENV{'PATH_INFO'} = '/' . join('/', @path_info);
+			# change $address accordingly
+			$address = substr($address, 0,
+				length($address) - length($ENV{'PATH_INFO'}));
+		} else {
+			$raddress = $oldraddress; # prepare to fail
+			$ENV{'PATH_INFO'} = '';
+		}
+	}
+~
+~
 	IRED: ($hostname, $port, $ip) = &sock_to_host();
 	if(!sysopen(S, $raddress, 0)) { &hterror404; } else {
-		if ((-x $raddress) 
+		if ((-x $raddress)
 ~check CGIEXT
 	&& ($raddress =~ /[\-\._](exe|[ckpba]*sh|p[er]*l|cgi|cmd|com)$/i)
 ~
@@ -645,7 +675,9 @@ EOF
 				require $raddress;
 				exit;
 ~
-				if ($method eq 'POST') { 
+				$ENV{'PATH'} = '';
+				($raddress =~ /^(.+)$/) && ($raddress = $1);
+				if ($method eq 'POST') {
 					open(W, "|$raddress") || die
 						"can't POST to $raddress";
 					read(STDIN, $buf, $httpcl);
@@ -668,7 +700,7 @@ EOF
 			}
 		}
 		$mtime = &rfctime($mtime);
-SERVEIT:	
+SERVEIT:
 		if ($mtime eq $modsince) {
 			&htsponse(304, "Not Modified");
 			&hthead("Last-Modified: $mtime", 1);
@@ -696,7 +728,7 @@ SERVEIT:
 		$contentlength ||= $length;
 ~check MPREPARSE
 		if ($raddress =~ /\.sDEF_PREGEXPAhtm?l?/i) {
-			$currentcode = 200; &stub_nsecmodel; # kludge
+			$currentcode = 200; &nsecmodel; # kludge
 			$j = $/; undef $/; $q = <S>; $/ = $j; close(S);
 			1 while ($fbuf = '',
 		$q =~ s#<perl>(.+?)</perl>#eval"$1" || $@ || ''#es);
@@ -708,7 +740,7 @@ SERVEIT:
 			&htsponse(200, "OK");
 			&hthead("Last-Modified: $mtime");
 			&htcontent("", $ctype, $length);
-			&stub_nsecmodel;
+			&nsecmodel;
 			$bytecount = 0;
 			unless ($method eq 'HEAD') {
 				while(!eof(S)) {
@@ -748,33 +780,23 @@ exit;
 ~check MPREPARSE
 sub output { $fbuf .= "@_"; }
 sub flush { $fbuf1 = $fbuf; $fbuf = ''; return $fbuf1; }
-sub include { if(open(INC, "@_")) { &output(join('', (<INC>))); close(INC); }
-	else { &output("<!-- $! -->\n"); } }
+sub include {
+	if(sysopen(INC, "@_", 0)) {
+		&output(join('', (<INC>))); close(INC);
+	} else {
+		&output("<!-- $! -->\n");
+	}
+}
 sub finclude { &include(@_); return &flush; }
 ~
 ~
 
-sub stub_nsecmodel {
-~# Don't expect this function to stay: it works around the preprocessor
-~# and supports disabling the New Security Model. 1.7 will make it mandatory.
-~check MNSECMODEL
-	&nsecmodel;
-~
-	&log;
-~
-}
 sub nsecmodel {
 	&log;
-~check MNSECMODEL
 	($x,$x,$x,$x,$uid,$gid) = stat(S);
 	(!$uid || !$gid || $uid < DEF_NSECUID) &&
 		die "resource is root-owned, secured or not stat-able\n";
 	if (!$<) {
-~
-	if (!$<) {
-		($x,$x,$x,$x,$uid,$gid) = stat(S);
-		(!$uid || !$gid) && die "file is root-owned\n";
-~
 ~check CANDOSETRUID
 		($) = "$gid $gid") || die "can't set egid to $gid";
 		($> = $uid) || die "can't set euid to $uid";

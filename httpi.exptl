@@ -17,10 +17,10 @@ use POSIX qw(SIGALRM SIGTERM sigaction);
 ~else
 $ENV{'PERL_SIGNALS'} = "unsafe";
 ~endif
-$VERSION = "1.6.2 (DEF_CONF_TYPE/DEF_ARCH)";
+$VERSION = "1.7 (DEF_CONF_TYPE/DEF_ARCH)";
 
 # HTTPi Hypertext Tiny Truncated Process Implementation
-# Copyright 1999-2009 Cameron Kaiser and Contributors # All rights reserved
+# Copyright 1999-2010 Cameron Kaiser and Contributors # All rights reserved
 # Please read LICENSE # Do not strip this copyright message.
 
 ###############################################################
@@ -123,7 +123,7 @@ undef %system_content_types;
 while (($file, $arrayref) = each(%virtual_files)) {
 	my ($mime, $type, $block) = (@{ $arrayref });
 	next if ($type ne 'FILE');
-	if(open(S, "$block")) {
+	if(sysopen(S, "$block", 0)) {
 		$j = $/; undef $/; $virtual_files{$file}->[2] = scalar(<S>);
 		$/ = $j; close(S);
 	} else {
@@ -473,7 +473,7 @@ EOF
 		&htsponse(200, "OK");
 		$contentlength = 0; # kludge
 		&log;
-		if(open(S, $logfile)) {
+		if(sysopen(S, $logfile, 0)) {
 			seek(S, -5000, 2);
 			undef $/;
 			$logsnap = <S>;
@@ -548,15 +548,44 @@ EOF
 	;
 ~endif
 	1 while ($raddress =~ s#//#/#);
-~ifdef MDEMONIC
-	&hterror301("http://DEF_SERVER_HOST:DEF_TCP_PORT$address/")
-~else
+~ifdef MGENERIC
 	&hterror301("http://DEF_SERVER_HOST$address/")
+~else
+	&hterror301("http://DEF_SERVER_HOST:DEF_TCP_PORT$address/")
 ~endif
 		if ($address !~ m#/$# && -d $raddress);
 	$raddress = (-r "${raddress}index.shtml") ?
 		"${raddress}index.shtml" : "${raddress}index.html"
 			if (-d $raddress);
+~ifdef PATHINFO
+	if (! -e $raddress && ! -d $raddress
+			&& $raddress =~ m#^(.+)/$#
+			&& -x $1) {
+		$raddress = $1;
+		$ENV{'PATH_INFO'} = '/';
+	}
+	if (! -e $raddress) {
+		my $oldraddress = $raddress;
+		my @path_array = split('/', $raddress);
+		my @path_info = ();
+		my $k;
+
+		while(scalar(@path_array) &&
+				((! -e $raddress) || (-d $raddress))) {
+			unshift(@path_info, pop(@path_array));
+			$raddress = join('/', @path_array);
+		}
+		if (scalar(@path_array) && (-x $raddress)) {
+			$ENV{'PATH_INFO'} = '/' . join('/', @path_info);
+			# change $address accordingly
+			$address = substr($address, 0,
+				length($address) - length($ENV{'PATH_INFO'}));
+		} else {
+			$raddress = $oldraddress; # prepare to fail
+			$ENV{'PATH_INFO'} = '';
+		}
+	}
+~endif
 	IRED: ($hostname, $port, $ip) = &sock_to_host();
 	if(!sysopen(S, $raddress, 0)) { &hterror404; } else {
 		if ((-x $raddress)
@@ -597,6 +626,8 @@ EOF
 				require $raddress;
 				exit;
 ~else
+				$ENV{'PATH'} = '';
+				($raddress =~ /^(.+)$/) && ($raddress = $1);
 				if ($method eq 'POST') {
 					open(W, "|$raddress") || die
 						"can't POST to $raddress";
@@ -644,7 +675,7 @@ SERVEIT:
 		$contentlength ||= $length;
 ~ifdef MPREPARSE
 		if ($raddress =~ /\.sDEF_PREGEXPAhtm?l?/i) {
-			$currentcode = 200; &stub_nsecmodel; # kludge
+			$currentcode = 200; &nsecmodel; # kludge
 			$j = $/; undef $/; $q = <S>; $/ = $j; close(S);
 			1 while ($fbuf = '',
 		$q =~ s#<perl>(.+?)</perl>#eval"$1" || $@ || ''#es);
@@ -655,7 +686,7 @@ SERVEIT:
 			&htsponse(200, "OK");
 			&hthead("Last-Modified: $mtime");
 			&htcontent("", $ctype, $length);
-			&stub_nsecmodel;
+			&nsecmodel;
 			$bytecount = 0;
 			unless ($method eq 'HEAD') {
 				while(!eof(S)) {
@@ -690,32 +721,22 @@ exit;
 ~ifdef MPREPARSE
 sub output { $fbuf .= "@_"; }
 sub flush { $fbuf1 = $fbuf; $fbuf = ''; return $fbuf1; }
-sub include { if(open(INC, "@_")) { &output(join('', (<INC>))); close(INC); }
-	else { &output("<!-- $! -->\n"); } }
+sub include {
+	if(sysopen(INC, "@_", 0)) {
+		&output(join('', (<INC>))); close(INC);
+	} else {
+		&output("<!-- $! -->\n");
+	}
+}
 sub finclude { &include(@_); return &flush; }
 ~endif
 
-sub stub_nsecmodel {
-~# Don't expect this function to stay: it works around the preprocessor
-~# and supports disabling the New Security Model. 1.7 will make it mandatory.
-~ifdef MNSECMODEL
-	&nsecmodel;
-~else
-	&log;
-~endif
-}
 sub nsecmodel {
 	&log;
-~ifdef MNSECMODEL
 	($x,$x,$x,$x,$uid,$gid) = stat(S);
 	(!$uid || !$gid || $uid < DEF_NSECUID) &&
 		die "resource is root-owned, secured or not stat-able\n";
 	if (!$<) {
-~else
-	if (!$<) {
-		($x,$x,$x,$x,$uid,$gid) = stat(S);
-		(!$uid || !$gid) && die "file is root-owned\n";
-~endif
 ~ifdef CANDOSETRUID
 		($) = "$gid $gid") || die "can't set egid to $gid";
 		($> = $uid) || die "can't set euid to $uid";

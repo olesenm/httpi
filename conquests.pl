@@ -1,4 +1,3 @@
-$HOSTNAME = &wherecheck('Finding hostname', 'hostname');
 $DEF_MCANALARM = &yncheck('Can we use alarm()?', 'alarm 0;');
 unless ($DEF_CANFORK) {
 $DEF_CANFORK = $q = &yncheck("Can we fork()?",
@@ -108,7 +107,7 @@ actually helps any), the one item in HTTPi that used to be a hardcoded
 network constant now actually makes an effort to be portable. If you know
 that your system's AF_INET macro is something other than two, enter it here.
 (I have yet to find an OS where it wasn't, but I'm sure they're out there,
-although it was 2 on AIX, Darwin/OS X, SCO, HP/UX, Solaris, NetBSD and Linux.) 
+although it was 2 on AIX, Darwin/OS X, SCO, HP/UX, Solaris, NetBSD and Linux.)
 
 If you don't know what this is, accept the default -- it's probably correct.
 
@@ -167,7 +166,7 @@ Server host name?
 EOF
 
 $q = 0; $j = '';
-($ENV{'TZ'} =~ /[A-Z]+([0-9]+)[A-Z]+/) && ($q = "-" . substr("0${1}00", 
+($ENV{'TZ'} =~ /[A-Z]+([0-9]+)[A-Z]+/) && ($q = "-" . substr("0${1}00",
 	length("0${1}00") - 4, 4));
 $j = <<"EOF" if ($q);
 (I made a guess based on your TZ environment variable, which is $ENV{'TZ'}.
@@ -176,7 +175,7 @@ EOF
 $DEF_TIME_ZONE = &prompt(<<"EOF", $q || "+0000", 1);
 HTTPi does CERN logging format making it compatible with most log analysers.
 However, to make it as compatible as possible on as wide a range of Perls as
-possible, it doesn't do locale() work to find out what your timezone is. 
+possible, it doesn't do locale() work to find out what your timezone is.
 $j
 If you don't care, you can accept the default. If you do, enter a
 five-character timezone here (e.g., if you're on Pacific time, like I am,
@@ -184,7 +183,7 @@ enter -0800 for 8 hours behind Greenwich mean).
 EOF
 
 $DEF_MRESTRICTIONS = &prompt(<<"EOF", "y", 1);
-HTTPi's answer to .htaccess and access control is the restriction matrix, 
+HTTPi's answer to .htaccess and access control is the restriction matrix,
 allowing access control based on IP address, agent/browser type, and a user
 list you can specify with HTTP Basic Auth. For example, the restriction
 matrix can restrict access to a certain page only to user fred from the
@@ -266,7 +265,7 @@ shouldn't or can't. The usual symptom is spurious error messages trying to
 serve content and a lot of status 100 in the server log.
 
 To get around this problem, in addition to the execute bit HTTPi can be told
-to only execute certain specific file extensions (i.e., they must both be 
+to only execute certain specific file extensions (i.e., they must both be
 executable, and have an allowed extension). This is generally not preferred
 but may be needed depending on your particular environment. For speed, this
 includes only the following: [\\-\\._](exe|[ckpba]*sh|p[er]*l|cgi|cmd|com)\$. Only
@@ -369,30 +368,39 @@ EOF
 
 $DEF_NAMEREDIR = (($q eq 'y') ? 1 : 0);
 
-$q = &prompt(<<"EOF", "y", 1);
-The New Security Model, introduced in 1.4, adds a additional level of control
-over how files are served.
+$q = &prompt(<<"EOF", "n", 1);
+New in HTTPi 1.7 is the ability to use PATH_INFO (and have executables make
+up "virtual filesystems" just like in other webservers). If you already know
+what this is, you'll already be pressing y(es), but this function is currently
+experimental. Because it has the potential for collision problems, you should
+not enable it unless you think you need it, and it currently defaults to n.
 
-In the older model, HTTPi only changed uid for executables. In this model,
-HTTPi changes uid for *all* files, meaning even preparsed documents cannot
-take over the webserver. Furthermore, you can specify a uid for which it and
-all UIDs lower, is illegal: the server will not change uid to them, and will
-not, as a consequence, serve files owned by them (root uid is always illegal)
+Enable PATH_INFO support?
+EOF
+
+$DEF_PATHINFO = (($q eq 'y') ? 1 : 0);
+
+&prompt(<<"EOF", "");
+
+Now for the security section.
+
+Starting with HTTPi 1.7, if you are running as root, HTTPi transforms itself
+into the owner of the document it is accessing, even if it is not executable.
+This means that as soon as content serving begins, a document (even parsable)
+can't take over the webserver. Furthermore, you can specify a uid for which it
+and all UIDs lower, is illegal: the server won't change uid to them and also
+won't, as a consequence, serve files owned by them (root uid is always illegal)
 or run executables on behalf of them (again, root uid is always illegal too).
 Other consequences exist -- PLEASE READ THE DOCUMENTATION FIRST.
 
-The New Security Model is ONLY SALIENT IF YOU RUN HTTPi AS ROOT. Otherwise,
-it simply adds bulk and overhead. It is also only relevant to Un*xy worlds.
+Even if you do not run HTTPi as root, certain security restrictions are
+still enforced for you, even if HTTPi cannot transform its uid (but it still
+may be more secure overall for you to run as an unprivileged user, so your
+decision should be made based on your overall local requirements).
 
-As of 1.5, the New Security Model is now well-tested enough that it is the
-strongly recommended default. It may break old installations, so the choice
-is still offered, but if you use the user filesystem or preparsing and you
-are running your server as root, it is strongly recommended.
-
-Use the New Security Model?
+Press RETURN/ENTER to continue.
 EOF
-$DEF_MNSECMODEL = (($q eq 'y') ? 1 : 0);
-if ($DEF_MNSECMODEL) {
+
 	$eUID = ($>) ? $> : ($ENV{'SUDO_UID'} || 0);
 	$is_not_root = (!$> && $ENV{'SUDO_UID'}) ? 'pre-sudo ' : '';
 	$useful = ($eUID) ? " (FYI: your ${is_not_root}euid is $eUID)" : "";
@@ -418,7 +426,6 @@ as the minimum UID is meaningless.
 
 Lowest UID to serve files${useful}?
 EOF
-}
 
 if (!&yncheck("Can we use getpwnam()?",
 	"print scalar(getpwnam('root')), ' ... '")) {
@@ -438,9 +445,8 @@ between the root server documents and users', so users may also run executables
 (and if HTTPi can't change its uid to the executable's owner, this could be
 a rather large security hole). For this reason, this option defaults to no.
 
-If you have the New Security Model on, *and* you're running as root, HTTPi
-will also change its UID to match the document's, which is useful for
-protecting things like /etc/passwd, and for preparsing.
+If you are running as root, HTTPi can change its uid to the document's, which
+is useful for protecting things like /etc/passwd, and for preparsing.
 
 Enable user filesystem?
 EOF
@@ -452,11 +458,11 @@ HTTPi now enables preparsing of selected content types. With the new preparse
 module loaded, you can insert inline Perl with the <perl></perl> tags and
 access server internals.
 
-Preparsing is done only on files with extensions .sht, .shtm and .shtml, 
+Preparsing is done only on files with extensions .sht, .shtm and .shtml,
 unless you say otherwise.
 
-UNLESS YOU HAVE THE NEW SECURITY MODEL ON *AND* YOU'RE RUNNING HTTPi AS ROOT,
-preparsing runs as the UID of the webserver and this can be a *huge* security
+UNLESS YOU ARE RUNNING HTTPi AS ROOT, PREPARSING CAN BE VERY DANGEROUS! --
+preparsing then runs with the webserver uid and this can be a *huge* security
 hole if enabled with the user filesystem. Enable only if you really trust
 your users, or if you will be the sole person creating content for HTTPi (or
 if you're running HTTPi as some unprivileged user that can't do anything
@@ -549,7 +555,7 @@ individual process instance).
 Gulp delay (in seconds)?
 EOF
 }
-	
+
 if ($DEF_MCANALARM) {
 	$q = &prompt(<<"EOF", "n", 1);
 Now the ugly kludge section. This is really only relevant to inetd users, but

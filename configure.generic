@@ -1,11 +1,15 @@
 $DEF_ARCH = "???";
 $DEF_CONF_TYPE = "Generic";
 $DEF_MDEMONIC = 0;
+$DEF_MGENERIC = 1;
+$DEF_MSTUNNEL = 0;
 
-eval 'require "consubs.pl";'; die(<<"EOF") if ($@);
+eval 'require "./consubs.pl";'; die(<<"EOF") if ($@);
 
 Could not load consubs.pl, which is required for running the configure script.
 Please make sure it's in the current directory.
+
+($@)
 
 EOF
 
@@ -34,11 +38,13 @@ TO RUN HTTPi IN THE GENERIC CONFIGURATION.
 Press ENTER to continue, or BREAK/CTRL-C to bail out now:
 EOF
 
-eval 'require "conquests.pl";'; die(<<"EOF") if ($@);
+eval 'require "./conquests.pl";'; die(<<"EOF") if ($@);
 
 Could not load conquests.pl, which is required as part of the standard
 questions suite for all of the configure scripts. Please make sure it's in 
 the current directory.
+
+($@)
 
 EOF
 
