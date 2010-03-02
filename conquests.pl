@@ -613,8 +613,9 @@ EOF
 
 # prompt for extra custom variables/configuration (if they exist)
 # place at the end of our normal list to avoid compatibility issues
-eval 'require "custom-config.pl";';
+eval 'require "./custom-config.pl";';
 
 # leave alone
 1;
 
+# ------------------------------------------------------------ end-of-file
