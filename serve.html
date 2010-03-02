@@ -67,7 +67,7 @@ will automatically die when they are no longer needed.
 <p>
 You can also kill child processes off if they misbehave, which will
 appropriately be respawned if needed. The owner of these processes may be
-affected by the New Security Model (see below).
+affected by the HTTPi Security Model (see below).
 <p>
 <table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
 <td bgcolor = "#e0e0ff">
@@ -139,82 +139,73 @@ Executables are an issue, as you might be running untrusted code under the
 web server's uid if you're not careful. <i>There is no current way to
 selectively allow only some users or no users at all to have executables.</i>
 Read the section on <a href = "#exec">executable support</a> carefully before
-you enable the user filesystem.
-<p>
-Security constraints may be made stronger by using the New Security Model
-(see below).
+you enable the user filesystem, as well as the HTTPi Security Model below.
 </td></tr></table><p>
-<h4>The New Security Model</h4>
+<h4>The HTTPi Security Model</h4>
 In 1.4, a new method which HTTPi uses to assign its (effective and/or real)
-UID and GID for operations became available. This is a configure-time option
-which can be enabled at your leisure. These examples assume the server is
-running as <code>root</code>
-(otherwise the server does not/cannot change its UID/GID and
-all operations are done with the server's UID/GID).
+uid and gid for operations became available;
+as of 1.7, this became the new default and mandatory.
 <p>
-In the former system, the server only changed its UID/GID on executables. No
-attempt was made to enforce which UIDs were legal until the most recent
+In the old system, the server only changed its uid/gid on executables,
+if it could do so. No
+attempt was made to enforce which uids were legal until the most recent
 versions, although as a side
 effect, no <code>root</code>-owned
-executables were allowed to execute and this was
-assimilated as a "feature" in the latest versions before the introduction
-of the NSM. Documents and server-parsed documents, including inline Perl
-blocks, ran with the webserver's UID/GID.
+executables were allowed to execute and this was later
+assimilated as a "feature".
+Documents were served, and server-parsed documents, including inline Perl
+blocks, ran, with the webserver's uid/gid.
 <p>
-In the New Security Model, the server changes UID/GID for all documents to the
-owner of the document. This includes server-parsed documents, including
+In the new (and current)
+HTTPi Security Model, the server changes uid/gid for <i>all</i> documents to the
+owner of the document, if it can do so.
+This includes server-parsed documents, including
 those using inline Perl, and all executables, meaning the serving and
 execution of all content is restricted to the privileges of the user who
 owns the file being served. In fact, this includes even completely static
-documents and files. Moreover, a minimum UID can be specified to
-indicate which UIDs may serve documents. This has the following effects:
+documents and files. Moreover, a minimum uid can be specified to
+indicate which uids may serve documents. This has the following effects:
 <p>
 <ul>
-<li>UID 0 (<code>root</code>)
-is explicitly disabled in the NSM, whereas it was only
-"implicitly" disabled before. GID 0 is also explicitly disabled. Documents
-owned by either UID 0 or GID 0, as well as any executable file owned
+<li>uid 0 (<code>root</code>) and gid 0
+are explicitly disabled.
+Documents owned by either uid 0 or gid 0, as well as any executable file owned
 by them, are categorically proscribed and cannot be accessed, no
-matter what. (In this
-version of HTTPi, even if the New Security Model is disabled, an explicit
-constraint to restrict UID/GID 0-owned files from being served is in place.)
+matter what.
 <p>
-<li>All files owned by a UID lower than the minimum UID are proscribed and
-cannot be accessed. (However, specifying a minimum UID of zero won't allow
-superuser-owned files to be served, as UID 0 and GID 0 are
+<li>All files owned by a uid lower than the minimum uid are proscribed and
+cannot be accessed. (However, specifying a minimum uid of zero won't allow
+superuser-owned files to be served, as uid 0 and gid 0 are
 never allowed to serve documents; see above.) So, even if a malignant or
 clueless user put a symlink to a private or secured system directory (like
 <code>/etc</code> or <code>/var/adm</code> or other sensitive locations)
 somewhere visible to the webserver, as long as the files within it
-are owned by a proscribed UID, they can't be accessed.
+are owned by a proscribed uid, they can't be accessed.
 <p>
-<li>As the process has changed UID, the child process serving the document
+<li>As the process has changed uid, the child process serving the document
 or executable is now owned by the owner of the document or executable and
 the document owner can now send the child server process signals, including
 termination signals if desired. (This may or may not be advantageous.)
-The master server continues to run with the original UID.
+The master server continues to run with the original uid.
 <p>
-<li>Logging is done before the UID switch.
+<li>Logging is done before the uid switch.
 <p>
 <li>Depending on your operating system, accessing files owned by
 <code>nobody</code> may have strange interactions.
 <p>
 <li>Files in the virtual filesystem do not have "owners" per se and are
-served with the server's original UID.
+served with the server's original uid.
 <p>
 <li><code>stat()</code> is used to evaluate the permissions of the file,
-meaning that symlinks will not disguise a file's true UID/GID. For example,
+meaning that symlinks will not disguise a file's true uid/gid. For example,
 a symlink to <code>/etc/passwd</code> would still evaluate as owned by
 <code>root</code>, and cannot be served.
 <p></ul>
-Even if the web server is unable to mutate its UID/GID to the document owner
+Even if the web server is unable to mutate its uid/gid to the document owner
 and must do operations as "itself" (when it's not running as
 <code>root</code>), it
-will still enforce the minimum UID constraint, and will still enforce the
-restrictions on files owned by either UID or GID 0.
-<p>
-The New Security Model is well tested and strongly recommended; for this
-reason, it is the default in 1.5 and above.
+will still enforce the minimum uid constraint, and will still enforce the
+restrictions on files owned by either uid or gid 0.
 <p>
 <a name = "htho"><h3>Virtual Hosting with HTTPi</h3></a>
 <h4>IP-Based Virtual Hosting</h4>
@@ -307,12 +298,11 @@ directory save the document one (i.e. there is no explicit
 <p>
 <table width = 100% cellspacing = 2 cellpadding = 5 border = 0><tr>
 <td bgcolor = "#e0e0ff">
-As of 1.4, regardless of whether the webserver is itself running as
+Regardless of whether the webserver is itself running as
 <code>root</code>,
-no <code>root</code>-owned or GID 0-owned executable may be executed.
-<p>
-Executables may also be subject to conditions of the New Security Model
-if you enable it.
+no <code>root</code>-owned or gid 0-owned executable may be executed (in
+1.4+),
+as well as any constraints you specify in the HTTPi Security Model.
 </td></tr></table><p>
 The file <code>noodle</code>, included with the distribution in the
 <code>tools/</code> directory, allows you to
@@ -335,7 +325,9 @@ provided the <code>REMOTE_HOST</code>, <code>REMOTE_ADDR</code>,
 variables. In addition, as of 1.4, you are also provided the
 <code>HTTP_COOKIE</code> header with any cookies sent by the client, and
 as of 1.6, <code>HTTP_ACCEPT_*</code>, <code>HTTP_ACCEPT</code>, 
-<code>HTTP_IF_MODIFIED_SINCE</code> and <code>HTTP_X_REQUESTED_WITH</code>.
+<code>HTTP_IF_MODIFIED_SINCE</code> and <code>HTTP_X_REQUESTED_WITH</code>;
+and if you have 1.7+ and you enable <code>PATH_INFO</code>, you also will
+get <code>PATH_INFO</code> where applicable.
 <p>
 Here's the good news:
 most NPH CGIs will probably need no modification at all, and most other CGIs
@@ -427,8 +419,7 @@ your executable with <code>configure</code>.</b><p>
 HTTPi 1.0 and up offer the ability to embed Perl in server-parsed HTML files.
 This feature is very useful and also very <i>dangerous</i> (particularly if
 you have the user filesystem enabled, as it allows anyone to execute arbitrary
-Perl with the webserver's UID). Although the New Security Model (see
-above), introduced in 1.4, improves
+Perl with the webserver's uid). Although the HTTPi Security Model improves
 this feature's security, it still has tremendous power for problem as well
 as promise.
 <p>
@@ -467,7 +458,7 @@ file in the distribution according to the <a href
 The first entry indicates that for all resources starting with
 <code>/nw/</code>, only
 addresses 10.*.*.* are allowed, and of that set, only browsers that report a
-user agent string of Mozilla (Netscape) and do not have MSIE. By now it should
+user agent string of Mozilla and do not have MSIE. By now it should
 be obvious that this is nothing more than four regular expressions concatenated
 together with #s, in this order:
 <p>
@@ -521,7 +512,7 @@ In the first line of the example, there is an allow and deny rule for the user
 agent. Microsoft Internet Explorer exports a user-agent string of the form
 <code>Mozilla/V.v (... MSIE ...)</code>. It will satisfy the allow rule
 <code>^Mozilla</code> <i>and</i> the deny rule <code>MSIE</code>, and thus
-be <b>disallowed</b>. Netscape Navigator exports a user-agent string of the
+be <b>disallowed</b>. Mozilla Firefox exports a user-agent string of the
 form <code>Mozilla/V.v (...)</code>. It will satisfy the allow rule
 <code>^Mozilla</code>, but not satisfy the deny rule, and thus will be
 <b>allowed</b>. Lynx (<code>Lynx ...</code>) will fail the allow rule and the
@@ -633,7 +624,7 @@ modification date per se, as well.
 If an entry in the hash is the same as a file that really does exist, the
 virtual filesystem entry always takes precedence.
 <p>
-The New Security Model has no effect on how virtual filesystem entries are
+The HTTPi Security Model has no effect on how virtual filesystem entries are
 served.
 <p>
 <b>To edit the <code>%virtual_files</code> hash, please see the <a href =
