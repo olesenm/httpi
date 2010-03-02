@@ -1,8 +1,9 @@
 $DEF_MDEMONIC = 0;
 $DEF_MSTUNNEL = 0;
+$DEF_MGENERIC = 0;
 $DEF_CONF_TYPE = "inetd";
 
-eval 'require "consubs.pl";'; die(<<"EOF") if ($@);
+eval 'require "./consubs.pl";'; die(<<"EOF") if ($@);
 
 Could not load consubs.pl, which is required for running the configure script.
 Please make sure it's in the current directory.
@@ -85,7 +86,7 @@ running and active. You *do* have inetd, don't you?
 
 EOF
 
-eval 'require "conquests.pl";'; die(<<"EOF") if ($@);
+eval 'require "./conquests.pl";'; die(<<"EOF") if ($@);
 
 Could not load conquests.pl, which is required as part of the standard
 questions suite for all of the configure scripts. Please make sure it's in
@@ -174,7 +175,7 @@ hangs when you try to access it, you must disable this restriction ('n').
 Restrict HTTPi to a single process?
 EOF
 
-$PORT_NO = &prompt(<<"EOF", "80") unless (!$DO_INSTALL);
+$DEF_TCP_PORT = $PORT_NO = &prompt(<<"EOF", "80") unless (!$DO_INSTALL);
 What numerical TCP port do you want the webserver to run on? 80 is the default
 but if you're using configure to build multiple HTTPis on multiple ports,
 make sure you give a different answer this time.

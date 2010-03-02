@@ -1,6 +1,37 @@
-$version_key = "HTTPi/1.6/$DEF_CONF_TYPE";
+$version_key = "HTTPi/1.7/$DEF_CONF_TYPE";
 $my_version_key = 0;
-$ACTUAL_VERSION = "1.6.2 (C)1998-2009 Cameron Kaiser/Contributors";
+$ACTUAL_VERSION = "1.7 (C)1998-2010 Cameron Kaiser/Contributors";
+
+print STDOUT "HTTPi/$ACTUAL_VERSION\n";
+print STDOUT "Pre-flight check in progress ...\n\n";
+
+#require "./Mpp.pm"; # use fails -T
+#$parser = new Mpp;
+
+# detaint our path. this is slightly risky, but we assume you know what
+# you're doing.
+$nupath = &detaint($ENV{'PATH'});
+if ($nupath =~ /(^|:)\./) {
+	1 while ($nupath =~ s#(^|:)[^/][^:]*##);
+	1 while ($nupath =~ s#:[^/][^:]+$##);
+	&prompt(<<"EOF", "");
+*** WARNING: Portions of your PATH have relative paths in them ***
+This is considered potentially unsafe by the installer, and these paths have
+been removed temporarily during this run of the configure script.
+
+Your path WAS:
+	$ENV{'PATH'}
+
+Your path now TEMPORARILY IS:
+	$nupath
+
+If you require these paths to find tools, press CONTROL-C now and fix your
+PATH, then re-run this configure script.
+
+Otherwise, press RETURN or ENTER to continue.
+EOF
+}
+$ENV{'PATH'} = $nupath;
 
 sub detaint { # sigh
 	my ($w) = (@_);
@@ -60,8 +91,8 @@ sub preproc {
 			next;
 		}
 		next if ($ifl > 0);
-		if (/^~check/) {
-			(/^~check (.+)$/) && ($def = $1);
+		if (/^~(if|check)/) {
+			(/^~(if|check) (.+)$/) && ($def = $2);
 			@ldefs = split(/,\s*/, $def);
 			$j=0;
 			foreach $def (@ldefs) {
@@ -115,11 +146,11 @@ $entry selected.
 EOF
 	printf(L "%s\n", $entry) if ($dontcare && !$DEFAULT);
 	return $entry;
-}			
+}
 
 sub inter_homedir {
 	# based on an idea by Mark Olesen
-	my $w = shift;
+	my $w = &detaint(shift);
 	my $x = $w;
 	$x =~ s#^~/#\$ENV{'HOME'}/#; # so that interpolation occurs
 	my $w = '';
@@ -199,6 +230,7 @@ unless ($DEFAULT) {
 	open(L, ">transcript.$p.$f") || (print(<<"EOF"), exit);
 
 Can't open transcript file transcript.$p.$f for write.
+(Error was $!)
 Check your permissions on that file or directory.
 
 EOF
@@ -216,6 +248,7 @@ sub firstchecks {
 	"Hmm. This might not be a Unix box, but we'll keep trying.\n";
 		$DEF_ARCH = "???";
 	}
+	$HOSTNAME = &wherecheck('Finding hostname', 'hostname');
 
 	$didnt_work = 1;
 	PERLCHEK: while($didnt_work) {
@@ -229,9 +262,10 @@ EOF
 If you want to use this Perl to execute HTTPi, just hit RETURN/ENTER. However,
 if you have another Perl executable you want to use instead, then enter it
 here; it will be probed and then put in HTTPi's #! line.
-... 
+...
 EOF
 		print "Checking out your Perl ...\n";
+		$DEF_PERL = &detaint($DEF_PERL);
 		$test_script = 'print"$] ";eval"use POSIX ()";print"$@"';
 		if(!open(Q, "$DEF_PERL -e '$test_script'|")) {
 			print "Failed to execute $DEF_PERL ... $!\n";
@@ -303,6 +337,8 @@ EOF
 		$didnt_work = 0;
 	}
 }
+
+print STDOUT "\nOk, starting the configure system.\n\n";
 
 1;
 

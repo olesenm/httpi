@@ -1,3 +1,17 @@
+Changes in 1.7:
+
+	** This document changes from "since" to "in" starting with this
+		new version of HTTPi, covering changes from 1.6.2 to 1.7.
+
+	new:
+	* New Security Model now mandatory
+	* PATH_INFO support, based on code by Rob Sayers and Denis Fortin
+	enhanced:
+	* Additional security and sanity checks during installation
+	fixes:
+	* Repairs taintperl bug introduced in 1.6.2 (will pass perl -T again)
+	* Redirects now properly aware of port number (except Generic)
+
 Changes since 1.6.1:
 
 	fixes:
@@ -193,7 +207,7 @@ Changes since first 1.0:
 	* fixed configure-time bug that caused syntax errors if preparsing
 		not turned on. duh. (thanks Fergus Gallagher)
 	* better socket handling for Demonic
-	
+
 Changes since 0.99:
 
 	* logging. one final change: user, since it's not through identd,
