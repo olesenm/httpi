@@ -1,9 +1,17 @@
 use strict;    # -*- Perl -*-
 package Mpp;
-
-#
+# ---------------------------------------------------------------------------
 # Mpp - Mark's Mini-Pre-Processor
+# Copyright (c) 2010 Mark Olesen. All rights reserved.
 #
+# permission granted for inclusion in HTTPi and for distribution under
+# the Floodgap Free Software License
+# ---------------------------------------------------------------------------
+#
+# This implementation has been kept deliberately simple for the current
+# purposes.
+#
+# ---------------------------------------------------------------------------
 
 sub new {
     bless {
@@ -15,30 +23,43 @@ sub new {
 
 # ---------------------------------------------------------------------------
 
+#
+# test if variable is defined
+#
 sub isDefined {
     my $self = shift;
-    my $test = shift;
+    my $def  = shift;
 
-    # for httpi - use global DEF_xxx variables
+    # for httpi - using global DEF_xxx variables
     # otherwise use tied hashes, etc
     my $n = 0;
-    eval qq{\$n += \$::DEF_$test;};
-
+    eval qq{\$n += \$::DEF_$def;};
     return $n;
+
+    # # for httpi - using global %DEF hash
+    # exists $::DEF{$def};
 }
 
 
 #
 # expand macros in the $_ variable
+#
 sub expandMacros {
     my $self = shift;
 
-    # for httpi - use global DEF_xxx variables
+    # for httpi - using global DEF_xxx variables
     # otherwise use tied hashes, etc
     while (/(DEF_[A-Z_]+)/) {
         my $def = $1;
-        eval qq{s/DEF_[A-Z_]+/\$::$def/};
+        eval qq{s/$def/\$::$def/};
     }
+
+    # # for httpi - using global %DEF hash
+    # while (/DEF_([A-Z_]+)/) {
+    #     my $def = $1;
+    #     exists $::DEF{$def} or die "attempt to substitute an undefined value for DEF_$def\n";
+    #     s/DEF_$def/$::DEF{$def}/;
+    # }
 }
 
 
@@ -49,7 +70,7 @@ sub expandMacros {
 #
 sub include {
     my $self = shift;
-    ref $self or $self = $self->new(); ## catch people using a static form
+    ref $self or $self = $self->new(); ## allow use as a static method
 
     my ($filename) = @_;
 
@@ -57,11 +78,8 @@ sub include {
 
     my $contents = '';
 
-    # older perl cannot handle lexical variables for open:
-##    my $fd;
-##    open $fd, $filename
-##      or warn "Can't open $filename: $!\n"
-##      and return $contents;
+    # older Perl versions cannot handle lexical variables for open
+    # thus use localized variables
 
     local *INCLUDE;
     open INCLUDE, $filename
@@ -73,7 +91,6 @@ sub include {
     #
     # process each line
     local $_;
-##    GETLINE: while (<$fd>) {
     GETLINE: while (<INCLUDE>) {
 
         ## strip comments
@@ -93,7 +110,6 @@ sub include {
 
             if (/^~endif/) {
                 ## match 'endif' ... ignore all trailing junk
-
                 if ( $self->{curr} == $self->{exec} ) {
                     $self->{exec}--;
                     $self->{prev} = $self->{exec}; # pull down prev as well
@@ -178,7 +194,6 @@ sub include {
         $contents .= $_;
     }
 
-##    close $fd;    # close old filehandle
     close INCLUDE;    # close old filehandle
     return $contents;
 }
