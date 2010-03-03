@@ -262,6 +262,8 @@ EOF
 $INSTALL_PATH = &detaint($INSTALL_PATH);
 print "Writing out the configured httpi to $INSTALL_PATH ... ";
 
+# process file
+# ---------------
 (open(S, "httpi.in") && open(T, ">$INSTALL_PATH")) || die(<<"EOF");
 
 Couldn't write out the new httpi. Check permissions on httpi.in in the
@@ -272,9 +274,12 @@ current directory and the destination path.
 EOF
 print T &preproc(\*S);
 close(T);
+close(S);
 print "done.\n\n";
+# ---------------
 
-# using Mpp
+# process file using Mpp
+# ---------------
 open(T, ">$INSTALL_PATH.exptl") || die(<<"EOF");
 
 Couldn't write out the new httpi. Check permissions on httpi.in in the
@@ -283,6 +288,7 @@ current directory and the destination path.
 EOF
 print T Mpp->include("httpi.exptl"); close(T);
 print "done.\n\n";
+# ---------------
 
 
 print "chmod()ding $INSTALL_PATH to 0755 ... ";
@@ -302,3 +308,5 @@ be root.
 Remember to read the documentation file for last minute information. Bye!
 
 EOF
+
+# ------------------------------------------------------------ end-of-file

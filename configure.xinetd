@@ -1,3 +1,5 @@
+# -*- perl -*-
+
 $DEF_MDEMONIC = 0;
 $DEF_MSTUNNEL = 0;
 $DEF_MGENERIC = 0;
@@ -67,7 +69,7 @@ EOF
 
 &firstchecks;
 
-$DEF_INCONF = &wherecheck("Verifying /etc/xinetd.conf", "/etc/xinetd.conf", 
+$DEF_INCONF = &wherecheck("Verifying /etc/xinetd.conf", "/etc/xinetd.conf",
 	<<"EOF");
 
 Without /etc/xinetd.conf, your xinetd won't know what services should be
@@ -198,14 +200,33 @@ EOF
 
 $INSTALL_PATH = &detaint($INSTALL_PATH);
 print "Writing out the configured httpi to $INSTALL_PATH ... ";
+
+# process file
+# ---------------
 (open(S, "httpi.in") && open(T, ">$INSTALL_PATH")) || die(<<"EOF");
 
 Couldn't write out the new httpi. Check permissions on httpi.in in the
 current directory and the destination path.
 
 EOF
-print T &preproc(\*S); close(T); close(S);
+print T &preproc(\*S);
+close(T);
+close(S);
 print "done.\n\n";
+# ---------------
+
+# process file using Mpp
+# ---------------
+open(T, ">$INSTALL_PATH.exptl") || die(<<"EOF");
+
+Couldn't write out the new httpi. Check permissions on httpi.in in the
+current directory and the destination path.
+
+EOF
+print T Mpp->include("httpi.exptl"); close(T);
+print "done\n\n";
+# ---------------
+
 
 if ($DO_INSTALL) {
 print "Writing changes to /etc/xinetd.conf ... ";
@@ -214,22 +235,22 @@ open(S, ">>/etc/xinetd.conf") || die(
 $wmode = ($WAIT_MODE == 1) ? 'yes' : 'no';
 $mproc = ($WAIT_MODE == 0) ? 'UNLIMITED' : "$WAIT_MODE";
 $pbind = ($IP_ADDR eq 'default') ? '' : <<"EOF";
-	bind			= $IP_ADDR
+	bind         = $IP_ADDR
 EOF
 print S <<"EOF";
 
 # added by HTTPi install
 service $SERV_NAME
 {
-	type			= UNLISTED
-	protocol		= tcp
-	port			= $PORT_NO
-        flags                   = REUSE
-        socket_type             = stream
-	wait			= $wmode
-	instances		= $mproc
-        user                    = $USER_ID
-        server                  = $INSTALL_PATH
+	type         = UNLISTED
+	protocol     = tcp
+	port         = $PORT_NO
+	flags        = REUSE
+	socket_type  = stream
+	wait         = $wmode
+	instances    = $mproc
+	user         = $USER_ID
+	server       = $INSTALL_PATH
 $pbind
 }
 

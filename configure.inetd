@@ -1,3 +1,5 @@
+# -*- perl -*-
+
 $DEF_MDEMONIC = 0;
 $DEF_MSTUNNEL = 0;
 $DEF_MGENERIC = 0;
@@ -78,7 +80,7 @@ Without /etc/services, your inetd won't know what port to run HTTPi on. You
 *do* have inetd, don't you?
 
 EOF
-$DEF_INCONF = &wherecheck("Verifying /etc/inetd.conf", "/etc/inetd.conf", 
+$DEF_INCONF = &wherecheck("Verifying /etc/inetd.conf", "/etc/inetd.conf",
 	<<"EOF");
 
 Without /etc/inetd.conf, your inetd won't know what services should be
@@ -256,6 +258,9 @@ EOF
 
 $INSTALL_PATH = &detaint($INSTALL_PATH);
 print "Writing out the configured httpi to $INSTALL_PATH ... ";
+
+# process file
+# ---------------
 (open(S, "httpi.in") && open(T, ">$INSTALL_PATH")) || die(<<"EOF");
 
 Couldn't write out the new httpi. Check permissions on httpi.in in the
@@ -264,6 +269,20 @@ current directory and the destination path.
 EOF
 print T &preproc(\*S); close(T); close(S);
 print "done.\n\n";
+# ---------------
+
+# process file using Mpp
+# ---------------
+open(T, ">$INSTALL_PATH.exptl") || die(<<"EOF");
+
+Couldn't write out the new httpi. Check permissions on httpi.in in the
+current directory and the destination path.
+
+EOF
+print T Mpp->include("httpi.exptl"); close(T);
+print "done.\n\n";
+# ---------------
+
 
 if ($DO_INSTALL) {
 print "Need changes to /etc/services? ... ";
@@ -324,3 +343,4 @@ Remember to read the documentation file for last minute information. Bye!
 EOF
 }
 
+# ------------------------------------------------------------ end-of-file

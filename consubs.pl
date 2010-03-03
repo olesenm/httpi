@@ -13,6 +13,8 @@ eval 'require "./Mpp.pm";'; die(<<"EOF") if ($@);
 Could not load Mpp.pm, which is required for running the configure script.
 Please make sure it is in the current directory.
 
+($@)
+
 EOF
 
 # detaint our path. this is slightly risky, but we assume you know what
