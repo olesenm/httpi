@@ -2,8 +2,10 @@ $version_key = "HTTPi/1.7/$DEF_CONF_TYPE";
 $my_version_key = 0;
 $ACTUAL_VERSION = "1.7 (C)1998-2010 Cameron Kaiser/Contributors";
 
-print STDOUT "HTTPi/$ACTUAL_VERSION\n";
-print STDOUT "Pre-flight check in progress ...\n\n";
+print STDOUT                               ##
+  "HTTPi/$ACTUAL_VERSION\n",               ##
+  "Pre-flight check in progress ...\n",    ##
+  "Configure is using perl ", ( $^V || $] ), "\n\n";
 
 # 'use Mpp.pm' fails -T, but 'require' is okay
 eval 'require "./Mpp.pm";'; die(<<"EOF") if ($@);
@@ -44,8 +46,8 @@ sub detaint { # sigh
 }
 
 sub yncheck {
-	local ($prompt, $evals, $fatal) = (@_);
-	local $setv;
+	my ( $prompt, $evals, $fatal ) = (@_);
+	my $setv = 0;
 
 	print STDOUT "$prompt ... ";
 	eval $evals;
@@ -53,21 +55,21 @@ sub yncheck {
 		print "yes\n"; $setv = 1;
 	} else {
 		chomp($q = $@);
-		print "no ($q)\n"; $setv = 0;
+		print "no ($q)\n";
 		(print($fatal), exit) if ($fatal);
 	}
 	return $setv;
 }
 
 sub wherecheck {
-	local ($prompt, $filename, $fatal) = (@_);
-	local(@paths) = split(/\:/, $ENV{'PATH'});
-	unshift(@paths, '/usr/bin'); # the usual place
+	my ($prompt, $filename, $fatal) = (@_);
+	my @paths = split /\:/, $ENV{'PATH'};
+	unshift @paths, '/usr/bin';            # the usual place
 	@paths = ('') if ($filename =~ m#^/#); # for absolute paths
-	local $setv = 0;
+	my $setv = 0;
 
 	print STDOUT "$prompt ... ";
-	foreach(@paths) {
+	for (@paths) {
 		$setv = "$_/$filename";
 		1 while $setv =~ s#//#/#;
 		if (-r $setv) {
@@ -131,8 +133,8 @@ EOF
 }
 
 sub prompt {
-	local($prompt, $default, $dontcare) = (@_);
-	local $entry;
+	my ( $prompt, $default, $dontcare ) = (@_);
+	my $entry;
 
 	if (!$DEFAULT) {
 		chomp $prompt;
