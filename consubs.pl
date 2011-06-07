@@ -149,27 +149,44 @@ EOF
 	return $kvbuf;
 }
 
-sub prompt {
-	local($prompt, $default, $dontcare) = (@_);
-	local $entry;
 
-	if (!$DEFAULT) {
-		chomp $prompt;
-		print STDOUT "$prompt [$default]: ";
-		chomp($entry = <STDIN>);
-		$entry = (length($entry) ? $entry : $default);
-	} else {
-		return if (!$dontcare);
-		$entry = $default if ($DEFAULT == 1);
-		$entry = shift(@answers) if ($DEFAULT == 2);
-	}
-	print <<"EOF" unless ($entry eq '');
+#
+#
+#
+sub prompt {
+    my ( $prompt, $default, $dontcare ) = @_;
+    my $entry;
+
+    if ($DEFAULT) {
+        return if ( !$dontcare );
+        if ( ref $DEFAULT eq 'ARRAY' ) {
+            $entry = shift @$DEFAULT;
+        }
+        else {
+            $entry = $default;
+        }
+    }
+    else {
+        chomp $prompt;
+
+        print STDOUT "$prompt [$default]: ";
+        chomp( $entry = <STDIN> );
+        unless ( length($entry) ) {
+            $entry = $default;
+        }
+
+        # log the entry
+        if ($dontcare) {
+            print L "$entry\n";
+        }
+    }
+
+    print <<"EOF" unless ( $entry eq '' );
 
 $entry selected.
 
 EOF
-	printf(L "%s\n", $entry) if ($dontcare && !$DEFAULT);
-	return $entry;
+    return $entry;
 }
 
 sub inter_homedir {
@@ -207,8 +224,9 @@ HIT CTRL-C NOW IF THIS IS NOT WHAT YOU WANT!
 
 EOF
 	sleep 2;
-	$DEFAULT = 1;
+	$DEFAULT = 1;  # yes, accept the default values
 	if (length($ARGV[1]) && -e $ARGV[1]) {
+		$DEFAULT = [];  # default values read from file
 		open(P, "$ARGV[1]");
 		while(<P>) {
 			chomp;
@@ -234,11 +252,10 @@ EOF
 				}
 				next;
 			}
-			push(@answers, $_);
+			push @$DEFAULT, $_;
 		}
 		close(P);
-		print "Loaded responses from $ARGV[1].\n\n";
-		$DEFAULT = 2;
+		print "Loaded ", scalar(@$DEFAULT), " responses from $ARGV[1].\n\n";
 	} elsif (length($ARGV[1])) {
 		print <<"EOF";
 Can't load transcript file $ARGV[1]! ("$!")
@@ -266,9 +283,9 @@ EOF
 # check for basic system information and perl
 #
 sub firstchecks {
-	$DEF_UNAME = &wherecheck("Finding uname", "uname");
-	if ($DEF_UNAME) {
-		chomp($DEF_ARCH = `$DEF_UNAME -s`);
+	my $uname = &wherecheck("Finding uname", "uname");
+	if ($uname) {
+		chomp($DEF_ARCH = `$uname -s`);
 		print "Smells like $DEF_ARCH.\n";
 	} else {
 		print
