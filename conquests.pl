@@ -38,7 +38,7 @@ Press RETURN or ENTER to continue.
 EOF
 
 $INSTALL_PATH =
-	&interprompt(<<"EOF", "/usr/local/bin/httpi", 1, \&inter_homedir);
+	&prompt(<<"EOF", "/usr/local/bin/httpi", 1, \&inter_homedir);
 Where do you want the resultant script placed? If you're using configure to
 build multiple instances of HTTPi on different ports, make sure this changes
 unless you're darn certain that they'll all be configured the same way.
@@ -118,7 +118,7 @@ System AF_INET constant (nearly invariably 2)?
 EOF
 }
 $DEF_HTDOCS_PATH =
-	&interprompt(<<"EOF", "/usr/local/htdocs", 1, \&inter_homedir);
+	&prompt(<<"EOF", "/usr/local/htdocs", 1, \&inter_homedir);
 Where do you want the server to serve documents from? All files that HTTPi
 will make available, executables included, must be under this tree (except
 for the user filesystem option if enabled, coming up shortly). This is the
@@ -135,7 +135,7 @@ WARNING: That directory hasn't been created yet. Make sure you create it.
 
 EOF
 $DEF_ACCESS_LOG =
-  &interprompt(<<"EOF", "$DEF_HTDOCS_PATH/access.log", 1, \&inter_homedir);
+  &prompt(<<"EOF", "$DEF_HTDOCS_PATH/access.log", 1, \&inter_homedir);
 
 Where do you want the server to put the access log? If you don't want
 logging, specify /dev/null. This is the webserver's log file path.
@@ -618,3 +618,4 @@ eval 'require "custom-config.pl";';
 # leave alone
 1;
 
+# ----------------------------------------------------------------- end-of-file

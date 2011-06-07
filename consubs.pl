@@ -154,7 +154,7 @@ EOF
 #
 #
 sub prompt {
-    my ( $prompt, $default, $dontcare ) = @_;
+    my ( $prompt, $default, $dontcare, $interpolator ) = @_;
     my $entry;
 
     if ($DEFAULT) {
@@ -165,14 +165,41 @@ sub prompt {
         else {
             $entry = $default;
         }
+
+        if ($interpolator) {
+            my ( $expanded, $err ) = &$interpolator($entry);
+            if ( length($expanded) ) {
+                print "(expanded to $expanded)\n\n" if $expanded ne $entry;
+                $entry = $expanded;
+            }
+            else {
+                print "The expression made no sense: $@";
+                print "stopping\n";
+                exit;
+            }
+        }
     }
     else {
         chomp $prompt;
+        PROMPT:
 
         print STDOUT "$prompt [$default]: ";
         chomp( $entry = <STDIN> );
         unless ( length($entry) ) {
             $entry = $default;
+        }
+
+        if ($interpolator) {
+            my ( $expanded, $err ) = &$interpolator($entry);
+            if ( length($expanded) ) {
+                print "(expanded to $expanded)\n\n" if $expanded ne $entry;
+                $entry = $expanded;
+            }
+            else {
+                print "Your expression made no sense: $@";
+                print "Try again, with feeling.\n\n";
+                goto PROMPT;
+            }
         }
 
         # log the entry
@@ -189,6 +216,10 @@ EOF
     return $entry;
 }
 
+
+#
+# interpolate variables, with special treatment for ~/ home-dir expansion
+#
 sub inter_homedir {
 	# based on an idea by Mark Olesen
 	my $w = &detaint(shift);
@@ -196,24 +227,7 @@ sub inter_homedir {
 	$x =~ s#^~/#\$ENV{'HOME'}/#; # so that interpolation occurs
 	my $w = '';
 	eval qq{ \$w = "$x"; };
-	return ($w, $@);
-}
-
-sub interprompt {
-	my($prompt, $default, $dontcare, $interpolator) = (@_);
-
-	while(1) {
-		my $k = &prompt($prompt, $default, $dontcare);
-		my ($l, $err) = &$interpolator($k);
-		if (length($l)) {
-			print "(expanded to $l)\n\n" if ($l ne $k);
-			return $l;
-		} else {
-			print "Your expression made no sense: $@";
-			print "Try again, with feeling.\n\n";
-		}
-	}
-	die("not reached\n");
+	wantarray ? return ($w, $@) : return $w;
 }
 
 if ($ARGV[0] =~ /^--?d/) {
@@ -386,3 +400,4 @@ print STDOUT "\nOk, starting the configure system.\n\n";
 
 1;
 
+# ----------------------------------------------------------------- end-of-file
