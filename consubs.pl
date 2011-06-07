@@ -65,27 +65,40 @@ sub yncheck {
 	return $setv;
 }
 
-sub wherecheck {
-	local ($prompt, $filename, $fatal) = (@_);
-	local(@paths) = split(/\:/, $ENV{'PATH'});
-	unshift(@paths, '/usr/bin'); # the usual place
-	@paths = ('') if ($filename =~ m#^/#); # for absolute paths
-	local $setv = 0;
 
-	print STDOUT "$prompt ... ";
-	foreach(@paths) {
-		$setv = "$_/$filename";
-		1 while $setv =~ s#//#/#;
-		if (-r $setv) {
-			print "$setv\n";
-			last;
-		}
-	}
-	if (!$setv) {
-		print "not found.\n";
-		(print($fatal),exit) if ($fatal);
-	}
-	return $setv;
+#
+# check for program
+#
+# Prototype: wherecheck(String prompt, String program, Bool fatal)
+#
+sub wherecheck {
+    my ( $prompt, $prog, $fatal ) = @_;
+    my @paths;
+    if ( $prog =~ m{^/} ) {    # for absolute paths
+        @paths = ('');
+    }
+    else {
+        ## check a few usual places and in PATH
+        @paths = ( qw( /bin /usr/bin ), split /\:+/, $ENV{'PATH'} );
+    }
+
+    my $resolved = 0;
+    print STDOUT "$prompt ... ";
+    for (@paths) {
+        ( my $resolved = "$_/$prog" ) =~ s{//+}{/}g;
+        if ( -r $resolved and -f _ ) {
+            print "$resolved\n";
+            return $resolved;
+        }
+    }
+
+    print "not found.\n";
+    if ($fatal) {
+        print $fatal;
+        exit 1;
+    }
+
+    return '';    # return false
 }
 
 sub preproc {
@@ -249,6 +262,9 @@ EOF
 	print L "$version_key\n";
 }
 
+#
+# check for basic system information and perl
+#
 sub firstchecks {
 	$DEF_UNAME = &wherecheck("Finding uname", "uname");
 	if ($DEF_UNAME) {
