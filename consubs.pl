@@ -8,33 +8,42 @@ print STDOUT "Pre-flight check in progress ...\n\n";
 #require "./Mpp.pm"; # use fails -T
 #$parser = new Mpp;
 
-# detaint our path. this is slightly risky, but we assume you know what
-# you're doing.
-{
-my $nupath = &detaint($ENV{'PATH'});
-if ($nupath =~ /(^|:)\./) {
-	1 while ($nupath =~ s#(^|:)[^/][^:]*?##);
-	1 while ($nupath =~ s#:[^/][^:]+$##);
-	&prompt(<<"EOF", "");
+# detaint our path.
+# You could disable this check, but only do so if you know what you're doing.
+if (1) {
+    die "your path contains meta-characters: [\\|><]\n",
+      "Refusing to run - fix your PATH!\n"
+      if $ENV{'PATH'} =~ m{[\\|><]};
+
+    my @path = grep { length } split /:+/, $ENV{'PATH'};
+    my $norig = @path;
+    @path = grep { m{^/} } @path;
+    if ( $norig != @path ) {
+        my $newpath = join ":" => @path;
+        &prompt( <<"EOF", "" );
 *** WARNING: Portions of your PATH have relative paths in them ***
 This is considered potentially unsafe by the installer, and these paths have
 been removed temporarily during this run of the configure script.
 
 Your path WAS:
-	$ENV{'PATH'}
+    $ENV{'PATH'}
 
 Your path now TEMPORARILY IS:
-	$nupath
+    $newpath
 
 If you require these paths to find tools, press CONTROL-C now and fix your
 PATH, then re-run this configure script.
 
 Otherwise, press RETURN or ENTER to continue.
 EOF
-}
-$ENV{'PATH'} = $nupath;
+        $ENV{'PATH'} = $newpath;
+    }
 }
 
+
+#
+# return portion of string without \|>< meta-characters
+#
 sub detaint { # sigh
 	my ($w) = (@_);
 	($w =~ m#([^\\|><]+)#) && (return $1);
