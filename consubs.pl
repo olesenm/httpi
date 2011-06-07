@@ -10,9 +10,10 @@ print STDOUT "Pre-flight check in progress ...\n\n";
 
 # detaint our path. this is slightly risky, but we assume you know what
 # you're doing.
-$nupath = &detaint($ENV{'PATH'});
+{
+my $nupath = &detaint($ENV{'PATH'});
 if ($nupath =~ /(^|:)\./) {
-	1 while ($nupath =~ s#(^|:)[^/][^:]*##);
+	1 while ($nupath =~ s#(^|:)[^/][^:]*?##);
 	1 while ($nupath =~ s#:[^/][^:]+$##);
 	&prompt(<<"EOF", "");
 *** WARNING: Portions of your PATH have relative paths in them ***
@@ -32,6 +33,7 @@ Otherwise, press RETURN or ENTER to continue.
 EOF
 }
 $ENV{'PATH'} = $nupath;
+}
 
 sub detaint { # sigh
 	my ($w) = (@_);
