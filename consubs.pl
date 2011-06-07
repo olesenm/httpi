@@ -1,5 +1,4 @@
 $version_key = "HTTPi/1.7/$DEF_CONF_TYPE";
-$my_version_key = 0;
 $ACTUAL_VERSION = "1.7 (C)1998-2010 Cameron Kaiser/Contributors";
 
 print STDOUT "HTTPi/$ACTUAL_VERSION\n";
@@ -49,20 +48,26 @@ sub detaint { # sigh
 	($w =~ m#([^\\|><]+)#) && (return $1);
 }
 
+#
+# check (eval) some perl code and return 1/0 for success or failure
+#
 sub yncheck {
-	local ($prompt, $evals, $fatal) = (@_);
-	local $setv;
+	my ( $prompt, $evals, $fatal ) = (@_);
 
 	print STDOUT "$prompt ... ";
 	eval $evals;
 	if (!$@) {
-		print "yes\n"; $setv = 1;
+		print "yes\n";
+		return 1;
 	} else {
 		chomp($q = $@);
-		print "no ($q)\n"; $setv = 0;
-		(print($fatal), exit) if ($fatal);
+		print "no ($q)\n";
+		if ($fatal) {
+			print $fatal;
+			exit 1;
+		}
+		return 0;
 	}
-	return $setv;
 }
 
 
@@ -173,7 +178,7 @@ sub prompt {
                 $entry = $expanded;
             }
             else {
-                print "The expression made no sense: $@";
+                print "The expression made no sense: $err";
                 print "stopping\n";
                 exit;
             }
@@ -196,7 +201,7 @@ sub prompt {
                 $entry = $expanded;
             }
             else {
-                print "Your expression made no sense: $@";
+                print "Your expression made no sense: $err";
                 print "Try again, with feeling.\n\n";
                 goto PROMPT;
             }
@@ -241,21 +246,22 @@ EOF
 	$DEFAULT = 1;  # yes, accept the default values
 	if (length($ARGV[1]) && -e $ARGV[1]) {
 		$DEFAULT = [];  # default values read from file
+		my $file_version_key = '';
 		open(P, "$ARGV[1]");
 		while(<P>) {
 			chomp;
-			if (!$my_version_key) {
-				$my_version_key = $_;
-				if ($my_version_key ne $version_key) {
-					$my_version_key =
+			if (!$file_version_key) {
+				$file_version_key = $_;
+				if ($file_version_key ne $version_key) {
+					$file_version_key =
 						"0.99 or earlier"
-						if ($my_version_key !~
+						if ($file_version_key !~
 							/^HTTPi/);
 					print <<"EOF";
 Whoops, screeching halt time, bud.
 
 This is a transcript file from an incompatible or earlier HTTPi configure
-sequence (looks like version $my_version_key).
+sequence (looks like version $file_version_key).
 
 Since the question sequence and possible choices have changed, the responses
 you gave in this transcript file are no longer valid. Please start over and
