@@ -1,5 +1,5 @@
 $version_key = "HTTPi/1.7/$DEF_CONF_TYPE";
-$ACTUAL_VERSION = "1.7 (C)1998-2010 Cameron Kaiser/Contributors";
+$ACTUAL_VERSION = "1.7 (C)1998-2011 Cameron Kaiser/Contributors";
 
 print STDOUT "HTTPi/$ACTUAL_VERSION\n";
 print STDOUT "Pre-flight check in progress ...\n\n";
