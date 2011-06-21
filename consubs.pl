@@ -1,8 +1,10 @@
 $version_key = "HTTPi/1.7/$DEF_CONF_TYPE";
 $ACTUAL_VERSION = "1.7 (C)1998-2011 Cameron Kaiser/Contributors";
 
-print STDOUT "HTTPi/$ACTUAL_VERSION\n";
-print STDOUT "Pre-flight check in progress ...\n\n";
+print STDOUT                               ##
+  "HTTPi/$ACTUAL_VERSION\n",               ##
+  "Pre-flight check in progress ...\n",    ##
+  "Configure is using perl ", ( $^V || $] ), "\n\n";
 
 #require "./Mpp.pm"; # use fails -T
 #$parser = new Mpp;
