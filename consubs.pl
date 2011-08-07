@@ -224,6 +224,10 @@ EOF
 }
 
 
+# provide alias for compatibility
+*interprompt = \&prompt;
+
+
 #
 # interpolate variables, with special treatment for ~/ home-dir expansion
 #
