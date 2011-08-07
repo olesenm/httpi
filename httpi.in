@@ -680,7 +680,7 @@ EOF
 				require $raddress;
 				exit;
 ~
-				$ENV{'PATH'} = '';
+				$ENV{'PATH'} = '/usr/bin:/bin';
 				($raddress =~ /^(.+)$/) && ($raddress = $1);
 				if ($method eq 'POST') {
 					open(W, "|$raddress") || die
