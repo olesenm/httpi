@@ -29,7 +29,23 @@ $VERSION = "1.7 (DEF_CONF_TYPE/DEF_ARCH)";
 # WHITE HATS ONLY BELOW THIS POINT -- SEE DOCUMENTATION FIRST #
 ###############################################################
 
-%system_content_types =
+$logfile = "DEF_ACCESS_LOG";
+$path = "DEF_HTDOCS_PATH";
+$sockaddr = 'S n a4 x8';
+~check MFALSE
+
+*** For convenience, the server host and port are provided as variables
+    but the hardwired values are still used in the remaining code.
+    This might change in the future.
+
+~
+~
+$server_host = "DEF_SERVER_HOST";
+$server_port = "DEF_TCP_PORT";
+
+~insert uservar.in
+
+%content_types =
 	("html" => "text/html",
 	 "htm" => "text/html",
 ~check MPREPARSE
@@ -103,27 +119,9 @@ $VERSION = "1.7 (DEF_CONF_TYPE/DEF_ARCH)";
 	 "hqx" => "application/x-binhex",
 	 "swf" => "x-shockwave-flash",
 	 "flv" => "video/x-flv",
-
-	 "bin" => "application/octet-stream");
-
-$logfile = "DEF_ACCESS_LOG";
-$path = "DEF_HTDOCS_PATH";
-$sockaddr = 'S n a4 x8';
-~check MFALSE
-
-*** For convenience, the server host and port are provided as variables
-    but the hardwired values are still used in the remaining code.
-    This might change in the future.
-
-~
-~
-$server_host = "DEF_SERVER_HOST";
-$server_port = "DEF_TCP_PORT";
-
-~insert uservar.in
-
-%content_types = (%system_content_types, %content_types);
-undef %system_content_types;
+	 "bin" => "application/octet-stream",
+	 %content_types,
+	 );
 
 ~check MVIRTFILES
 while (($file, $arrayref) = each(%virtual_files)) {
